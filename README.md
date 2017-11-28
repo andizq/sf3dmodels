@@ -5,9 +5,11 @@ About "Name"
 
 "Name" is a star-forming-region(s) modelling package that brings together analytical physical models from different authors (Ulrich, Keto, Pringle, Whitney) to compute density, velocity, temperature, abundance and gas-to-dust ratio 3D distributions. 
 
-"Name" makes it possible to construct diverse distributions by mixing the available standard models of the code. However, new models can be added to the package if needed. Users willing to contribute and nourish the package with new models are very welcome! 
+"Name" makes it possible to construct diverse distributions by mixing the available standard models within it. However, new models can be added to the package if needed. Users willing to contribute and nourish the package with new models are very welcome! 
 
-In addition, "Name" can couple different star-forming-regions together to recreate complex star forming systems as those being revealed by recent telescopes and interferometers. This feature was quite used by Izquierdo et al, 2018 to model the complex star forming system W33A MM1. 
+In addition, "Name" can couple different star-forming-regions together to recreate complex star forming systems as those being revealed by recent telescopes and interferometers. This feature was quite used by Izquierdo et al, 2018 to model the complex star forming system W33A MM1.
+
+To simulate real observations you need first to perform radiative transfer calculations. The [LIME](https://github.com/lime-rt/lime) software does this for you in far-infrared and (sub-)millimeter wavelength. Therefore, we made the "Name" output data to be compatible with LIME. 
 
 Installation process
 --------------------
@@ -74,7 +76,7 @@ MStar = 7.0 * U.MSun
 MRate = 4e-4 * U.MSun_yr #Mass accretion rate                                                                                                         
 RStar = 26 * U.RSun * ( MStar/U.MSun )**0.27 * ( MRate / (1e-3*U.MSun_yr) )**0.41                                                                                                               
 LStar = 3.2e4 * U.LSun
-TStar = TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25                                                                                       
+TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25                                                                                       
 Rd = 152. * U.AU #Centrifugal radius  
 ```
 
@@ -83,7 +85,7 @@ Rd = 152. * U.AU #Centrifugal radius
 # Cubic grid, each edge ranges [-500, 500] AU. 
 
 sizex = sizey = sizez = 500 * U.AU
-Nx = Ny = Nz = 75 #Number of divisions for each axis
+Nx = Ny = Nz = 150 #Number of divisions for each axis
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
 ```
@@ -120,7 +122,7 @@ ab0 = 1.8e-7 #CH3CN abundance
 abundance = Model.abundance(ab0, NPoints) #Constant abundance
 
 gtd0 = 100. #Gas to dust ratio
-gtdratio = MU.gastodust(gtd0, NPoints) #Constant gtd ratio
+gtdratio = Model.gastodust(gtd0, NPoints) #Constant gtd ratio
 ```
 
 **d.** Write the data into a file :memo::
