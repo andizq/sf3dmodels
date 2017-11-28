@@ -9,7 +9,7 @@ About "Name"
 
 In addition, "Name" can couple different star-forming-regions together to recreate complex star forming systems as those being revealed by recent telescopes and interferometers. This feature was quite used by Izquierdo et al, 2018 to model the complex star forming system W33A MM1.
 
-To simulate real observations you need first to perform radiative transfer calculations. The [LIME](https://github.com/lime-rt/lime) software does this for you in far-infrared and (sub-)millimeter wavelength. Therefore, we made the "Name" output data to be compatible with LIME. 
+We made the "Name" output data to be compatible with [LIME](https://github.com/lime-rt/lime): To simulate real observations you need first to perform radiative transfer calculations and LIME does this for you in far-infrared and (sub-)millimeter wavelength.
 
 Installation process
 --------------------
