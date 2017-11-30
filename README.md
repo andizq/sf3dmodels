@@ -163,24 +163,9 @@ The resulting 3D distribution and 2D profiles:
 </p>
 
 
-**Example 2.** Creating a low-mass star forming region with a composite model for density (Envelope: Ulrich density. Disc: Burger density)
-```python
-#-----------------
-#Package libraries
-#-----------------
-import Model
-import Resolution as Res
-import Plot_model
-import Utils as U #Module with useful units
-#-----------------
-#Extra libraries
-#-----------------
-import numpy as np
-import os
-import time
-```
+**Example 2.** Creating a low-mass star forming region with a composite model for density (Envelope: Ulrich density. Disc: Burger density) and a different model for temperature.
 
-**a.** Define general parameters :page_with_curl::
+**a.** The general parameters :page_with_curl::
 ```python
 MStar = 0.86 * U.MSun 
 MRate = 5.e-6 * U.MSun_yr 
@@ -190,7 +175,7 @@ TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25
 Rd = 264. * U.AU
 ```
 
-**b.** Create the grid that will host the region :house_with_garden::
+**b.** The grid :house_with_garden::
 ```python
 # Cubic grid, each edge ranges [-500, 500] AU. 
 
@@ -200,7 +185,7 @@ GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
 ```
 
-**c.** Invoke the physical properties from a desired model(s) :pager::
+**c.** The physical properties :pager:. Note how the final density Structure should be defined joining both, the envelope density and the disc density that were calculated separately from 2 different models:
 ```python
 #-------------
 #DENSITY
@@ -220,7 +205,7 @@ densEnv = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = False, en
 H0sf = 0.03 #Disc scale height factor (H0 = 0.03 * RStar)
 Arho = 5.25
 Rdisc = 1.5 * Rd
-densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag = True, 
+densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = False,
                                     rdisc_max = Rdisc)
 #---------------------
 #The COMPOSITE DENSITY
@@ -271,7 +256,7 @@ Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, G
 #---------------------
 #3D Plotting (density)
 #---------------------
-Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='Blues', 
+Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='cool', 
                      scale='log', output = 'density.png', show = True)
 
 #-------------------------------------
