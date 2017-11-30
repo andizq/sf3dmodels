@@ -19,7 +19,7 @@ t0 = time.time()
 #General Parameters
 #------------------
 MStar = 7.0 * U.MSun 
-MRate = 4.0 * 1.e-4 * U.MSun_yr 
+MRate = 4e-4 * U.MSun_yr 
 RStar = 26 * U.RSun * ( MStar/U.MSun )**0.27 * ( MRate / (1e-3*U.MSun_yr) )**0.41 
 LStar = 3.2e4 * U.LSun  
 TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25
