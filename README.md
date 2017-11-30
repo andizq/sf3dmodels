@@ -138,7 +138,7 @@ Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, G
 #---------------------
 #3D Plotting (density)
 #---------------------
-Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=AU, palette='Blues', 
+Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='Blues', 
                      scale='log', output = 'density.png', show = True)
 
 #-------------------------------------
@@ -150,8 +150,8 @@ Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=AU, palette='
 #Density: colormap
 #Temperature: contours
 
-Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=AU, 
-                     palette='jet', output = 'density_faceon.png', tag = 'Main', show = True)
+Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU, 
+                     palette='jet', output = 'density_profiles.png', tag = 'Main', show = True)
 ```
 
 The resulting 3D distribution and 2D profiles: 
@@ -162,3 +162,135 @@ The resulting 3D distribution and 2D profiles:
   <img src="/images/Density_Temp_Main.png" width="250"/>
 </p>
 
+
+**Example 2.** Creating a low-mass star forming region with a composite model for density (Envelope: Ulrich density. Disc: Burger density)
+```python
+#-----------------
+#Package libraries
+#-----------------
+import Model
+import Resolution as Res
+import Plot_model
+import Utils as U #Module with useful units
+#-----------------
+#Extra libraries
+#-----------------
+import numpy as np
+import os
+import time
+```
+
+**a.** Define general parameters :page_with_curl::
+```python
+MStar = 0.86 * U.MSun 
+MRate = 5.e-6 * U.MSun_yr 
+RStar = U.RSun * ( MStar/U.MSun )**0.8 
+LStar = U.LSun * ( MStar/U.MSun )**4 
+TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25 
+Rd = 264. * U.AU
+```
+
+**b.** Create the grid that will host the region :house_with_garden::
+```python
+# Cubic grid, each edge ranges [-500, 500] AU. 
+
+sizex = sizey = sizez = 500 * U.AU
+Nx = Ny = Nz = 200 #Number of divisions for each axis
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+NPoints = GRID.NPoints #Number of nodes in the grid
+```
+
+**c.** Invoke the physical properties from a desired model(s) :pager::
+```python
+#-------------
+#DENSITY
+#-------------
+
+#--------
+#ENVELOPE
+#--------
+Rho0 = Res.Rho0(MRate, Rd, MStar)
+Arho = None
+Renv = 2.5 * Rd
+densEnv = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = False, envFlag = True, 
+                               renv_max = Renv)
+#-------
+#DISC
+#-------
+H0sf = 0.03 #Disc scale height factor (H0 = 0.03 * RStar)
+Arho = 5.25
+Rdisc = 1.5 * Rd
+densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag = True, 
+                                    rdisc_max = Rdisc)
+#---------------------
+#The COMPOSITE DENSITY
+#---------------------
+density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
+                            'disc': densDisc.total, 
+                            'env': densEnv.total,
+                            'discFlag': True,
+                            'envFlag': True,
+                            'r_disc': densDisc.r_disc, 
+                            'r_env': densEnv.r_env,
+                            'streamline': densEnv.streamline} )
+
+#-----------
+#TEMPERATURE
+#-----------
+T10Env = 250. #Envelope temperature at 10 AU
+Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
+BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, H0sf, Tmin, 
+                                           BT, None, density, GRID, inverted = False)
+
+#--------
+#VELOCITY
+#--------
+vel = Model.velocity(RStar, MStar, Rd, density, GRID)
+
+#-------------------------------
+#ABUNDANCE and GAS-to-DUST RATIO
+#-------------------------------
+ab0 = 5e-8 #CH3CN abundance vs H2
+abundance = Model.abundance(ab0, NPoints)
+
+gtd0 = 100. #Gas to dust ratio (H2 vs Dust)
+gtdratio = Model.gastodust(gtd0, NPoints)
+```
+
+**d.** Write the data into a file :memo::
+```python
+#-----------------------------
+#WRITING DATA with LIME format
+#-----------------------------
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID)
+```
+
+**e.** Plot the results :fireworks::
+```python
+#---------------------
+#3D Plotting (density)
+#---------------------
+Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='Blues', 
+                     scale='log', output = 'density.png', show = True)
+
+#-------------------------------------
+#2D Plotting (density and temperature)
+#-------------------------------------
+
+#FACE-ON and EDGE-ON profiles:
+
+#Density: colormap
+#Temperature: contours
+
+Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU, 
+                     palette='jet', output = 'density_profiles.png', tag = 'Burger', show = True)
+```
+
+The resulting 3D distribution and 2D profiles: 
+
+
+<p align="left">
+  <img src="/images/totalDensity_Burger.png" width="500"/>
+  <img src="/images/Density_Temp_Burger.png" width="250"/>
+</p>
