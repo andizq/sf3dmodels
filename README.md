@@ -163,7 +163,7 @@ The resulting 3D distribution and 2D profiles:
 </p>
 
 
-**Example 2.** Creating a low-mass star forming region with a composite model for density (Envelope: Ulrich density. Disc: Burger density) and a different model for temperature.
+**Example 2.** Creating a low-mass star forming region with a composite model for the density (*Envelope: Ulrich density + Disc: Burger density*) and a different model for the temperature.
 
 **a.** The general parameters :page_with_curl::
 ```python
