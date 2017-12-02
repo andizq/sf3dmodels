@@ -135,11 +135,15 @@ Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, G
 
 **e.** Plot the results :fireworks::
 ```python
-#---------------------
-#3D Plotting (density)
-#---------------------
-Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='Blues', 
-                     scale='log', output = 'density.png', show = True)
+#------------------------------------
+#3D PLOTTING (weighting with density)
+#------------------------------------
+tag = 'Main'
+weight = 10*Rho0
+r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, 
+	             palette = 'jet', colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', 
+		     output = 'Points%s.png'%tag, show = True)
 
 #-------------------------------------
 #2D Plotting (density and temperature)
@@ -158,8 +162,15 @@ The resulting 3D distribution and 2D profiles:
 
 
 <p align="left">
-  <img src="/images/totalPoints_Main.png" width="500"/>
+  <img src="/images/totalPointsMain.png" width="500"/>
   <img src="/images/Density_Temp_Main.png" width="250"/>
+</p>
+
+Edge-on and Face-on 3D distribution:
+
+<p align="left">
+  <img src="/images/totalPointsMain_a.png" width="500"/>
+  <img src="/images/totalPointsMain_b.png" width="500"/>
 </p>
 
 
@@ -253,11 +264,14 @@ Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, G
 
 **e.** Plot the results :fireworks::
 ```python
-#---------------------
-#3D Plotting (density)
-#---------------------
-Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='cool', 
-                     scale='log', output = 'density.png', show = True)
+#----------------------------------------
+#3D PLOTTING (weighting with temperature)
+#----------------------------------------
+tag = 'Burger'
+weight = 10*T10Env
+Plot_model.scatter3D_rand(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, 
+			  palette = 'hot', colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', 
+			  output = 'Points%s.png'%tag, show = True)
 
 #-------------------------------------
 #2D Plotting (density and temperature)
@@ -276,6 +290,13 @@ The resulting 3D distribution and 2D profiles:
 
 
 <p align="left">
-  <img src="/images/totalDensity_Burger.png" width="500"/>
+  <img src="/images/totalDensityBurger.png" width="500"/>
   <img src="/images/Density_Temp_Burger.png" width="250"/>
+</p>
+
+Edge-on and Face-on 3D distribution:
+
+<p align="left">
+  <img src="/images/totalDensityBurger_a.png" width="500"/>
+  <img src="/images/totalDensityBurger_b.png" width="500"/>
 </p>

@@ -108,9 +108,12 @@ Model.PrintProperties(density, temperature, GRID)
 print ('Ellapsed time: %.3fs' % (time.time() - t0))
 print ('-------------------------------------------------\n-------------------------------------------------\n')
 
-#---------------------
-#3D PLOTTING (density)
-#---------------------
+#----------------------------------------
+#3D PLOTTING (weighting with temperature)
+#----------------------------------------
 tag = 'Burger'
-Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='cool', scale='log', output = 'totalDensity%s.png'%tag)
-Plot_model.scatter3D(GRID.XYZ, density.disc,  NRand = 2000,  unit=U.AU, palette='cool', scale='log', output = 'discDensity%s.png'%tag)
+weight = 10*T10Env
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, palette = 'hot', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'totalPoints%s.png'%tag, show = True)
+
+

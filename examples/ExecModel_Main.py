@@ -85,10 +85,12 @@ Model.PrintProperties(density, temperature, GRID)
 print ('Ellapsed time: %.3fs' % (time.time() - t0))
 print ('-------------------------------------------------\n-------------------------------------------------\n')
 
-#---------------------
-#3D PLOTTING (density)
-#---------------------
+#------------------------------------
+#3D PLOTTING (weighting with density)
+#------------------------------------
 tag = 'Main'
-Plot_model.scatter3D(GRID.XYZ, density.total,  NRand = 2000,  unit=U.AU, palette='Blues', scale='log', output = 'totalPoints%s.png'%tag, show = False)
-Plot_model.scatter3D(GRID.XYZ, density.env, NRand = 2000, unit=U.AU, palette='hot', scale='log', output = 'envPoints%s.png'%tag, show = False)
-Plot_model.scatter3D(GRID.XYZ, density.disc,  NRand = 200,  unit=U.AU, palette='Blues', scale='log', output = 'discPoints%s.png'%tag, show = False)
+weight = 10*Rho0
+r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, palette = 'jet', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', output = 'totalPoints%s.png'%tag, show = True)
+
