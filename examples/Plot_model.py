@@ -34,9 +34,12 @@ def scatter3D_rand(XYZ, prop, NRand = 10000, unit = 1.0, palette = 'hot', scale 
         rand = random.random()
         while 1:
             index = random.sample(population, 1) #Selects 1 point from the given list
-        
-            if (prop[index]/weight)**power > rand:
+            val = (prop[index]/weight)**power
+            print (val)
+            if val > rand:
                 indices.append(index)
+                count = 0
+                k = 0
                 break
             count += 1
 
@@ -48,7 +51,7 @@ def scatter3D_rand(XYZ, prop, NRand = 10000, unit = 1.0, palette = 'hot', scale 
                 rand = random.random()
 
     colors = palette_c(np.linspace(0, 1, NRand))
-
+    indices = np.array(indices)
     x,y,z = x[indices], y[indices], z[indices]
     
     if scale == 'uniform': prop2plot = np.sort(prop[indices])
