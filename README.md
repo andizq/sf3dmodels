@@ -169,8 +169,8 @@ The resulting 3D distribution and 2D profiles:
 Edge-on and Face-on 3D distribution:
 
 <p align="center">
-  <img src="/images/totalPointsMain_a.png" width="400"/>
-  <img src="/images/totalPointsMain_b.png" width="400"/>
+  <img src="/images/totalPointsMain_a.png" width="450"/>
+  <img src="/images/totalPointsMain_b.png" width="450"/>
 </p>
 
 
@@ -269,7 +269,7 @@ Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, G
 #----------------------------------------
 tag = 'Burger'
 weight = 10*T10Env
-Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total/1e6 , axisunit = U.AU, 
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total/1e6, axisunit = U.AU, 
 	             palette = 'hot', colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', 
 	             output = 'Points%s.png'%tag, show = True)
 
@@ -297,6 +297,6 @@ The resulting 3D distribution and 2D profiles:
 Edge-on and Face-on 3D distribution:
 
 <p align="center">
-  <img src="/images/totalPointsBurger_a.png" width="400"/>
-  <img src="/images/totalPointsBurger_b.png" width="400"/>
+  <img src="/images/totalPointsBurger_a.png" width="450"/>
+  <img src="/images/totalPointsBurger_b.png" width="450"/>
 </p>
