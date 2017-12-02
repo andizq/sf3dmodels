@@ -169,8 +169,8 @@ The resulting 3D distribution and 2D profiles:
 Edge-on and Face-on 3D distribution:
 
 <p align="center">
-  <img src="/images/totalPointsMain_a.png" width="450"/>
-  <img src="/images/totalPointsMain_b.png" width="450"/>
+  <img src="/images/totalPointsMain_a.png" width="420"/>
+  <img src="/images/totalPointsMain_b.png" width="420"/>
 </p>
 
 
@@ -297,6 +297,6 @@ The resulting 3D distribution and 2D profiles:
 Edge-on and Face-on 3D distribution:
 
 <p align="center">
-  <img src="/images/totalPointsBurger_a.png" width="450"/>
-  <img src="/images/totalPointsBurger_b.png" width="450"/>
+  <img src="/images/totalPointsBurger_a.png" width="420"/>
+  <img src="/images/totalPointsBurger_b.png" width="420"/>
 </p>
