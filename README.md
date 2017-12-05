@@ -343,5 +343,6 @@ Finally, the writing process :pencil:. We have to specify that the model is actu
 #WRITING DATA with LIME format
 #-----------------------------
 tag = '_Main' #A tag to identify the final files from others
-Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, tag, is_submodel = True)
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, 
+		   is_submodel = True, tag = tag)
 ```
