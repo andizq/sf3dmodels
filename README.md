@@ -321,14 +321,19 @@ xc, yc, zc = [-250*U.AU, 350*U.AU, 300*U.AU]
 CENTER = [xc, yc, zc] #Center of the region in the global grid
 v_sys = 3320. #m/s
 newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
-	      	 	          rot_dict = { 'angles': [np.pi/4, 1.87*np.pi], 'axis': ['x','z'] })
+	      	 	             rot_dict = { 'angles': [np.pi/4, 1.87*np.pi], 'axis': ['x','z'] })
 ```
 
 The **`GRID`** and **`vel`** objects should inherit the modified properties that **`newProperties`** currently hosts :school::
 
 ```python
-GRID.XYZ = newProperties.newXYZ #At the minute, the Model library only modifies the XYZ lists. This is enough information for LIME
-vel.x, vel.y, vel.z = newProperties.newVEL #The velocity should inherit the new velocity distribution (as we rotated the system and added a systemic velocity)
+#At the minute, the Model library only modifies the XYZ lists. 
+ #It is enough information for LIME
+GRID.XYZ = newProperties.newXYZ
+
+#The velocity should inherit the new velocity distribution 
+ #(as we rotated the system and added a systemic velocity)
+vel.x, vel.y, vel.z = newProperties.newVEL 
 ```
 
 Finally, the writing process :pencil:. We have to specify that the model is actually a **sub-model**:
