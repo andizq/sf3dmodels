@@ -327,22 +327,22 @@ newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel =
 The **`GRID`** and **`vel`** objects should inherit the modified properties that **`newProperties`** currently hosts :school::
 
 ```python
-#At the minute, the Model library only modifies the XYZ lists. 
+#At the minute, the Model library only modifies the XYZ lists.
  #It is enough information for LIME
 GRID.XYZ = newProperties.newXYZ
 
-#The velocity should inherit the new velocity distribution 
+#The velocity should inherit the new velocity distribution
  #(as we rotated the system and added a systemic velocity)
-vel.x, vel.y, vel.z = newProperties.newVEL 
+vel.x, vel.y, vel.z = newProperties.newVEL
 ```
 
-Finally, the writing process :pencil:. We have to specify that the model is actually a **sub-model**:
+Finally, the writing process :pencil:. We have to specify that the model is actually a **sub-model**. A new folder named **Subgrids** will be created and all the sub-model data files will be saved there.
 
 ```python
 #-----------------------------
 #WRITING DATA with LIME format
 #-----------------------------
 tag = '_Main' #A tag to identify the final files from others
-Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, 
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID,
 		   is_submodel = True, tag = tag)
 ```
