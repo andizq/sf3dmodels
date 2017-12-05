@@ -363,7 +363,10 @@ newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel =
 
 :o: PS: once a sub-model is defined, a new folder named "**Subgrids**" will be created in the current working directory. All the sub-model data files will be saved there automatically. This order must be respected so that other features of the package work well :exclamation:
 
-:earth_americas: Now that we have the data of each sub-model separately, we should invoke a new library in order to properly overlap their physical properties in a single grid we call **global grid**.
+<br>
+
+### Overlapping sub-models :globe_with_meridians::heavy_plus_sign::globe_with_meridians:
+Now that we have the data of each sub-model separately, we should invoke a new library in order to properly overlap their physical properties in a single grid we call **global grid** :earth_americas:.
 
 You can overlap all the sub-models available in the "Subgrids" folder, or tell to the module explicitly the list of sub-models to overlap:
 
