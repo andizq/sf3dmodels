@@ -308,10 +308,11 @@ Edge-on and Face-on 3D distribution:
 
 :large_blue_circle: **Example 1.** I will use the last two examples to illustrate how to join them in a *global grid*. The spatial region that is shared by two or more *sub-models* will inherit physical properties by weighting them with the local density, as explained in section 3.2 of Izquierdo et al (2018).
 
-:white_check_mark: **The execution codes for both star forming regions are identical until just before the writing section.**
+:white_check_mark: **The execution codes for both star forming regions are identical until just before the "writing" section.**
 
-:pencil2: As there is no longer a single model, geometric changes will probably be required in each sub-model to better reproduce real scenarios. Let's add a couple of lines in the latter codes to account for the centering, inclination and systemic velocity of each region:
+:pencil2: As there is no longer a single model, geometric changes will probably be required in each sub-model to better reproduce real scenarios. Let's add a couple of lines in the latter codes to account for the centering, inclination and systemic velocity of each region.
 
+In the first example:
 
 ```python
 #-------------------------
@@ -336,7 +337,7 @@ GRID.XYZ = newProperties.newXYZ
 vel.x, vel.y, vel.z = newProperties.newVEL
 ```
 
-Finally, the writing process :pencil:. We have to specify that the model is actually a **sub-model**. A new folder named **Subgrids** will be created and all the sub-model data files will be saved there.
+Finally, the writing process :pencil:. We have to specify that the model is actually a **sub-model**:
 
 ```python
 #-----------------------------
@@ -345,4 +346,37 @@ Finally, the writing process :pencil:. We have to specify that the model is actu
 tag = '_Main' #A tag to identify the final files from others
 Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID,
 		   is_submodel = True, tag = tag)
+```
+
+:white_check_mark: **The second example region include the same additions, only differ in the first specific definitions**:
+
+```python
+#-------------------------
+#ROTATION, VSYS, CENTERING
+#-------------------------
+xc, yc, zc = [350*U.AU, -150*U.AU, -200*U.AU]
+CENTER = [xc, yc, zc] #Center of the region in the global grid
+v_sys = -2000. #m/s
+newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
+	      	 	             rot_dict = { 'angles': [np.pi/2, np.pi/3], 'axis': ['x','z'] })
+```
+
+:o: PS: once a sub-model is defined, a new folder named "**Subgrids**" will be created in the current working directory. All the sub-model data files will be saved there automatically. This order must be respected so that other features of the package work well :exclamation:
+
+:earth_americas: Now that we have the data of each sub-model separately, we should invoke a new library in order to properly overlap their physical properties in a single grid we call **global grid**.
+
+You can overlap all the sub-models available in the "Subgrids" folder, or tell to the module explicitly the list of sub-models to overlap:
+
+```python
+import BuildGlobalGrid as BGG
+
+BGG.overlap(all = True)
+```
+
+The next block is equivalent to the latter:
+```python
+import BuildGlobalGrid as BGG
+
+list_sub = ['datatab_Main.dat', 'datatab_Burger.dat']
+BGG.overlap(submodels = list_sub)
 ```
