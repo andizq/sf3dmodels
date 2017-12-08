@@ -358,7 +358,7 @@ xc, yc, zc = [350*U.AU, -150*U.AU, -200*U.AU]
 CENTER = [xc, yc, zc] #Center of the region in the global grid
 v_sys = -2000. #m/s
 newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
-	      	 	             rot_dict = { 'angles': [np.pi/2, np.pi/3], 'axis': ['x','z'] })
+	      	 	             rot_dict = { 'angles': [-np.pi/2, np.pi/4], 'axis': ['y','z'] })
 ```
 
 :o: PS: once a sub-model is defined, a new folder named "**Subgrids**" will be created in the current working directory. All the sub-model data files will be saved there automatically. This order must be respected so that other features of the package work well :exclamation:
@@ -372,17 +372,44 @@ You can overlap all the sub-models available in the "Subgrids" folder, or tell t
 
 ```python
 import BuildGlobalGrid as BGG
+import Plot_model as Pm
+import Utils as U
 
-BGG.overlap(all = True)
+global_prop = BGG.overlap(all = True)
 ```
 
 The next block is equivalent to the latter:
 ```python
 import BuildGlobalGrid as BGG
+import Plot_model as Pm
+import Utils as U
 
 list_sub = ['datatab_Main.dat', 'datatab_Burger.dat']
-BGG.overlap(submodels = list_sub)
+global_prop = BGG.overlap(submodels = list_sub)
 ```
+
+:fireworks: Plotting the result: the 3D points distribution follow the density field (see the `weight` parameter) in both plots. The colormaps represent the density in one plot and the temperature in the other.
+```python
+GRID = global_prop.GRID
+density = global_prop.density
+temperature = global_prop.temperature
+
+weight = 400 * np.mean(density)
+
+#-----------------
+#Plot for DENSITY
+#-----------------
+Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = U.AU, colorscale = 'log', palette = 'hot', 
+  	     colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'global_grid_dens.png')
+
+#--------------------
+#Plot for TEMPERATURE
+#--------------------
+Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = U.AU, colorscale = 'log', 
+             palette = 'brg', colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png')
+```
+
+***Left***: density colormap. ***Right***: temperature colormap.
 
 <p align="center">
   <img src="/images/global_grid_dens.png" width="420"/>
