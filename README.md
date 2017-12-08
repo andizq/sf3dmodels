@@ -383,3 +383,10 @@ import BuildGlobalGrid as BGG
 list_sub = ['datatab_Main.dat', 'datatab_Burger.dat']
 BGG.overlap(submodels = list_sub)
 ```
+
+<p align="center">
+  <img src="/images/global_grid_dens.png" width="420"/>
+  <img src="/images/global_grid_temp.png" width="420"/>
+</p>
+
+<br>
