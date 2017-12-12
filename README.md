@@ -391,7 +391,7 @@ global_prop = BGG.overlap(submodels = list_sub)
 :fireworks: Plotting the result: the 3D points distribution follow the density field (see the `weight` parameter) in both plots. The colormaps represent the density in one plot and the temperature in the other.
 ```python
 GRID = global_prop.GRID
-density = global_prop.density
+density = global_prop.density / 1e6 #1e6 to convert from m^-3 to cm^-3
 temperature = global_prop.temperature
 
 weight = 400 * np.mean(density)
