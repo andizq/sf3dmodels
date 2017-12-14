@@ -372,20 +372,42 @@ You can overlap all the sub-models available in the "Subgrids" folder, or tell t
 
 ```python
 import BuildGlobalGrid as BGG
+import Model
 import Plot_model as Pm
 import Utils as U
 
+#---------------
+#DEFINE THE GRID
+#---------------
+sizex = sizey = sizez = 1000 * U.AU
+Nx = Ny = Nz = 120
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+
+#---------------
+#INVOKE BGG LIB
+#---------------
 global_prop = BGG.overlap(all = True)
 ```
 
 The next block is equivalent to the latter:
 ```python
 import BuildGlobalGrid as BGG
+import Model
 import Plot_model as Pm
 import Utils as U
 
+#---------------
+#DEFINE THE GRID
+#---------------
+sizex = sizey = sizez = 1000 * U.AU
+Nx = Ny = Nz = 120
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+
+#---------------
+#INVOKE BGG LIB
+#---------------
 list_sub = ['datatab_Main.dat', 'datatab_Burger.dat']
-global_prop = BGG.overlap(submodels = list_sub)
+global_prop = BGG.overlap(GRID, submodels = list_sub)
 ```
 
 :fireworks: Plotting the result: the 3D points distribution follow the density field (see the `weight` parameter) in both plots. The colormaps represent the density in one plot and the temperature in the other.
@@ -399,13 +421,13 @@ weight = 400 * np.mean(density)
 #-----------------
 #Plot for DENSITY
 #-----------------
-Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = U.AU, colorscale = 'log', palette = 'hot', 
+Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = U.AU, colorscale = 'log', palette = 'hot',
   	     colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'global_grid_dens.png')
 
 #--------------------
 #Plot for TEMPERATURE
 #--------------------
-Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = U.AU, colorscale = 'log', 
+Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = U.AU, colorscale = 'log',
              palette = 'brg', colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png')
 ```
 
