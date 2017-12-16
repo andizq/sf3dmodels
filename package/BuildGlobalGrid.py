@@ -52,7 +52,7 @@ def overlap(GRID, submodels = [""], all = False):
     print ('Number of files detected:', num, '\nFiles detected:', detected, 
            '\nNumber of files read:', len(files), '\nFiles read:', read)
 
-    NTotal = len(names)
+    NTotal = GRID.NPoints
     Nx, Ny, Nz = GRID.Nodes
 
     cm3_to_m3 = 1e6
