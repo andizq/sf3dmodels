@@ -1,15 +1,6 @@
 from __future__ import print_function
+import Utils as U
 import numpy as np
-
-PC = 206264.806247 #PC->AU
-AU = 1.49597870700e11 #AU -> meters
-arcsecs = 206264.806247 #radians->arcsecs
-
-MSun = 1.9891e30 #MSun in kg 
-yr = 365.25*24*3600 #Year in secs
-G = 6.67384e-11 #m^3/kg/s^2 
-Mu = 1.6726219e-27 #kg ->proton mass
-
 
 def FieldView(xmax, radius, NP, d, scale=False):
 
@@ -48,13 +39,13 @@ def FieldView(xmax, radius, NP, d, scale=False):
     if scale==False:
         scale = 2*xmax/NP
             
-    d = d*PC
+    d = d*U.PC
     
     resolution = np.arctan(scale/d) # pixel resolution in radians
     phimax = 2*np.arctan(radius/d) #length of the Lime domain in radians  
     pxls = phimax/resolution
 
-    resarcs = resolution * arcsecs
+    resarcs = resolution * U.arcsecs
     size = resarcs * pxls
     
 
@@ -79,8 +70,8 @@ def Rho0(Mr,Rd,MStar):
 #Rd: Centrifugal radius in AU
 #MStar: Central star mass in MSun
    
-    rho0 = Mr / ( (2*Mu) * 4*np.pi * Rd**2 * (G*MStar/Rd)**0.5 ) 
-    print ('Base density rho0: %e parts/m3, %e g/cm3'% (rho0, rho0/100**3))
+    rho0 = Mr / ( (2*U.Mu) * 4*np.pi * Rd**2 * (U.G*MStar/Rd)**0.5 ) 
+    print ('Base density rho0: %e parts/m3, %e parts/cm3'% (rho0, rho0/100**3))
     return rho0
     
 
@@ -90,7 +81,7 @@ def Npxls(resolution,radius,d):
     
     print ('(Lime domain radius in AU, distance in parsecs, resolution in arcsecs/pixel)')
     
-    d=d*PC
+    d=d*U.PC
 
     phimax = (2*np.arctan(radius/d))*3600*180/np.pi
         #length of the Lime domain in arcsecs  
@@ -110,7 +101,7 @@ def RadiusLime(ax,ay,d):
     print ('(image x-size in arcsecs, image y-size in arcsecs, distance in parsecs )')
 
     phimax=0
-    d=d*PC
+    d=d*U.PC
     
     if ax<=ay: phimax = ax
     else: phimax = ay
@@ -130,7 +121,7 @@ def Arcsec_AU(Ang,d):
     
     Ang_torad = Ang * (1./3600) * (np.pi/180)
     r_inpc = d * np.tan(Ang_torad)
-    r_inAU = r_inpc * PC  #parsecs to AU
+    r_inAU = r_inpc * U.PC  #parsecs to AU
         
     #A very good aproximation (small angles):
     """
@@ -152,9 +143,9 @@ def Mass(v,r):
     
     print ('(velocity in m/s, distance from central mass in AU)')
 
-    r_toSI = r * AU
-    M = r_toSI * v**2 / G
-    M_inMSun = M / MSun
+    r_toSI = r * U.AU
+    M = r_toSI * v**2 / U.G
+    M_inMSun = M / U.MSun
 
     return M_inMSun
     
