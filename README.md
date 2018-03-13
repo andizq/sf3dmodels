@@ -386,7 +386,7 @@ GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 #---------------
 #INVOKE BGG LIB
 #---------------
-global_prop = BGG.overlap(all = True)
+global_prop = BGG.overlap(GRID, all = True)
 ```
 
 The next block is equivalent to the latter:
