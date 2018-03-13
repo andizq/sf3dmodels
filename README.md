@@ -379,8 +379,8 @@ import Utils as U
 #---------------
 #DEFINE THE GRID
 #---------------
-sizex = sizey = sizez = 3400 * U.AU
-Nx = Ny = Nz = 300
+sizex = sizey = sizez = 1000 * U.AU
+Nx = Ny = Nz = 120
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 
 #---------------
