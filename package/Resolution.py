@@ -34,8 +34,6 @@ def FieldView(xmax, radius, NP, d, scale=False):
 # grids this must be provided and xmax and NP won't have
 #  relevance. 
 
-    
-
     if scale==False:
         scale = 2*xmax/NP
             
@@ -48,7 +46,6 @@ def FieldView(xmax, radius, NP, d, scale=False):
     resarcs = resolution * U.arcsecs
     size = resarcs * pxls
     
-
     print ("\nBoxel size in the model:", scale, "AU")
     print ("Resolution for the Lime image:", resarcs, "arcsecs")
     print ("Number of pixels for the Lime image:", int(round(pxls)))
@@ -58,23 +55,16 @@ def FieldView(xmax, radius, NP, d, scale=False):
     return scale,resarcs,pxls,size
     
 
-#Calculating Rho0
-
 def Rho0(Mr,Rd,MStar):
     
     #print "\n->Mr: Mass accretion rate in MSun/yr"
     #print "->Rd: Centrifugal radius in AU"
     #print "->MStar: Central star mass in MSun"
-
-#Mr: Mass accretion rate in MSun/yr
-#Rd: Centrifugal radius in AU
-#MStar: Central star mass in MSun
    
     rho0 = Mr / ( (2*U.Mu) * 4*np.pi * Rd**2 * (U.G*MStar/Rd)**0.5 ) 
     print ('Base density rho0: %e parts/m3, %e parts/cm3'% (rho0, rho0/100**3))
     return rho0
     
-
 #Calculating the image size in pixels (1D)  
 
 def Npxls(resolution,radius,d):    
@@ -82,21 +72,14 @@ def Npxls(resolution,radius,d):
     print ('(Lime domain radius in AU, distance in parsecs, resolution in arcsecs/pixel)')
     
     d=d*U.PC
-
     phimax = (2*np.arctan(radius/d))*3600*180/np.pi
         #length of the Lime domain in arcsecs  
     pxls = phimax/resolution
-
     return pxls
-
 
 #Calculating the radius of the Lime model
 
 def RadiusLime(ax,ay,d):
-
-    """
-    HOLA
-    """
 
     print ('(image x-size in arcsecs, image y-size in arcsecs, distance in parsecs )')
 
@@ -107,9 +90,7 @@ def RadiusLime(ax,ay,d):
     else: phimax = ay
     #because tan(phimax/2) = radius/d
     radius = d*np.tan(phimax/2.*1./3600*np.pi/180)
-
     return radius #in AU
-
 
 #Converting arsecs to AUs
 
@@ -146,7 +127,6 @@ def Mass(v,r):
     r_toSI = r * U.AU
     M = r_toSI * v**2 / U.G
     M_inMSun = M / U.MSun
-
     return M_inMSun
     
     

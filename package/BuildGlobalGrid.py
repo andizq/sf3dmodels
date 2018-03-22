@@ -17,11 +17,9 @@ def mindistance(x,xma,Nx):
     mindist = 100000*U.AU
 
     for i in range(Nx):
-
         distx = abs(x-xma[i])
 
         if (distx<mindist):
-
             mindist=distx
             j=i
 
@@ -72,7 +70,6 @@ def overlap(GRID, submodels = [""], all = False):
     GTD = np.zeros(NTotal) #np.ones(NTotal) * gtd0
 
     VEL = [np.zeros(NTotal),np.zeros(NTotal),np.ones(NTotal)*1*70000] 
-
 
 #----------------------
 #----------------------
@@ -127,14 +124,11 @@ def overlap(GRID, submodels = [""], all = False):
                 abund_tmp[m][Num] = n[4] * n[9]
                 gtd_tmp[m][Num] = n[4] * n[10]
                 IDList[m].append(Num)
-
         
 #        hg+=1
 #        if hg%50000 == 0: print (hg)
 
         print ('Finished with the file: %s'%names[m])
-
-
 
     print ('Calculating combined densities, temperatures, etc....')
     for m in range(NFiles):
@@ -169,7 +163,6 @@ def overlap(GRID, submodels = [""], all = False):
             VEL[2][ind] += dens_dum * vel2_dum
             ABUND[ind] += dens_dum * abund_dum
             GTD[ind] += dens_dum * gtd_dum
-
 
     TEMP = TEMP / DENS    
     ABUND = ABUND / DENS
