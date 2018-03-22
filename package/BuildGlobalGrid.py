@@ -7,7 +7,6 @@ import Model
 import Utils as U
 import time
 
-
 #------------------------------
 #FUNCTION TO FIND NEAREST POINT
 #------------------------------
@@ -22,12 +21,10 @@ def mindistance(x,xma,Nx):
         if (distx<mindist):
             mindist=distx
             j=i
-
     return j
 
 #------------------------------
 #------------------------------
-
 
 def overlap(GRID, submodels = [""], all = False):
 
