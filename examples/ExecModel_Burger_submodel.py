@@ -33,7 +33,7 @@ print ('RStar:', RStar/U.RSun, ', LStar:', LStar/U.LSun, ', TStar:', TStar)
 #Cubic grid, each edge ranges [-500, 500] AU.
 
 sizex = sizey = sizez = 500 * U.AU
-Nx = Ny = Nz = 200 #Number of divisions for each axis
+Nx = Ny = Nz = 50 #Number of divisions for each axis
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
 

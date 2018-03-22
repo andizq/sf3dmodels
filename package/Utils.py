@@ -8,6 +8,7 @@ LSun = 3.828e26 #J/s
 TSun = 5780. #K
 yr = 31557600 #s
 AU = 1.495978707e11 #m
+PC = 206264.806247 #pc to au
 MSun_yr = MSun/yr #kg/s
 
 Mu = 1.6726219e-27 #kg ->proton mass
