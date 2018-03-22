@@ -3,3 +3,4 @@
 *.pyc
 *.pyd
 *~
+package/create_parabola.py
