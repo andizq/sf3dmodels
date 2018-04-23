@@ -105,9 +105,10 @@ density = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = True, env
 #-----------
 #TEMPERATURE
 #-----------
+p = 0
 T10Env = 375. #Envelope temperature at 10 AU                                                                                                              
 BT = 5. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature_Keto(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
+temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, p, BT, density, GRID,
                                      ang_cavity = Cavity)
 
 #--------
