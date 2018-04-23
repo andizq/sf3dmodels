@@ -17,7 +17,6 @@ def velocity(M,R_l,r_seg,r): #(Big mass,Low mass position,Particle position)
 
     return speed, vel #returns speed, velocity
 
-
 def segment_between_stars(M_pair,R_pair):
     
     M_pair = np.array(M_pair)
@@ -31,7 +30,6 @@ def segment_between_stars(M_pair,R_pair):
     
     # Returns the position of the lower mass and the vector of the segment
     return R_pair[ind[1]] , r_seg
-
     
 def make_cylinder(M_pair,DiskSizes,R_l,r_seg,drBIGGRID,width, function_R_rho, function_R_T, vsys=0, abund=5e-8, gtd=100., name = 'cylinder0.dat'):
     
@@ -43,7 +41,6 @@ def make_cylinder(M_pair,DiskSizes,R_l,r_seg,drBIGGRID,width, function_R_rho, fu
     if M_pair[0] > M_pair[1]: M = M_pair[0]
     else: M = M_pair[1]
         
-
     Rdisk_l = DiskSizes[0]
     Rdisk_H = DiskSizes[1]
     
@@ -59,7 +56,7 @@ def make_cylinder(M_pair,DiskSizes,R_l,r_seg,drBIGGRID,width, function_R_rho, fu
     #   times the number of divisions in the perpendicular to both segments above
     
     Npoints = int(r_seg_mag/dr * width/dr * width/dr) 
-    print Npoints
+    print ('Number of points generated:', Npoints)
     
     flag = True
     
