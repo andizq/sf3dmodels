@@ -18,6 +18,9 @@ if sys.version_info < tuple((int(val) for val in "2.7".split('.'))):
 
 if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
-
-    from .example_mod import *
+    
+    import Model
+    import Resolution as Res
+    import Plot_model
+    import Utils as U
 
