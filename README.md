@@ -62,7 +62,7 @@ In this section I will show some examples to illustrate the main features of the
 import Model
 import Resolution as Res
 import Plot_model
-import Utils as U #Module with useful units
+import Utils as U #Module with useful units and constants
 #-----------------
 #Extra libraries
 #-----------------
