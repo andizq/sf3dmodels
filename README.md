@@ -147,7 +147,7 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 		     output = 'Points%s.png'%tag, show = True)
 
 #-------------------------------------
-#2D Plotting (density and temperature)
+#2D Plotting (density and temperature) - UNDER DEVELOPMENT
 #-------------------------------------
 
 #FACE-ON and EDGE-ON profiles:
@@ -155,8 +155,8 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 #Density: colormap
 #Temperature: contours
 
-Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
-                     palette='jet', output = 'density_profiles.png', tag = 'Main', show = True)
+#Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
+#                     palette='jet', output = 'density_profiles.png', tag = 'Main', show = True)
 ```
 
 The resulting 3D distribution and 2D profiles:
@@ -276,7 +276,7 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 	             output = 'Points%s.png'%tag, show = True)
 
 #-------------------------------------
-#2D Plotting (density and temperature)
+#2D Plotting (density and temperature) - UNDER DEVELOPMENT
 #-------------------------------------
 
 #FACE-ON and EDGE-ON profiles:
@@ -284,8 +284,8 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 #Density: colormap
 #Temperature: contours
 
-Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
-                     palette='jet', output = 'density_profiles.png', tag = 'Burger', show = True)
+#Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
+#                     palette='jet', output = 'density_profiles.png', tag = 'Burger', show = True)
 ```
 
 The resulting 3D distribution and 2D profiles:
