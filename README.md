@@ -56,13 +56,10 @@ In this section I will show some examples to illustrate the main features of the
 
 :large_blue_circle: **Example 1.** Creating a massive star forming region (with *Ulrich envelope + Pringle disc*):
 ```python
-#-----------------
-#Package libraries
-#-----------------
-import Model
-import Resolution as Res
-import Plot_model
-import Utils as U #Module with useful units
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import *
 #-----------------
 #Extra libraries
 #-----------------
@@ -146,7 +143,7 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 		     output = 'Points%s.png'%tag, show = True)
 
 #-------------------------------------
-#2D Plotting (density and temperature)
+#2D Plotting (density and temperature) - UNDER DEVELOPMENT
 #-------------------------------------
 
 #FACE-ON and EDGE-ON profiles:
@@ -154,8 +151,8 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 #Density: colormap
 #Temperature: contours
 
-Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
-                     palette='jet', output = 'density_profiles.png', tag = 'Main', show = True)
+#Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
+#                     palette='jet', output = 'density_profiles.png', tag = 'Main', show = True)
 ```
 
 The resulting 3D distribution and 2D profiles:
@@ -275,7 +272,7 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 	             output = 'Points%s.png'%tag, show = True)
 
 #-------------------------------------
-#2D Plotting (density and temperature)
+#2D Plotting (density and temperature) - UNDER DEVELOPMENT
 #-------------------------------------
 
 #FACE-ON and EDGE-ON profiles:
@@ -283,8 +280,8 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 #Density: colormap
 #Temperature: contours
 
-Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
-                     palette='jet', output = 'density_profiles.png', tag = 'Burger', show = True)
+#Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
+#                     palette='jet', output = 'density_profiles.png', tag = 'Burger', show = True)
 ```
 
 The resulting 3D distribution and 2D profiles:
@@ -371,10 +368,10 @@ Now that we have the data of each sub-model separately, we should invoke a new l
 You can overlap all the sub-models available in the "Subgrids" folder, or tell to the module explicitly the list of sub-models to overlap:
 
 ```python
-import BuildGlobalGrid as BGG
-import Model
-import Plot_model as Pm
-import Utils as U
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import BuildGlobalGrid as BGG, Model, Plot_model as Pm, Utils as U 
 
 #---------------
 #DEFINE THE GRID
@@ -391,10 +388,10 @@ global_prop = BGG.overlap(GRID, all = True)
 
 The next block is equivalent to the latter:
 ```python
-import BuildGlobalGrid as BGG
-import Model
-import Plot_model as Pm
-import Utils as U
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import BuildGlobalGrid as BGG, Model, Plot_model as Pm, Utils as U 
 
 #---------------
 #DEFINE THE GRID
