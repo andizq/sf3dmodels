@@ -18,7 +18,7 @@ class Struct:
 #SPATIAL (Spherical-)GRID
 #------------------------
  
-def grid(XYZmax, NP, artist = False):
+def grid(XYZmax, NP, artist = False, radmc3d = False):
 
     """
     XYZmax: Maximum physical domain of the grid
@@ -29,7 +29,6 @@ def grid(XYZmax, NP, artist = False):
 
     print ('-------------------------------------------------\n-------------------------------------------------')
     
-    if artist: artist = 1
     XYZmax = np.array(XYZmax)
 
     #----------------
@@ -51,10 +50,22 @@ def grid(XYZmax, NP, artist = False):
     step = 2. * XYZmax / NP
     #epsilon = [RSun / 1.] * 3
     
-    #In case of artist: a dummy point is created at the end of each coordinate. Artist won't read them but they are necessary for it to work fine! 
-    XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i] + artist * step[i], NP[i] + artist) for i in range(3)]
-
-    X, Y, Z = XYZgrid
+    #In case of radmc3d or artist: 
+    # a dummy point is created at the end of each coordinate. Artist  won't read them but they are necessary for it to work well! 
+    
+    if radmc3d or artist: 
+        step = 2. * XYZmax / (NP - np.ones(3))
+        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in range(3)]
+        #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in range(3)]
+        X, Y ,Z = XYZgrid #The grid must contain an extra node but...
+        X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] )
+        Y = 0.5 * ( Y[0:NP[1]] + Y[1:NP[1]+1] )  
+        Z = 0.5 * ( Z[0:NP[2]] + Z[1:NP[2]+1] )
+  
+        #X = X[:-1]; Y = Y[:-1]; Z = Z[:-1] #...the calculations must be done w/o that node 
+    else: #lime
+        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in range(3)]
+        X, Y, Z = XYZgrid
     
     #--------------------------------------
     #Extended Lists of distance coordinates
@@ -89,16 +100,17 @@ def grid(XYZmax, NP, artist = False):
     #-----
     #-----
 
+    dx = abs(X[1] - X[0]) #Linear step in X
     XYZ = [xList,yList,zList]
     rRTP = [rList,RList,thetaList,phiList]
-
+    
 
     print ('Number of grid nodes for x,y,z:', NP)
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
         
-    return Struct( **{'XYZgrid': XYZgrid, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP})
+    return Struct( **{'XYZgrid': XYZgrid, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP, 'step': dx})
 
 
 """
@@ -249,7 +261,7 @@ def streamline(Rd, GRID):
 #DENSITY FUNCTION
 #-------------------
 
-def density_Ulrich(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False, rdisc_max = False, renv_max = False, ang_cavity = False):
+def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False, rdisc_max = False, renv_max = False, ang_cavity = False):
 
 #RStar: Star radius
 #Rd: Centrifugal radius
@@ -378,11 +390,10 @@ def density_Hamburgers(RStar, shFactor, Rd, rhoE0, Arho, GRID, discFlag=True, rd
 
 def density_Powerlaw(r_max, rho_mean, q, GRID):
 
-#rho_mean: Mean density of the Envelope 
 #r_max: Maximum radius of the envelope 
+#rho_mean: Mean density of the Envelope 
 #q: power-law for density
-#GRID: Cartesian-grid to work in. [xList,yList,zList]     
-#Env: On/Off the Envelope
+#GRID: Grid to work in
 
     #------------
     #LISTS TO USE
@@ -399,6 +410,88 @@ def density_Powerlaw(r_max, rho_mean, q, GRID):
     rho0 = NPoints * rho_mean / np.sum(rqList)
     rhoENV = np.where( rho0 * rqList < 1.0, 1.0e9, rho0 * rqList )
 
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max} ) 
+
+#---------------------------
+#---------------------------
+
+#-----------------------------------
+#DENSITY (Keto2003, HCH_II) FUNCTION
+#-----------------------------------
+
+def density_Keto_HII(MStar, r_min, r_max, rho_s, T, GRID, q = 1.5):
+
+#r_min: Minimum radius of the envelope (must be > 0)
+#r_max: Maximum radius of the envelope 
+#r_s: Reference radius
+#rho_s: Density at r_s
+#q: power-law for density
+#GRID: Grid to work in
+
+    #----------------
+    #LOCAL PARAMETERS
+    #----------------
+    gamma = 5./3 #Heat capacity ratio for a monoatomic gas 
+    cs = (gamma * T * kb / Mu)**0.5 #Speed of sound for H_II at T
+    rs = 0.5 * G * MStar / cs**2 #Sonic point (v_escape = v_sound)
+    if r_min > rs: sys.exit('ERROR: Please define r_min <= rs' )
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #-------------------------------------------------
+    #MODEL. HCH_II region, Keto 2003 (double gradient)
+    #-------------------------------------------------
+    print ('Calculating H_II Envelope density with Keto2003 (double gradient)...')
+    print ('Speed of sound (cs):', cs/1e3, 'km/s')
+    print ('Sonic point (rs):', rs/AU, 'au')
+    rhoENV = np.ones(GRID.NPoints)
+    ind_gravity = np.where((rList >= r_min) & (rList <= rs))
+    ind_pressure = np.where((rList > rs) & (rList <= r_max))
+    rhoENV[ind_gravity] = rho_s * (rs / rList[ind_gravity])**q
+    rhoENV[ind_pressure] = rho_s * np.exp(-2 * (1 - rs / rList[ind_pressure]))
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_min': r_min, 'r_env': r_max, 'rs': rs} ) 
+
+#---------------------------
+#---------------------------
+
+#-----------------------------------
+#DENSITY (PowerLaw, HCH_II) FUNCTION
+#-----------------------------------
+
+def density_Powerlaw_HII(r_min, r_max, r_s, rho_s, q, GRID):
+
+#r_min: Minimum radius of the envelope (must be > 0)
+#r_max: Maximum radius of the envelope 
+#r_s: Reference radius
+#rho_s: Density at r_s
+#q: power-law for density
+#GRID: Grid to work in
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #------------------------------
+    #MODEL. HCH_II region, Powerlaw 
+    #------------------------------
+    print ('Calculating H_II Envelope density with power-law...')
+    rhoENV = np.where((rList >= r_min) & (rList <= r_max), rho_s * (r_s / rList)**q, 1.)
     #------------------------
     #------------------------
 
@@ -439,7 +532,7 @@ def density_Constant(Rd, GRID, discDens = 0, rdisc_max = False, envDens = 0, ren
     #----------------
     if envDens:
         print ('Setting constant Envelope density...')
-        if not renv_max: renv_max = np.max(GRID.XYZgrid[0])
+        if not renv_max: renv_max = Rd #np.max(GRID.XYZgrid[0])
         rhoENV = np.where( rList <= renv_max, envDens, 1.0)
     else: 
         print ('No Envelope was invoked!')
@@ -502,7 +595,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
 #MRate: Mass accretion rate
 #BT: Disc temperature factor
 #p: Temperature power law exponent 
-#GRID: [xList,yList,zList]
+#GRID: Grid to work in
 
     rRTP = GRID.rRTP
     #------------
@@ -630,7 +723,7 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, shFactor, T_m
 #TEMPERATURE (Constant) FUNCTION
 #-------------------------------
 
-def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0):
+def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30.0):
 
     rRTP = GRID.rRTP
     NPoints = GRID.NPoints
@@ -646,7 +739,7 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0):
     if discTemp:
         if density.discFlag:
             print ('Setting constant Disc temperature...')
-            tempDISC = np.where( RList <= density.r_disc, discTemp, 30.0)
+            tempDISC = np.where( RList <= density.r_disc, discTemp, backTemp)
         else: sys.exit('ERROR: The disc calculation was turned ON but there is no density distribution for disc!')
     else: tempDISC = 0.
 
@@ -656,7 +749,7 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0):
     if envTemp:
         if density.envFlag:
             print ('Setting constant Envelope density...')
-            tempENV = np.where( rList <= density.r_env, envTemp, 30.0)
+            tempENV = np.where( rList <= density.r_env, envTemp, backTemp)
         else: sys.exit('ERROR: The envelope calculation was turned ON but there is no density distribution for envelope!')
     else: tempENV = 0.
         
@@ -806,7 +899,7 @@ def MakeHole(T_min,T_max,dens_val,temp_val,abund_val,densList,tempList,abundList
 
 def PrintProperties(density, temperature, GRID): 
 
-    dx = GRID.XYZgrid[0][1] - GRID.XYZgrid[0][0]
+    dx = GRID.step
     inddisc = np.where(temperature.disc > 2.)
     indtotal = np.where(temperature.total > 2.)
     Mu_MSun = 2 * Mu/MSun
@@ -939,9 +1032,9 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
 #---------------
 #---------------
 
-#--------------
-#WRITING DATA
-#--------------
+#------------------------
+#WRITING DATA (LIME v1.6)
+#------------------------
 
 def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
     
@@ -989,3 +1082,103 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
 
 #--------------
 #--------------
+
+#-----------------------------
+#WRITING DATA (RADMC-3d v0.41)
+#-----------------------------
+
+def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
+
+    #dens = 1e-6 * np.where(dens > 10.0, dens, 0) #to cm^-3
+    dens = dens / 1e6
+    nx,ny,nz = GRID.Nodes
+    xi, yi, zi = np.array(GRID.XYZgrid) * 100 #to cm
+    nphot = 1000000
+
+#
+# Write the grid file
+#
+    with open('amr_grid.inp','w+') as f:
+        f.write('1\n')                       # iformat
+        f.write('0\n')                       # AMR grid style  (0=regular grid, no AMR)
+        f.write('0\n')                       # Coordinate system
+        f.write('0\n')                       # gridinfo
+        f.write('1 1 1\n')                   # Include x,y,z coordinate
+        f.write('%d %d %d\n'%(nx,ny,nz))     # Size of grid
+        for value in xi:
+            f.write('%13.6e\n'%(value))      # X coordinates (cell walls)
+        for value in yi:
+            f.write('%13.6e\n'%(value))      # Y coordinates (cell walls)
+        for value in zi:
+            f.write('%13.6e\n'%(value))      # Z coordinates (cell walls)
+#
+# Write the electronic density file.
+#
+    with open('electron_numdens.inp','w+') as f:
+        f.write('1\n')                       # Format number
+        f.write('%d\n'%(nx*ny*nz))           # Nr of cells
+        #data = rhoelect.ravel(order='F')         # Create a 1-D view, fortran-style indexing
+        dens.tofile(f, sep='\n', format="%13.6e")
+        f.write('\n')
+
+#
+# Write the ion density file.
+#
+    with open('ion_numdens.inp','w+') as f:
+        f.write('1\n')                       # Format number
+        f.write('%d\n'%(nx*ny*nz))           # Nr of cells
+        #data = rhoelect.ravel(order='F')         # Create a 1-D view, fortran-style indexing
+        dens.tofile(f, sep='\n', format="%13.6e")
+        f.write('\n')
+    
+#
+# Write the gas temperature
+#
+
+    with open('gas_temperature.inp','w+') as f:
+        f.write('1\n')                       # Format number
+        f.write('%d\n'%(nx*ny*nz))           # Nr of cells
+        #data = tgas.ravel(order='F')          # Create a 1-D view, fortran-style indexing
+        temp.tofile(f, sep='\n', format="%13.6e")
+        f.write('\n')
+
+#
+# Write the wavelength_micron.inp file
+#
+
+    lam1 = 0.5e3
+    lam2 = 2.e4
+    lam3 = 4.e4
+    lam4 = 6.e4
+    
+    n12      = 50
+    n23      = 50
+    n34      = 50
+    lam12    = np.logspace(np.log10(lam1),np.log10(lam2),n12,endpoint=False)
+    lam23    = np.logspace(np.log10(lam2),np.log10(lam3),n23,endpoint=False)
+    lam34    = np.logspace(np.log10(lam3),np.log10(lam4),n34,endpoint=True)
+    lam      = np.concatenate([lam12,lam23,lam34])
+    nlam     = lam.size
+
+#
+# Write the wavelength file
+#
+    with open('wavelength_micron.inp','w+') as f:
+        f.write('%d\n'%(nlam))
+        for value in lam:
+            f.write('%13.6e\n'%(value))
+
+#
+# Write the radmc3d.inp control file
+#
+    with open('radmc3d.inp','w+') as f:
+        f.write('nphot = %d\n'%(nphot))
+        f.write('scattering_mode_max = 1\n')   # Put this to 1 for isotropic scattering
+        f.write('incl_freefree = 1\n')
+        f.write('incl_dust = 0\n')
+        #f.write('tgas_eq_tdust = 1')
+
+    
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+    
