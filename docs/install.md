@@ -1,7 +1,19 @@
+About SF3dmodels
+------------
+
+SF3dmodels is a star-forming-region(s) modelling package that brings together analytical physical models from different authors (Ulrich, Keto, Pringle, Whitney) to compute density, velocity, temperature, abundance and gas-to-dust ratio 3D distributions.
+
+SF3dmodels makes it possible to construct diverse distributions by mixing the available standard models within it. However, new models can be added to the package if needed. Users willing to contribute and nourish the package with new models are very welcome!
+
+In addition, SF3dmodels can couple different star forming regions together to recreate complex star forming systems as those being revealed by recent telescopes and interferometers. This feature was quite used by Izquierdo et al, 2018 to model the complex star forming system W33A MM1.
+
+We made the SF3dmodels output data to be compatible with [LIME](https://github.com/lime-rt/lime): To simulate real observations you need first to perform radiative transfer calculations and LIME does this for you in far-infrared and (sub-)millimeter wavelengths.
+
+
 Installation process
 --------------------
 
-Download the package folder and place it in your prefered location :open_file_folder:. Then, modify the Python Module Search Path in your shell startup file as follows:
+Download the package folder and place it in your prefered location. Then, modify the Python Module Search Path in your shell startup file as follows:
 
 #### for Bash shell (sh):
 
@@ -23,6 +35,404 @@ setenv PYTHONPATH $PYTHONPATH\:/path/to/package
 
 * [Matplotlib](https://matplotlib.org/users/installing.html)
 * [Numpy](https://www.scipy.org/install.html)
-* [Pandas](http://pandas.pydata.org/pandas-docs/stable/install.html) :panda_face:
+* [Pandas](http://pandas.pydata.org/pandas-docs/stable/install.html)
 * [Astropy](http://docs.astropy.org/en/stable/install.html) (optional, but recommended)
 * [IPython](https://ipython.org/install.html) (optional, but recommended)
+
+
+Examples
+--------
+
+In this section I will show some examples to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Ulrich`, type in your Python or IPython Command-Line the following commands:
+
+```python
+>>> import Model
+>>> help(Model)
+>>> help(Model.density_Ulrich)
+```
+
+## Modelling a single star forming region
+
+**Example 1.** Creating a massive star forming region (with *Ulrich envelope + Pringle disc*):
+```python
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import *
+#-----------------
+#Extra libraries
+#-----------------
+import numpy as np
+import os
+import time
+```
+**a.** Define general parameters:
+```python
+MStar = 7.0 * U.MSun
+MRate = 4e-4 * U.MSun_yr #Mass accretion rate                                                                                                         
+RStar = 26 * U.RSun * ( MStar/U.MSun )**0.27 * ( MRate / (1e-3*U.MSun_yr) )**0.41                                                                                                               
+LStar = 3.2e4 * U.LSun
+TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25                                                                                       
+Rd = 152. * U.AU #Centrifugal radius  
+```
+
+**b.** Create the grid that will host the region:
+```python
+# Cubic grid, each edge ranges [-500, 500] AU.
+
+sizex = sizey = sizez = 500 * U.AU
+Nx = Ny = Nz = 150 #Number of divisions for each axis
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+NPoints = GRID.NPoints #Number of nodes in the grid
+```
+
+**c.** Invoke the physical properties from a desired model(s):
+```python
+#--------
+#DENSITY
+#--------
+Rho0 = Res.Rho0(MRate, Rd, MStar) #Base density for Ulrich model
+Arho = 24.1 #Disc-envelope density factor
+Renv = 500 * U.AU #Envelope radius
+Cavity = 40 * np.pi/180 #Cavity opening angle
+density = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = True,
+                               renv_max = Renv, ang_cavity = Cavity)
+
+#-----------
+#TEMPERATURE
+#-----------
+p = 0
+T10Env = 375. #Envelope temperature at 10 AU                                                                                                              
+BT = 5. #Adjustable factor for disc temperature. Extra, or less, disc heating.
+temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID,
+                                ang_cavity = Cavity)
+
+#--------
+#VELOCITY
+#--------
+vel = Model.velocity_Ulrich(RStar, MStar, Rd, density, GRID)
+
+#-------------------------------
+#ABUNDANCE and GAS-to-DUST RATIO
+#-------------------------------
+ab0 = 1.8e-7 #CH3CN abundance                                                                                                           
+abundance = Model.abundance(ab0, NPoints) #Constant abundance
+
+gtd0 = 100. #Gas to dust ratio
+gtdratio = Model.gastodust(gtd0, NPoints) #Constant gtd ratio
+```
+
+**d.** Write the data into a file with the LIME format:
+```python
+#-----------------------------
+#WRITING DATA with LIME format
+#-----------------------------
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID)
+```
+
+**e.** Plot the results:
+```python
+#------------------------------------
+#3D PLOTTING (weighting with density)
+#------------------------------------
+tag = 'Main'
+weight = 10*Rho0
+r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU,
+	             palette = 'jet', colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$',
+		     output = 'Points%s.png'%tag, show = True)
+
+#-------------------------------------
+#2D Plotting (density and temperature) - UNDER DEVELOPMENT
+#-------------------------------------
+
+#FACE-ON and EDGE-ON profiles:
+
+#Density: colormap
+#Temperature: contours
+
+#Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
+#                     palette='jet', output = 'density_profiles.png', tag = 'Main', show = True)
+```
+
+The resulting 3D distribution and 2D profiles:
+
+
+<p align="left">
+  <img src="../../../images/totalPointsMain.png" width="450"/>
+  <img src="../../../images/Density_Temp_Main.png" width="200"/>
+</p>
+
+Edge-on and Face-on 3D distribution:
+
+<p align="left">
+  <img src="../../../images/totalPointsMain_a.png" width="325"/>
+  <img src="../../../images/totalPointsMain_b.png" width="325"/>
+</p>
+
+<br>
+
+**Example 2.** Creating a low-mass star forming region with a composite model for the density (*Envelope: Ulrich density + Disc: Burger density*) and a different model for the temperature.
+
+**a.** The general parameters:
+```python
+MStar = 0.86 * U.MSun
+MRate = 5.e-6 * U.MSun_yr
+RStar = U.RSun * ( MStar/U.MSun )**0.8
+LStar = U.LSun * ( MStar/U.MSun )**4
+TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25
+Rd = 264. * U.AU
+```
+
+**b.** The grid:
+```python
+# Cubic grid, each edge ranges [-500, 500] AU.
+
+sizex = sizey = sizez = 500 * U.AU
+Nx = Ny = Nz = 200 #Number of divisions for each axis
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+NPoints = GRID.NPoints #Number of nodes in the grid
+```
+
+**c.** The physical properties. Note how the final density Structure should be defined joining both, the envelope density and the disc density that were calculated separately from 2 different models:
+```python
+#-------------
+#DENSITY
+#-------------
+
+#--------
+#ENVELOPE
+#--------
+Rho0 = Res.Rho0(MRate, Rd, MStar)
+Arho = None
+Renv = 2.5 * Rd
+densEnv = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = False, envFlag = True,
+                               renv_max = Renv)
+#-------
+#DISC
+#-------
+H0sf = 0.03 #Disc scale height factor (H0 = 0.03 * RStar)
+Arho = 5.25
+Rdisc = 1.5 * Rd
+densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = False,
+                                    rdisc_max = Rdisc)
+#---------------------
+#The COMPOSITE DENSITY
+#---------------------
+density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
+                            'disc': densDisc.total,
+                            'env': densEnv.total,
+                            'discFlag': True,
+                            'envFlag': True,
+                            'r_disc': densDisc.r_disc,
+                            'r_env': densEnv.r_env,
+                            'streamline': densEnv.streamline} )
+
+#-----------
+#TEMPERATURE
+#-----------
+T10Env = 250. #Envelope temperature at 10 AU
+Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin.
+BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, H0sf, Tmin,
+                                           BT, None, density, GRID, inverted = False)
+
+#--------
+#VELOCITY
+#--------
+vel = Model.velocity(RStar, MStar, Rd, density, GRID)
+
+#-------------------------------
+#ABUNDANCE and GAS-to-DUST RATIO
+#-------------------------------
+ab0 = 5e-8 #CH3CN abundance vs H2
+abundance = Model.abundance(ab0, NPoints)
+
+gtd0 = 100. #Gas to dust ratio (H2 vs Dust)
+gtdratio = Model.gastodust(gtd0, NPoints)
+```
+
+**d.** Write the data into a file:
+```python
+#-----------------------------
+#WRITING DATA with LIME format
+#-----------------------------
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID)
+```
+
+**e.** Plot the results:
+```python
+#----------------------------------------
+#3D PLOTTING (weighting with temperature)
+#----------------------------------------
+tag = 'Burger'
+weight = 10*T10Env
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total/1e6, axisunit = U.AU,
+	             palette = 'hot', colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$',
+	             output = 'Points%s.png'%tag, show = True)
+
+#-------------------------------------
+#2D Plotting (density and temperature) - UNDER DEVELOPMENT
+#-------------------------------------
+
+#FACE-ON and EDGE-ON profiles:
+
+#Density: colormap
+#Temperature: contours
+
+#Plot_model.profile2D(GRID.XYZ, density.total, contours = temperature.total, unit=U.AU,
+#                     palette='jet', output = 'density_profiles.png', tag = 'Burger', show = True)
+```
+
+The resulting 3D distribution and 2D profiles:
+
+
+<p align="left">
+  <img src="../../../images/totalPointsBurger.png" width="450"/>
+  <img src="../../../images/Density_Temp_Burger.png" width="200"/>
+</p>
+
+Edge-on and Face-on 3D distribution:
+
+<p align="center">
+  <img src="../../../images/totalPointsBurger_a.png" width="325"/>
+  <img src="../../../images/totalPointsBurger_b.png" width="325"/>
+</p>
+
+<br>
+
+## Modelling multiple star forming regions
+
+**Example 1.** I will use the last two examples to illustrate how to join them in a *global grid*. The spatial region that is shared by two or more *sub-models* will inherit physical properties by weighting them with the local density, as explained in section 3.2 of Izquierdo et al (2018).
+
+**The execution codes for both star forming regions are identical until just before the "writing" section.**
+
+As there is no longer a single model, geometric changes will probably be required in each sub-model to better reproduce real scenarios. Let's add a couple of lines in the latter codes to account for the centering, inclination and systemic velocity of each region.
+
+In the first example:
+
+```python
+#-------------------------
+#ROTATION, VSYS, CENTERING
+#-------------------------
+xc, yc, zc = [-250*U.AU, 350*U.AU, 300*U.AU]
+CENTER = [xc, yc, zc] #Center of the region in the global grid
+v_sys = 3320. #m/s
+newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
+	      	 	             rot_dict = { 'angles': [np.pi/4, 1.87*np.pi], 'axis': ['x','z'] })
+```
+
+The **`GRID`** and **`vel`** objects should inherit the modified properties that **`newProperties`** currently hosts:
+
+```python
+#At the minute, the Model library only modifies the XYZ lists.
+ #It is enough information for LIME
+GRID.XYZ = newProperties.newXYZ
+
+#The velocity should inherit the new velocity distribution
+ #(as we rotated the system and added a systemic velocity)
+vel.x, vel.y, vel.z = newProperties.newVEL
+```
+
+Finally, the writing process. We have to specify that the model is actually a **sub-model**:
+
+```python
+#-----------------------------
+#WRITING DATA with LIME format
+#-----------------------------
+tag = '_Main' #A tag to identify the final files from others
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID,
+		   is_submodel = True, tag = tag)
+```
+
+**The second example region include the same additions, only differ in the first specific definitions**:
+
+```python
+#-------------------------
+#ROTATION, VSYS, CENTERING
+#-------------------------
+xc, yc, zc = [350*U.AU, -150*U.AU, -200*U.AU]
+CENTER = [xc, yc, zc] #Center of the region in the global grid
+v_sys = -2000. #m/s
+newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
+	      	 	             rot_dict = { 'angles': [-np.pi/2, np.pi/4], 'axis': ['y','z'] })
+```
+
+PS: once a sub-model is defined, a new folder named "**Subgrids**" will be created in the current working directory. All the sub-model data files will be saved there automatically. This order must be respected so that other features of the package work well
+
+<br>
+
+### Overlapping sub-models
+Now that we have the data of each sub-model separately, we should invoke a new library in order to properly overlap their physical properties in a single grid we call **global grid**.
+
+You can overlap all the sub-models available in the "Subgrids" folder, or tell to the module explicitly the list of sub-models to overlap:
+
+```python
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import BuildGlobalGrid as BGG, Model, Plot_model as Pm, Utils as U 
+
+#---------------
+#DEFINE THE GRID
+#---------------
+sizex = sizey = sizez = 1000 * U.AU
+Nx = Ny = Nz = 120
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+
+#---------------
+#INVOKE BGG LIB
+#---------------
+global_prop = BGG.overlap(GRID, all = True)
+```
+
+The next block is equivalent to the latter:
+```python
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import BuildGlobalGrid as BGG, Model, Plot_model as Pm, Utils as U 
+
+#---------------
+#DEFINE THE GRID
+#---------------
+sizex = sizey = sizez = 1000 * U.AU
+Nx = Ny = Nz = 120
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+
+#---------------
+#INVOKE BGG LIB
+#---------------
+list_sub = ['datatab_Main.dat', 'datatab_Burger.dat']
+global_prop = BGG.overlap(GRID, submodels = list_sub)
+```
+
+Plotting the result: the 3D points distribution follow the density field (see the `weight` parameter) in both plots. The colormaps represent the density in one plot and the temperature in the other.
+```python
+GRID = global_prop.GRID 
+density = global_prop.density / 1e6 #1e6 to convert from m^-3 to cm^-3
+temperature = global_prop.temperature
+
+weight = 400 * np.mean(density)
+
+#-----------------
+#Plot for DENSITY
+#-----------------
+Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = U.AU, colorscale = 'log', palette = 'hot',
+  	     colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'global_grid_dens.png')
+
+#--------------------
+#Plot for TEMPERATURE
+#--------------------
+Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = U.AU, colorscale = 'log',
+             palette = 'brg', colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png')
+```
+
+***Left***: density colormap. ***Right***: temperature colormap.
+
+<p align="center">
+  <img src="../../../images/global_grid_dens.png" width="325"/>
+  <img src="../../../images/global_grid_temp.png" width="325"/>
+</p>
+
+<br>
