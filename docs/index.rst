@@ -7,6 +7,7 @@ This is the documentation for SF3dmodels.
 .. toctree::
   :maxdepth: 2
 
+  install.md
   sf3dmodels/index.rst
 
 .. note:: The layout of this directory is simply a suggestion.  To follow
