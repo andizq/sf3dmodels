@@ -8,7 +8,7 @@ import inspect
 
 
 def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, palette = 'hot',
-              colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True):
+              colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True, **kwargs):
 
     print ('Plotting 3D model with %d random-weighted points...'%NRand)
     x,y,z = GRID.XYZ
@@ -60,7 +60,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
 
     fig = plt.figure()
     ax = fig.gca(projection='3d') 
-    sp = ax.scatter(x,y,z, s = 5, c = prop2plot, cmap = palette, marker = '+')
+    sp = ax.scatter(x,y,z, s = 5, c = prop2plot, cmap = palette, marker = '+', **kwargs)
     
     ax.set_xlabel('X (AU)')
     ax.set_ylabel('Y (AU)')
