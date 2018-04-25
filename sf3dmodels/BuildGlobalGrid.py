@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import os
 from numpy import loadtxt as ltxt
-import Model
-import Utils as U
+from . import Model
+from . import Utils as U
 import time
 
 #------------------------------
