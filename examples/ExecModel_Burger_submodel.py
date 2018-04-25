@@ -44,8 +44,8 @@ NPoints = GRID.NPoints #Number of nodes in the grid
 Rho0 = Res.Rho0(MRate, Rd, MStar)
 Arho = None
 Renv = 2.5 * Rd
-densEnv = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = False, envFlag = True, 
-                               renv_max = Renv)
+densEnv = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = False, envFlag = True, 
+                                 renv_max = Renv)
 #-------
 #DISC
 #-------
