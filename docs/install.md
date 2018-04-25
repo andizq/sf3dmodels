@@ -43,12 +43,12 @@ setenv PYTHONPATH $PYTHONPATH\:/path/to/package
 Examples
 --------
 
-In this section I will show some examples to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Ulrich`, type in your Python or IPython Command-Line the following commands:
+In this section I will show some examples to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Env_Disc`, type in your Python or IPython Command-Line the following commands:
 
 ```python
 >>> import Model
 >>> help(Model)
->>> help(Model.density_Ulrich)
+>>> help(Model.density_Env_Disc)
 ```
 
 ## Modelling a single star forming region
@@ -95,8 +95,8 @@ Rho0 = Res.Rho0(MRate, Rd, MStar) #Base density for Ulrich model
 Arho = 24.1 #Disc-envelope density factor
 Renv = 500 * U.AU #Envelope radius
 Cavity = 40 * np.pi/180 #Cavity opening angle
-density = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = True,
-                               renv_max = Renv, ang_cavity = Cavity)
+density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = True,
+                                 renv_max = Renv, ang_cavity = Cavity)
 
 #-----------
 #TEMPERATURE
@@ -206,8 +206,8 @@ NPoints = GRID.NPoints #Number of nodes in the grid
 Rho0 = Res.Rho0(MRate, Rd, MStar)
 Arho = None
 Renv = 2.5 * Rd
-densEnv = Model.density_Ulrich(RStar, Rd, Rho0, Arho, GRID, discFlag = False, envFlag = True,
-                               renv_max = Renv)
+densEnv = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = False, envFlag = True,
+                                 renv_max = Renv)
 #-------
 #DISC
 #-------
