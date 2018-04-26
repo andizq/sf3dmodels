@@ -59,8 +59,13 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     x,y,z = x[ind2plot]/unit, y[ind2plot]/unit, z[ind2plot]/unit
 
     fig = plt.figure()
+    fig.clf()
     ax = fig.gca(projection='3d') 
-    sp = ax.scatter(x,y,z, s = 5, c = prop2plot, cmap = palette, marker = '+', **kwargs)
+    sp = ax.scatter(x,y,z, s = 5,
+                    c = prop2plot,
+                    #cmap = palette,
+                    marker = '+',
+                    **kwargs)
     
     ax.set_xlabel('X (AU)')
     ax.set_ylabel('Y (AU)')

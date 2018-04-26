@@ -9,5 +9,5 @@ dependencies:
     - matplotlib
     - numpy
     - pandas
-#   - pip:
-#       - dependency_from_pip
+    - pip:
+      - "git+https://github.com/sphinx-gallery/sphinx-gallery.git"
