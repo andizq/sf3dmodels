@@ -158,6 +158,8 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 The resulting 3D distribution and 2D profiles:
 
 <p align="left">
+  <img src="astropy_logo.ico" width="450"/>
+  <img src="/Users/andrespipecar42/SFRegions/SF3dmodels/docs/_build/html/_static/astropy_logo.ico" width="450"/>
   <img src="totalPointsMain.png" width="450"/>
   <img src="Density_Temp_Main.png" width="200"/>
 </p>
