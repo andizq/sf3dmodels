@@ -502,6 +502,11 @@ weight = dens_e
 Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
                      colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = 'totalPoints%s.png'%tag, show = True)
 ```
+<p align="center">
+  <img src="../../../images/ctsphere_HII.png" width="325"/>
+</p>
+
+<br>
 
 **e.** Now let's execute RADMC-3D. For a SED:
 
@@ -509,12 +514,11 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = densi
 radmc3d sed dpc 4000
 ```
 
-**f.** And the plotting:
+And its plot:
 
 ```python
 from radmc3dPy.analyze import *
 import matplotlib.pyplot as plt
-import numpy as np
 
 tag = 'ctsphere'
 
@@ -530,4 +534,71 @@ plt.savefig('sed_'+tag+'.png')
 plt.show()
 ```
 
+<p align="center">
+  <img src="../../../images/sed_ctsphere.png" width="325"/>
+</p>
+
+<br>
+
+**f.** Now let's calculate a 2D-Image at 300 GHz (1000 microns):
+
+```console
+radmc3d image lambda 1000
+```
+
+And its plot:
+
+```python
+from radmc3dPy.image import *
+from matplotlib import cm
+a=readImage()
+plotImage(a,log=True,maxlog=4,cmap=cm.hot,bunit='snu',dpc=140,arcsec=True) #or au=True
+```
+
+<p align="center">
+  <img src="../../../images/image_ctsphere.png" width="325"/>
+</p>
+
+<br>
   
+**Example 2.** Ionized spherical region with a power-law density and constant temperature.
+
+Here the only difference with the example 1 will be the general parameters and the invocation of a different model for the density distribution.
+
+```python
+#------------------
+#General Parameters
+#------------------
+#from Galvan-Madrid et al. 2009, Table 3:
+
+MStar = 34 * U.MSun
+r_max = 2530 * U.AU #H II sphere size
+r_min = r_max / 200 #Minimum distance (!= 0 to avoid indeterminations).
+r_s = r_max #Normalization distance
+rho_s = 1.4e5 * 1e6 #from cgs to SI. Density at r_s
+q = 1.3 #Density powerlaw  
+t_e = 1.e4 #K
+
+#-------------------
+#PHYSICAL PROPERTIES
+#-------------------
+density = Model.density_Powerlaw_HII(r_min, r_max, r_s, rho_s, q, GRID)
+temperature = Model.temperature_Constant(density, GRID, envTemp = t_e, backTemp=2.725)
+
+Model.PrintProperties(density, temperature, GRID) #Printing resultant properties (mass, mean temperature, etc)
+```
+
+The resultant plots:
+
+<p align="center">
+  <img src="../../../images/plsphere_HII.png" width="325"/>
+  <img src="../../../images/sed_plsphere.png" width="325"/>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="../../../images/image_plsphere.png" width="325"/>
+</p>
+
+<br>
