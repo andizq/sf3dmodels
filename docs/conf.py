@@ -209,3 +209,32 @@ source_parsers = {
    '.md': 'recommonmark.parser.CommonMarkParser',
 }
 source_suffix = ['.rst', '.md']
+
+# -- Options for the Sphinx gallery -------------------------------------------
+
+try:
+    import sphinx_gallery
+    extensions += ["sphinx_gallery.gen_gallery"]
+
+    sphinx_gallery_conf = {
+        'backreferences_dir': 'generated/modules', # path to store the module using example template
+        'filename_pattern': '^((?!skip_).)*$', # execute all examples except those that start with "skip_"
+        'examples_dirs': '..{}examples'.format(os.sep), # path to the examples scripts
+        'gallery_dirs': 'generated/examples', # path to save gallery generated examples
+        'ignore_pattern': 'Global_grid',
+        'reference_url': {
+            'astropy': None,
+            'matplotlib': 'http://matplotlib.org/',
+            'numpy': 'http://docs.scipy.org/doc/numpy/',
+        },
+        'abort_on_example_error': True
+    }
+
+except ImportError:
+    def setup(app):
+        app.warn('The sphinx_gallery extension is not installed, so the '
+                 'gallery will not be built.  You will probably see '
+                 'additional warnings about undefined references due '
+                 'to this.')
+
+linkcheck_anchors = False
