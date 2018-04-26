@@ -438,3 +438,170 @@ Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisun
 </p>
 
 <br>
+
+### Modelling HII regions + Radiative Transfer with RADMC-3D
+
+You can create electronic density distributions with the library `Model` and use the module `Datatab_RADMC3D_FreeFree` to obtain the necessary formatted files to predict the Free-Free emission of the region with **RADMC-3D**.  
+
+**Example 1.** Ionized spherical region with constant density and temperature.
+
+```python
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import *
+#-----------------
+#Extra libraries
+#-----------------
+import numpy as np
+import time
+```  
+**a.** The general parameters and the GRID definition (the `radmc3d` flag should be turned on):
+
+```python
+#------------------
+#General Parameters
+#------------------
+r_max = 2530 * U.AU #H II sphere size
+dens_e = 1.4e5 * 1e6 #Electronic numerical density, from cgs to SI
+t_e = 1.e4 #K
+
+#---------------
+#GRID Definition
+#---------------
+sizex = sizey = sizez = 2600 * U.AU 
+Nx = Ny = Nz = 63 #Number of divisions for each axis
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], radmc3d = True)
+NPoints = GRID.NPoints #Final number of nodes in the grid
+```
+
+**b.** Invoke the library `Model` to assign the physical properties to each node in the `GRID`:
+
+```python
+#-------------------
+#PHYSICAL PROPERTIES
+#-------------------
+density = Model.density_Constant(r_max, GRID, envDens = dens_e)
+temperature = Model.temperature_Constant(density, GRID, envTemp = t_e, backTemp=2.725)
+
+Model.PrintProperties(density, temperature, GRID) #Printing resultant properties (mass, mean temperature, etc)
+```
+
+**c.** Write the data into a file with the RADMC-3D format:
+```python
+#---------------------------------
+#WRITING DATA with RADMC-3D FORMAT
+#---------------------------------
+Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
+```
+
+**d.** Plot a random 3D distribution of points based on the physical properties of the model
+```python
+#------------------------------------
+#3D PLOTTING (weighting with density)
+#------------------------------------
+tag = 'HII'
+weight = dens_e
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
+                     colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = 'totalPoints%s.png'%tag, show = True)
+```
+<p align="center">
+  <img src="/images/ctsphere_HII.png" width="325"/>
+</p>
+
+<br>
+
+**e.** Now let's execute RADMC-3D. For a SED:
+
+```console
+radmc3d sed dpc 4000
+```
+
+And its plot:
+
+```python
+from radmc3dPy.analyze import *
+import matplotlib.pyplot as plt
+
+tag = 'ctsphere'
+
+s = readSpectrum(fname = 'spectrum.out') #column 0: wavelength in microns; column 1: Flux in cgs. 
+distance = 4000. #in pc. The spectrum.out file is still normalized to a distance of 1 pc (see radmc3d docs)
+F_nu = s[:,1] * distance**-2 * 1e23 #to Jy at the set distance
+nu = 3e8 * s[:,0]**-1 * 1e6 * 1e-9 #microns to GHz
+plt.plot(nu, F_nu)
+plt.title('%s - distance: %d pc'%(tag,distance))
+plt.xlabel('Frequency [GHz]'); plt.ylabel('Flux [Jy]')
+plt.xscale('log'); plt.yscale('log')
+plt.savefig('sed_'+tag+'.png')
+plt.show()
+```
+
+<p align="center">
+  <img src="/images/sed_ctsphere.png" width="325"/>
+</p>
+
+<br>
+
+**f.** Now let's calculate a 2D-Image at 300 GHz (1000 microns):
+
+```console
+radmc3d image lambda 1000
+```
+
+And its plot:
+
+```python
+from radmc3dPy.image import *
+from matplotlib import cm
+a=readImage()
+plotImage(a,log=True,maxlog=4,cmap=cm.hot,bunit='snu',dpc=140,arcsec=True) #or au=True
+```
+
+<p align="center">
+  <img src="/images/image_ctsphere.png" width="325"/>
+</p>
+
+<br>
+  
+**Example 2.** Ionized spherical region with a power-law density and constant temperature.
+
+Here the only difference with the example 1 will be the general parameters and the invocation of a different model for the density distribution.
+
+```python
+#------------------
+#General Parameters
+#------------------
+#from Galvan-Madrid et al. 2009, Table 3:
+
+MStar = 34 * U.MSun
+r_max = 2530 * U.AU #H II sphere size
+r_min = r_max / 200 #Minimum distance (!= 0 to avoid indeterminations).
+r_s = r_max #Normalization distance
+rho_s = 1.4e5 * 1e6 #from cgs to SI. Density at r_s
+q = 1.3 #Density powerlaw  
+t_e = 1.e4 #K
+
+#-------------------
+#PHYSICAL PROPERTIES
+#-------------------
+density = Model.density_Powerlaw_HII(r_min, r_max, r_s, rho_s, q, GRID)
+temperature = Model.temperature_Constant(density, GRID, envTemp = t_e, backTemp=2.725)
+
+Model.PrintProperties(density, temperature, GRID) #Printing resultant properties (mass, mean temperature, etc)
+```
+
+The resultant plots:
+
+<p align="center">
+  <img src="/images/plsphere_HII.png" width="325"/>
+  <img src="/images/sed_plsphere.png" width="325"/>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="/images/image_plsphere.png" width="325"/>
+</p>
+
+<br>
