@@ -157,17 +157,20 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 
 The resulting 3D distribution and 2D profiles:
 
-
+![label](../images/totalPointsMain.png)
+![label](../images/Density_Temp_Main.png)
 <p align="left">
-  <img src="/images/totalPointsMain.png" width="450"/>
-  <img src="/images/Density_Temp_Main.png" width="200"/>
+  <img src="../images/totalPointsMain.png" width="450"/>
+  <img src="../images/Density_Temp_Main.png" width="200"/>
 </p>
 
 Edge-on and Face-on 3D distribution:
 
+![label](../images/totalPointsMain_a.png)
+![label](../images/totalPointsMain_b.png)
 <p align="left">
-  <img src="/images/totalPointsMain_a.png" width="325"/>
-  <img src="/images/totalPointsMain_b.png" width="325"/>
+  <img src="../images/totalPointsMain_a.png" width="325"/>
+  <img src="../images/totalPointsMain_b.png" width="325"/>
 </p>
 
 <br>
@@ -286,17 +289,20 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 
 The resulting 3D distribution and 2D profiles:
 
-
+![label](../images/totalPointsBurger.png)
+![label](../images/Density_Temp_Burger.png)
 <p align="left">
-  <img src="/images/totalPointsBurger.png" width="450"/>
-  <img src="/images/Density_Temp_Burger.png" width="200"/>
+  <img src="../images/totalPointsBurger.png" width="450"/>
+  <img src="../images/Density_Temp_Burger.png" width="200"/>
 </p>
 
 Edge-on and Face-on 3D distribution:
 
+![label](../images/totalPointsBurger_a.png)
+![label](../images/totalPointsBurger_b.png)
 <p align="center">
-  <img src="/images/totalPointsBurger_a.png" width="325"/>
-  <img src="/images/totalPointsBurger_b.png" width="325"/>
+  <img src="../images/totalPointsBurger_a.png" width="325"/>
+  <img src="../images/totalPointsBurger_b.png" width="325"/>
 </p>
 
 <br>
@@ -430,9 +436,11 @@ Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisun
 
 ***Left***: density colormap. ***Right***: temperature colormap.
 
+![label](../images/global_grid_dens.png)
+![label](../images/global_grid_temp.png)
 <p align="center">
-  <img src="/images/global_grid_dens.png" width="325"/>
-  <img src="/images/global_grid_temp.png" width="325"/>
+  <img src="../images/global_grid_dens.png" width="325"/>
+  <img src="../images/global_grid_temp.png" width="325"/>
 </p>
 
 <br>
@@ -502,8 +510,10 @@ weight = dens_e
 Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
                      colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = 'totalPoints%s.png'%tag, show = True)
 ```
+
+![label](../images/ctsphere_HII.png)
 <p align="center">
-  <img src="/images/ctsphere_HII.png" width="325"/>
+  <img src="../images/ctsphere_HII.png" width="325"/>
 </p>
 
 <br>
@@ -534,8 +544,9 @@ plt.savefig('sed_'+tag+'.png')
 plt.show()
 ```
 
+![label](../images/sed_ctsphere.png)
 <p align="center">
-  <img src="/images/sed_ctsphere.png" width="325"/>
+  <img src="../images/sed_ctsphere.png" width="325"/>
 </p>
 
 <br>
@@ -555,8 +566,9 @@ a=readImage()
 plotImage(a,log=True,maxlog=4,cmap=cm.hot,bunit='snu',dpc=140,arcsec=True) #or au=True
 ```
 
+![label](../images/image_ctsphere.png)
 <p align="center">
-  <img src="/images/image_ctsphere.png" width="325"/>
+  <img src="../images/image_ctsphere.png" width="325"/>
 </p>
 
 <br>
@@ -599,15 +611,18 @@ Model.PrintProperties(density, temperature, GRID) #Printing resultant properties
 
 The resultant plots:
 
+![label](../images/plsphere_HII.png)
+![label](../images/sed_plsphere.png)
 <p align="center">
-  <img src="/images/plsphere_HII.png" width="325"/>
-  <img src="/images/sed_plsphere.png" width="325"/>
+  <img src="../images/plsphere_HII.png" width="325"/>
+  <img src="../images/sed_plsphere.png" width="325"/>
 </p>
 
 <br>
 
+![label](../images/image_plsphere.png)
 <p align="center">
-  <img src="/images/image_plsphere.png" width="325"/>
+  <img src="../images/image_plsphere.png" width="325"/>
 </p>
 
 <br>
@@ -676,15 +691,18 @@ Model.PrintProperties(density, temperature, GRID)
 
 The resultant plots:
 
+![label](../images/keto+disc_HII.png)
+![label](../images/sed_keto+disc.png)
 <p align="center">
-  <img src="/images/keto+disc_HII.png" width="325"/>
-  <img src="/images/sed_keto+disc.png" width="325"/>
+  <img src="../images/keto+disc_HII.png" width="325"/>
+  <img src="../images/sed_keto+disc.png" width="325"/>
 </p>
 
 <br>
 
+![label](../images/image_keto+disc.png)
 <p align="center">
-  <img src="/images/image_keto+disc.png" width="325"/>
+  <img src="../images/image_keto+disc.png" width="325"/>
 </p>
 
 <br>
