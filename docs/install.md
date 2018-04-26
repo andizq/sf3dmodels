@@ -436,3 +436,70 @@ Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisun
 </p>
 
 <br>
+
+### Modelling HII regions + Radiative Transfer with RADMC-3D
+
+You can create electronic density distributions with the library `Model` and use the module `Datatab_RADMC3D_FreeFree` to obtain the necessary formatted files to predict the Free-Free emission of the region with **RADMC-3D**.  
+
+**Example 1.** Ionized spherical region with constant density and temperature.
+```python
+#------------------
+#Import the package
+#------------------
+from sf3dmodels import *
+#-----------------
+#Extra libraries
+#-----------------
+import numpy as np
+import time
+```  
+**a.** The general parameters and the GRID definition (the `radmc3d` flag should be turned on):
+
+```python
+#------------------
+#General Parameters
+#------------------
+r_max = 2530 * U.AU #H II sphere size
+dens_e = 1.4e5 * 1e6 #Electronic numerical density, from cgs to SI
+t_e = 1.e4 #K
+
+#---------------
+#GRID Definition
+#---------------
+sizex = sizey = sizez = 2600 * U.AU 
+Nx = Ny = Nz = 63 #Number of divisions for each axis
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], radmc3d = True)
+NPoints = GRID.NPoints #Final number of nodes in the grid
+```
+
+**b.** Invoke the library `Model` to assign the physical properties to each node in the `GRID`:
+
+```python
+#-------------------
+#PHYSICAL PROPERTIES
+#-------------------
+density = Model.density_Constant(r_max, GRID, envDens = dens_e)
+temperature = Model.temperature_Constant(density, GRID, envTemp = t_e, backTemp=2.725)
+
+Model.PrintProperties(density, temperature, GRID) #Printing resultant properties (mass, mean temperature, etc)
+```
+
+**c.** Write the data into a file with the RADMC-3D format:
+```python
+#---------------------------------
+#WRITING DATA with RADMC-3D FORMAT
+#---------------------------------
+Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
+```
+
+**d.** Plot a random 3D distribution of points based on the physical properties of the model
+```python
+#------------------------------------
+#3D PLOTTING (weighting with density)
+#------------------------------------
+tag = 'HII'
+weight = dens_e
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
+                     colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = 'totalPoints%s.png'%tag, show = True)
+```
+
