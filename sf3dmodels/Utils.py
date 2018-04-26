@@ -13,6 +13,7 @@ MSun_yr = MSun/yr #kg/s
 
 Mu = 1.6726219e-27 #kg ->proton mass
 G = 6.67384e-11 #(N m^2 kg^-2)Cavendish-gravitational constant
+kb = 1.38064852e-23 #(J K^-1) Boltzmann constant
 sigma = 5.670373e-8 #(W m^-2 K^-4)Stefan-Boltzmann constant
 
 arcsecs = 206264.806247 #radians->arcsecs
