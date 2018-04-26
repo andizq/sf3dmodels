@@ -563,7 +563,7 @@ plotImage(a,log=True,maxlog=4,cmap=cm.hot,bunit='snu',dpc=140,arcsec=True) #or a
   
 **Example 2.** Ionized spherical region with a power-law density and constant temperature.
 
-Here the only difference with the example 1 will be the general parameters and the invocation of a different model for the density distribution.
+Here the only difference with the example 1 are the general parameters and the invocation of a different model for the density distribution.
 
 ```python
 #------------------
