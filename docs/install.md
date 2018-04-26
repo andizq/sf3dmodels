@@ -503,3 +503,31 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = densi
                      colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = 'totalPoints%s.png'%tag, show = True)
 ```
 
+**e.** Now let's execute RADMC-3D. For a SED:
+
+```console
+radmc3d sed dpc 4000
+```
+
+**f.** And the plotting:
+
+```python
+from radmc3dPy.analyze import *
+import matplotlib.pyplot as plt
+import numpy as np
+
+tag = 'ctsphere'
+
+s = readSpectrum(fname = 'spectrum.out') #column 0: wavelength in microns; column 1: Flux in cgs. 
+distance = 4000. #in pc. The spectrum.out file is still normalized to a distance of 1 pc (see radmc3d docs)
+F_nu = s[:,1] * distance**-2 * 1e23 #to Jy at the set distance
+nu = 3e8 * s[:,0]**-1 * 1e6 * 1e-9 #microns to GHz
+plt.plot(nu, F_nu)
+plt.title('%s - distance: %d pc'%(tag,distance))
+plt.xlabel('Frequency [GHz]'); plt.ylabel('Flux [Jy]')
+plt.xscale('log'); plt.yscale('log')
+plt.savefig('sed_'+tag+'.png')
+plt.show()
+```
+
+  

@@ -612,7 +612,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
     #DISC Profile
     #------------
     if density.discFlag:
-        print ('Calculating Keplerian flared-disc temperature...')
+        print ('Calculating Keplerian thin-disc temperature...')
         rdisc = density.r_disc
         if density.envFlag:
             renv = density.r_env
@@ -748,7 +748,7 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
     #----------------
     if envTemp:
         if density.envFlag:
-            print ('Setting constant Envelope density...')
+            print ('Setting constant Envelope temperature...')
             tempENV = np.where( rList <= density.r_env, envTemp, backTemp)
         else: sys.exit('ERROR: The envelope calculation was turned ON but there is no density distribution for envelope!')
     else: tempENV = 0.
@@ -1146,7 +1146,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
 # Write the wavelength_micron.inp file
 #
 
-    lam1 = 0.5e3
+    lam1 = 0.75e3
     lam2 = 2.e4
     lam3 = 4.e4
     lam4 = 6.e4
