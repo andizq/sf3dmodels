@@ -285,7 +285,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False,
     #DISC PROFILE
     #------------
     if discFlag:
-        print ('Calculating Keplerian thin-disc density...')
+        print ('Calculating Keplerian flared-disc density...')
         
         if not rdisc_max: rdisc_max = Rd #Keto's value for the disc to stop
         rhoD0 = Arho * rhoE0 #Normalization factor based on the envelope
@@ -294,7 +294,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False,
         rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (Rd / RList)**2.25 * np.exp(-0.5 * zList**2 / H**2), 1.0)#1.0e9 / 2)
         rhoDISC = np.where( rhoDISC < 1.0, 1.0, rhoDISC)
     else: 
-        print ('No Keplerian thin-disc was invoked!')
+        print ('No Keplerian flared-disc was invoked!')
         rhoDISC = np.zeros(NPoints)
     
     #----------------
@@ -612,7 +612,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
     #DISC Profile
     #------------
     if density.discFlag:
-        print ('Calculating Keplerian thin-disc temperature...')
+        print ('Calculating Keplerian flared-disc temperature...')
         rdisc = density.r_disc
         if density.envFlag:
             renv = density.r_env
