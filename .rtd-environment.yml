@@ -9,5 +9,4 @@ dependencies:
     - matplotlib
     - numpy
     - pandas
-    - pip:
-      - dependency_from_pip
+    
