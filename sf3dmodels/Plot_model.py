@@ -63,7 +63,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     ax = fig.gca(projection='3d') 
     sp = ax.scatter(x,y,z, s = 5,
                     c = prop2plot,
-                    #cmap = palette,
+                    cmap = palette,
                     marker = '+',
                     **kwargs)
     
