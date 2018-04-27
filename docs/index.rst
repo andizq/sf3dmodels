@@ -3,12 +3,13 @@ Documentation
 
 This is the documentation for SF3dmodels.
 
+For examples: include generated/examples/index.rst
 
 .. toctree::
   :maxdepth: 2
 
   sf3dmodels/index.rst
-  generated/examples/index.rst
+  about.md
   install.md
 
 .. note:: The layout of this directory is simply a suggestion.  To follow

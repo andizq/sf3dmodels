@@ -1,4 +1,7 @@
 """
+Building a global grid with 2 submodels
+=======================================
+
 Basic docstring explaining example
 """
 #------------------

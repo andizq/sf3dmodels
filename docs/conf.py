@@ -211,7 +211,8 @@ source_parsers = {
 source_suffix = ['.rst', '.md']
 
 # -- Options for the Sphinx gallery -------------------------------------------
-
+"""
+#
 try:
     import sphinx_gallery
     extensions += ["sphinx_gallery.gen_gallery"]
@@ -238,3 +239,5 @@ except ImportError:
                  'to this.')
 
 linkcheck_anchors = False
+"""
+
