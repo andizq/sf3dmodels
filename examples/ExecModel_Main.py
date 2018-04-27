@@ -1,3 +1,6 @@
+"""
+Basic docstring explaining example
+"""
 from __future__ import print_function
 #------------------
 #Import the package
