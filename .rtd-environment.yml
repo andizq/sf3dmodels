@@ -10,4 +10,4 @@ dependencies:
     - numpy
     - pandas
     - pip:
-      - "git+https://github.com/sphinx-gallery/sphinx-gallery.git"
+      - dependency_from_pip
