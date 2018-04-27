@@ -1,49 +1,7 @@
-About SF3dmodels
-------------
-
-SF3dmodels is a star-forming-region(s) modelling package that brings together analytical physical models from different authors (Ulrich, Keto, Pringle, Whitney) to compute density, velocity, temperature, abundance and gas-to-dust ratio 3D distributions.
-
-SF3dmodels makes it possible to construct diverse distributions by mixing the available standard models within it. However, new models can be added to the package if needed. Users willing to contribute and nourish the package with new models are very welcome!
-
-In addition, SF3dmodels can couple different star forming regions together to recreate complex star forming systems as those being revealed by recent telescopes and interferometers. This feature was quite used by Izquierdo et al, 2018 to model the complex star forming system W33A MM1.
-
-We made the SF3dmodels output data to be compatible with [LIME](https://github.com/lime-rt/lime): To simulate real observations you need first to perform radiative transfer calculations and LIME does this for you in far-infrared and (sub-)millimeter wavelengths.
-
-
-Installation process
---------------------
-
-Download the package folder and place it in your prefered location. Then, modify the Python Module Search Path in your shell startup file as follows:
-
-#### for Bash shell (sh):
-
-In your startup file (**`~/.bash_profile`** , **`~/.bash_login`** or **`~/.bashrc`** [Linux users], and **`~/.profile`** [Mac OS users]) include:
-
-```bash
-export PYTHONPATH=${PYTHONPATH}:/path/to/package
-```
-
-#### for C Shell (csh; tcsh):
-
-In your startup file (**`~/.cshrc`** , **`~/.tcshrc`** or **`~/.login`**) include:
-
-```csh
-setenv PYTHONPATH $PYTHONPATH\:/path/to/package
-```
-
-### External required packages
-
-* [Matplotlib](https://matplotlib.org/users/installing.html)
-* [Numpy](https://www.scipy.org/install.html)
-* [Pandas](http://pandas.pydata.org/pandas-docs/stable/install.html)
-* [Astropy](http://docs.astropy.org/en/stable/install.html) (optional, but recommended)
-* [IPython](https://ipython.org/install.html) (optional, but recommended)
-
-
 Examples
 --------
 
-In this section I will show some examples to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Env_Disc`, type in your Python or IPython Command-Line the following commands:
+In this section some examples are shown to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Env_Disc`, type in your Python or IPython Command-Line the following commands:
 
 ```python
 >>> import Model
@@ -161,14 +119,14 @@ The resulting 3D distribution and 2D profiles:
 
 <p align="left">
   <img src="../../../images/totalPointsMain.png" width="450"/>
-  <img src="Density_Temp_Main.png" width="200"/>
+  <img src="../../../images/Density_Temp_Main.png" width="200"/>
 </p>
 
 Edge-on and Face-on 3D distribution:
 
 <p align="left">
-  <img src="totalPointsMain_a.png" width="325"/>
-  <img src="totalPointsMain_b.png" width="325"/>
+  <img src="../../../images/totalPointsMain_a.png" width="325"/>
+  <img src="../../../images/totalPointsMain_b.png" width="325"/>
 </p>
 
 <br>
@@ -288,15 +246,15 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 The resulting 3D distribution and 2D profiles:
 
 <p align="left">
-  <img src="totalPointsBurger.png" width="450"/>
-  <img src="Density_Temp_Burger.png" width="200"/>
+  <img src="../../../images/totalPointsBurger.png" width="450"/>
+  <img src="../../../images/Density_Temp_Burger.png" width="200"/>
 </p>
 
 Edge-on and Face-on 3D distribution:
 
 <p align="center">
-  <img src="totalPointsBurger_a.png" width="325"/>
-  <img src="totalPointsBurger_b.png" width="325"/>
+  <img src="../../../images/totalPointsBurger_a.png" width="325"/>
+  <img src="../../../images/totalPointsBurger_b.png" width="325"/>
 </p>
 
 <br>
@@ -431,8 +389,8 @@ Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisun
 ***Left***: density colormap. ***Right***: temperature colormap.
 
 <p align="center">
-  <img src="global_grid_dens.png" width="325"/>
-  <img src="global_grid_temp.png" width="325"/>
+  <img src="../../../images/global_grid_dens.png" width="325"/>
+  <img src="../../../images/global_grid_temp.png" width="325"/>
 </p>
 
 <br>
@@ -504,7 +462,7 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = densi
 ```
 
 <p align="center">
-  <img src="ctsphere_HII.png" width="325"/>
+  <img src="../../../images/ctsphere_HII.png" width="325"/>
 </p>
 
 <br>
@@ -536,7 +494,7 @@ plt.show()
 ```
 
 <p align="center">
-  <img src="sed_ctsphere.png" width="325"/>
+  <img src="../../../images/sed_ctsphere.png" width="325"/>
 </p>
 
 <br>
@@ -557,7 +515,7 @@ plotImage(a,log=True,maxlog=4,cmap=cm.hot,bunit='snu',dpc=140,arcsec=True) #or a
 ```
 
 <p align="center">
-  <img src="image_ctsphere.png" width="325"/>
+  <img src="../../../images/image_ctsphere.png" width="325"/>
 </p>
 
 <br>
@@ -601,14 +559,14 @@ Model.PrintProperties(density, temperature, GRID) #Printing resultant properties
 The resultant plots:
 
 <p align="center">
-  <img src="plsphere_HII.png" width="325"/>
-  <img src="sed_plsphere.png" width="325"/>
+  <img src="../../../images/plsphere_HII.png" width="325"/>
+  <img src="../../../images/sed_plsphere.png" width="325"/>
 </p>
 
 <br>
 
 <p align="center">
-  <img src="image_plsphere.png" width="325"/>
+  <img src="../../../images/image_plsphere.png" width="325"/>
 </p>
 
 <br>
@@ -678,14 +636,14 @@ Model.PrintProperties(density, temperature, GRID)
 The resultant plots:
 
 <p align="center">
-  <img src="keto+disc_HII.png" width="325"/>
-  <img src="sed_keto+disc.png" width="325"/>
+  <img src="../../../images/keto+disc_HII.png" width="325"/>
+  <img src="../../../images/sed_keto+disc.png" width="325"/>
 </p>
 
 <br>
 
 <p align="center">
-  <img src="image_keto+disc.png" width="325"/>
+  <img src="../../../images/image_keto+disc.png" width="325"/>
 </p>
 
 <br>
