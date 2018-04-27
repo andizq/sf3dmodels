@@ -605,3 +605,80 @@ The resultant plots:
 </p>
 
 <br>
+
+
+**Example 3.** Keto+03 spherical region envolving a Pringle disc; constant temperature.
+
+```python
+#------------------
+#General Parameters
+#------------------
+#from Galvan-Madrid et al. 2009, Table 3:
+
+MStar = 34 * U.MSun
+r_max = 2530 * U.AU #1000 * U.AU #H II sphere size
+r_min = r_max / 200 #Minimum distance (!= 0 to avoid indeterminations)
+rho_s = 1.5e6 * 1e6 #from cgs to SI. Density at sonic radius
+q = 1.3 #Density powerlaw
+t_e = 1.e4 #K
+
+#-------------------------------
+#Parameters for the Pringle disc
+#-------------------------------
+MRate = 3e-4 * U.MSun_yr
+RStar = U.RSun * ( MStar/U.MSun )**0.8
+
+#---------------
+#GRID Definition
+#---------------
+
+sizex = sizey = sizez = 2600 * U.AU 
+Nx = Ny = Nz = 63 #Number of divisions for each axis
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], radmc3d = True)
+NPoints = GRID.NPoints #Final number of nodes in the grid
+
+#-------------------
+#PHYSICAL PROPERTIES
+#-------------------
+
+#--------
+#ENVELOPE
+#--------
+densEnv = Model.density_Keto_HII(MStar, r_min, r_max, rho_s, t_e, GRID, q = 1.5)
+
+#-------
+#DISC
+#-------
+Rd = 10*densEnv.rs #10 times the sonic radius, just to make it visible
+Rho0 = Res.Rho0(MRate, Rd, MStar)
+Arho = 60.0 #/ 500 
+densDisc = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = False, 
+                                rdisc_max = Rd)
+
+density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
+                            'disc': densDisc.total, 
+                            'env': densEnv.total,
+                            'discFlag': True,
+                            'envFlag': True,
+                            'r_disc': densDisc.r_disc, 
+                            'r_env': densEnv.r_env} )
+
+temperature = Model.temperature_Constant(density, GRID, discTemp=t_e, envTemp=t_e, backTemp=2.725)
+
+Model.PrintProperties(density, temperature, GRID)
+```
+
+The resultant plots:
+
+<p align="center">
+  <img src="/images/keto+disc_HII.png" width="325"/>
+  <img src="/images/sed_keto+disc.png" width="325"/>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="/images/image_keto+disc.png" width="325"/>
+</p>
+
+<br>
