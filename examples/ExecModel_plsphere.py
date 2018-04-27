@@ -1,3 +1,9 @@
+"""
+Powerlaw Sphere Example
+=======================
+
+This is an exmaple of a powerlaw density profile spherical HII region
+"""
 #------------------
 #Import the package
 #------------------
@@ -57,5 +63,5 @@ Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
 #------------------------------------
 tag = 'plsphere_HII'
 weight = 10*rho_s
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
-                     colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = '%s.png'%tag, show = True)
+#Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
+#                     colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = '%s.png'%tag, show = True)

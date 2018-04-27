@@ -1,3 +1,6 @@
+"""
+Basic docstring explaining example
+"""
 #------------------
 #Import the package
 #------------------
