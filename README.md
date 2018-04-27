@@ -45,7 +45,7 @@ setenv PYTHONPATH $PYTHONPATH\:/path/to/package
 Examples
 --------
 
-In this section I will show some examples to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Ulrich`, type in your Python or IPython Command-Line the following commands:
+In this section some examples are shown to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Ulrich`, type in your Python or IPython Command-Line the following commands:
 
 ```python
 >>> import Model
