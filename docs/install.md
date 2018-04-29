@@ -644,9 +644,11 @@ The resultant plots:
 
 <p align="center">
   <img src="../../../images/image_keto+disc.png" width="325"/>
+  <img src="../../../images/image_keto+disc_phi90incl90.png" width="325"/>
 </p>
 
 <br>
+
 
 
 
