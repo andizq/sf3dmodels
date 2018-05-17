@@ -15,7 +15,7 @@ We made the SF3dmodels output data to be compatible with [LIME](https://github.c
 Installation process
 --------------------
 
-Download the package folder and place it in your prefered location :open_file_folder:. Then, modify the Python Module Search Path in your shell startup file as follows:
+ownload the package folder and place it in your prefered location :open_file_folder:. Then, modify the Python Module Search Path in your shell startup file as follows:
 
 #### for Bash shell (sh):
 
