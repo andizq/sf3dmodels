@@ -1,4 +1,4 @@
-# star-forming-regions
+# tar-forming-regions
 
 About SF3dmodels
 ------------
