@@ -59,7 +59,7 @@ MNE_Ulrich = [RA_to_deg(MNE_Ulrich[0]),DEC_to_deg(MNE_Ulrich[1])]
 MNE_Ulrich = RADEC_to_XY(MNE_Ulrich,2400)
 print MNE_Ulrich
 """
-
+"""
 E_envelope = ['18:14:39.56600', '-17:52:00.0100']
 E_envelope = [RA_to_deg(E_envelope[0]),DEC_to_deg(E_envelope[1])]
 E_envelope = RADEC_to_XY(E_envelope,2400)
@@ -74,7 +74,7 @@ MSW = ['18:14:39.50119', '-17:52:00.3443']
 MSW = [RA_to_deg(MSW[0]),DEC_to_deg(MSW[1])]
 MSW = RADEC_to_XY(MSW,2400)
 print ("SNW coords.:", MSW)
-
+"""
 def Rotation_Matrix(angles):
 
     thX,thY,thZ = [angle for angle in angles]

@@ -5,31 +5,11 @@ import glob
 import os
 import sys
 
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
-
-# Get some values from the setup.cfg
-conf = ConfigParser()
-conf.read(['setup.cfg'])
-metadata = dict(conf.items('metadata'))
-
-PACKAGENAME = metadata.get('package_name', 'sf3dmodels')
-DESCRIPTION = metadata.get('description', '3D Modelling package of Star Forming regions')
-AUTHOR = metadata.get('author', 'Andres Izquierdo')
-AUTHOR_EMAIL = metadata.get('author_email', '')
-LICENSE = metadata.get('license', 'unknown')
-URL = metadata.get('url', 'http://astropy.org')
-__minimum_python_version__ = metadata.get("minimum_python_version", "2.7")
-
 # Enforce Python version check - this is the same check as in __init__.py but
 # this one has to happen before importing ah_bootstrap.
-if sys.version_info < tuple((int(val) for val in __minimum_python_version__.split('.'))):
-    sys.stderr.write("ERROR: sf3dmodels requires Python {} or later\n".format(__minimum_python_version__))
+if sys.version_info < tuple((int(val) for val in "2.7".split('.'))):
+    sys.stderr.write("ERROR: sf3dmodels requires Python {} or later\n".format(2.7))
     sys.exit(1)
-
-# Import ah_bootstrap after the python version validation
 
 import ah_bootstrap
 from setuptools import setup
@@ -46,6 +26,22 @@ from astropy_helpers.setup_helpers import (register_commands, get_debug_option,
 from astropy_helpers.git_helpers import get_git_devstr
 from astropy_helpers.version_helpers import generate_version_py
 
+# Get some values from the setup.cfg
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+
+conf = ConfigParser()
+conf.read(['setup.cfg'])
+metadata = dict(conf.items('metadata'))
+
+PACKAGENAME = metadata.get('package_name', 'sf3dmodels')
+DESCRIPTION = metadata.get('description', 'Star Forming regions 3-D Modelling package')
+AUTHOR = metadata.get('author', 'Andres Izquierdo')
+AUTHOR_EMAIL = metadata.get('author_email', 'andres.izquierdo.c@gmail.com')
+LICENSE = metadata.get('license', 'unknown')
+URL = metadata.get('url', 'http://astropy.org')
 
 # order of priority for long_description:
 #   (1) set in setup.cfg,
@@ -146,6 +142,6 @@ setup(name=PACKAGENAME,
       zip_safe=False,
       use_2to3=False,
       entry_points=entry_points,
-      python_requires='>={}'.format(__minimum_python_version__),
+      python_requires='>={}'.format("2.7"),
       **package_info
 )
