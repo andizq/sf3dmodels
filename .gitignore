@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Compiled files
 *.py[cod]
 *.a
@@ -59,11 +58,3 @@ distribute-*.tar.gz
 
 # Mac OSX
 .DS_Store
-=======
-#Compiled files
-*.o
-*.pyc
-*.pyd
-*~
-package/create_parabola.py
->>>>>>> 6fbd329ea191eb0af20670ca5df6f34cadd36261
