@@ -8,5 +8,7 @@ dependencies:
     - Cython
     - matplotlib
     - numpy
+    - pandas
+    - sphinx-astropy
 #   - pip:
 #       - dependency_from_pip
