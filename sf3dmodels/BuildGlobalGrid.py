@@ -2,9 +2,8 @@ from __future__ import print_function
 import numpy as np
 import pandas as pd
 import os
-from numpy import loadtxt as ltxt
-import Model
-import Utils as U
+from . import Model
+from . import Utils as U
 import time
 
 
@@ -35,17 +34,17 @@ def overlap(GRID, submodels = [""], all = False, radmc3d = False):
 
     t0 = time.time()
     folder = './Subgrids/'
-    num=int(ltxt(os.popen("ls -1 %s*.dat| wc -l"%folder)))
+    num=int(np.loadtxt(os.popen("ls -1 %s*.dat| wc -l"%folder)))
     data=os.popen("ls -1 %s*.dat"%folder).read().split('\n',num)[:-1]
     
     if all:
         names = [name for name in data] # if '_S.' in name or '_MSW' in name] 
-        files = [ltxt(name) for name in names]
+        files = [np.loadtxt(name) for name in names]
     
     else:
         submodels = [folder + sub for sub in submodels]
         names = [name for name in submodels] 
-        files = [ltxt(name) for name in names]
+        files = [np.loadtxt(name) for name in names]
     
     detected = [tmp.split(folder)[1] for tmp in data]
     read = [tmp.split(folder)[1] for tmp in names]

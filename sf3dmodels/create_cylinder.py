@@ -1,5 +1,5 @@
 from __future__ import print_function
-from Utils import *
+from .Utils import *
 import numpy as np
 
 def velocity(M,R_l,r_seg,r): #(Big mass,Low mass position,Particle position)                        

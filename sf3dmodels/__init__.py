@@ -20,4 +20,11 @@ if sys.version_info < tuple((int(val) for val in __minimum_python_version__.spli
 
 if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
-    from .example_mod import *
+    #from .example_mod import *
+    
+    from . import Model
+    from . import Resolution
+    from . import Plot_model
+    from . import Utils
+    from . import create_cylinder
+    from . import create_parabola

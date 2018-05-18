@@ -1,5 +1,5 @@
 from __future__ import print_function
-import Utils as U
+from . import Utils as U
 import numpy as np
 
 def FieldView(xmax, radius, NP, d, scale=False):

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from Utils import *
+from .Utils import *
 
 import numpy as np
 import random

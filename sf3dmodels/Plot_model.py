@@ -1,6 +1,6 @@
 from __future__ import print_function
-from BuildGlobalGrid import mindistance
-import Model
+from .BuildGlobalGrid import mindistance
+from . import Model
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
