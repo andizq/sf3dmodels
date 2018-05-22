@@ -26,3 +26,5 @@ if not _ASTROPY_SETUP_:
     from . import Utils
     from . import create_cylinder
     from . import create_parabola
+    Res = Resolution
+    U = Utils
