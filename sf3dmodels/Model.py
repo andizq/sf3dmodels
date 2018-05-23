@@ -1150,7 +1150,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
     lam1 = 0.5e3
     lam2 = 2.e4
     lam3 = 4.e4
-    lam4 = 6.e4
+    lam4 = 3.e5#6.e4
     
     n12      = 50
     n23      = 50
