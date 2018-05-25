@@ -1,4 +1,4 @@
-from __future__ import print_function
+#from __future__ import print_function
 import numpy as np
 import pandas as pd
 import os
@@ -126,14 +126,11 @@ def overlap(GRID, submodels = [""], all = False, radmc3d = False):
                 abund_tmp[m][Num] = n[4] * n[9]
                 gtd_tmp[m][Num] = n[4] * n[10]
                 IDList[m].append(Num)
-
         
 #        hg+=1
 #        if hg%50000 == 0: print (hg)
 
         print ('Finished with the file: %s'%names[m])
-
-
 
     print ('Calculating combined densities, temperatures, etc....')
     for m in range(NFiles):
@@ -168,7 +165,6 @@ def overlap(GRID, submodels = [""], all = False, radmc3d = False):
             VEL[2][ind] += dens_dum * vel2_dum
             ABUND[ind] += dens_dum * abund_dum
             GTD[ind] += dens_dum * gtd_dum
-
 
     TEMP = TEMP / DENS    
     ABUND = ABUND / DENS
