@@ -13,7 +13,6 @@ class Struct:
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
-
 #------------------------
 #SPATIAL (Spherical-)GRID
 #------------------------
@@ -111,7 +110,6 @@ def grid(XYZmax, NP, artist = False, radmc3d = False):
 
         
     return Struct( **{'XYZgrid': XYZgrid, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP, 'step': dx})
-
 
 """
 #Not tested
@@ -1037,6 +1035,53 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
 #WRITING DATA (LIME v1.6)
 #------------------------
 
+def Make_Datatab(prop_list, GRID, format_list = False, 
+                 submodel_tag = False, submodel_folder = 'Subgrids', 
+                 lime = True, radmc3d = False):
+    
+    import pandas
+    n = len(prop_list)
+
+    if submodel_tag:
+        
+        fold, tag, fmt, type_fmt = submodel_folder, submodel_tag, format_list, type(format_list)
+        os.system('mkdir %s'%fold)
+        file_path = './%s/datatab_%s.dat'%(fold,tag)
+        x,y,z = GRID.XYZ
+        tmp = '%d %e %e %e'
+
+        if type_fmt == str: #If a single format is provided
+            print ("Using format '%s'"%fmt) 
+            for i in range(n): tmp += ' '+fmt #The same format for all properties
+        elif type_fmt == list or type_fmt == np.ndarray: #If a list of formats
+            if len(fmt) != n: sys.exit('ERROR: The number of formats provided (%d) is not equal to the number of properties to be written (%d)'%(len(fmt),n))
+            print ('Using format list:', fmt) 
+            for f in fmt: tmp += ' '+f
+        elif not fmt: #If False
+            print ("Using default format '%e'")
+            for i in range(n): tmp += ' %e' #Default format for all properties
+        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid 'format_list' object (str, list or np.ndarray)"%type_fmt)
+
+        tmp += '\n'
+        tmp_write = []
+        if type(prop_list) == np.ndarray: prop_list = prop_list.tolist()
+        id = np.arange(GRID.NPoints)
+        list2write = iter(np.array([id,x,y,z] + prop_list).T)
+        
+        file = open(file_path, 'w')
+        print ('Writing Submodel data on %s'%file_path)        
+        for i in id:    
+            tmp_write.append( tmp % tuple(next(list2write)) )
+        
+        file.writelines(tmp_write)
+            
+    else:
+        if lime:
+            pass
+        if radmc3d:
+            pass
+
+    file.close()
 def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
     
     import pandas

@@ -1,9 +1,9 @@
 from __future__ import print_function
 import numpy as np
 import pandas as pd
-#import os
-#from . import Model
-#from . import Utils as U
+import os
+from . import Model
+from . import Utils as U
 import time
 
 
@@ -16,11 +16,9 @@ def mindistance(x,xma,Nx):
     mindist = 100000*U.AU
 
     for i in range(Nx):
-
         distx = abs(x-xma[i])
 
         if (distx<mindist):
-
             mindist=distx
             j=i
 
@@ -29,11 +27,10 @@ def mindistance(x,xma,Nx):
 #------------------------------
 #------------------------------
 
+def overlap(GRID, submodels = [''], folder = './Subgrids/', all = False, radmc3d = False):
 
-def overlap(GRID, submodels = [""], all = False, radmc3d = False):
-
+    if folder[-1] != '/': folder = folder + '/'
     t0 = time.time()
-    folder = './Subgrids/'
     num=int(np.loadtxt(os.popen("ls -1 %s*.dat| wc -l"%folder)))
     data=os.popen("ls -1 %s*.dat"%folder).read().split('\n',num)[:-1]
     
@@ -71,7 +68,6 @@ def overlap(GRID, submodels = [""], all = False, radmc3d = False):
     GTD = np.zeros(NTotal) #np.ones(NTotal) * gtd0
 
     VEL = [np.zeros(NTotal),np.zeros(NTotal),np.ones(NTotal)*1*70000] 
-
 
 #----------------------
 #----------------------
