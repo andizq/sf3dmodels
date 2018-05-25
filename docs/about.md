@@ -10,10 +10,8 @@ In addition, SF3dmodels can couple different star forming regions together to re
 We made the SF3dmodels output data to be compatible with [LIME](https://github.com/lime-rt/lime): To simulate real observations you need first to perform radiative transfer calculations and LIME does this for you in far-infrared and (sub-)millimeter wavelengths.
 
 
-Installation process
+External required packages
 --------------------
-
-### External required packages
 
 * [Matplotlib](https://matplotlib.org/users/installing.html)
 * [Numpy](https://www.scipy.org/install.html)
@@ -21,7 +19,10 @@ Installation process
 * [Astropy](http://docs.astropy.org/en/stable/install.html)
 * [IPython](https://ipython.org/install.html) (optional, but recommended)
 
-Once you have installed the required packages please clone or download the star-forming-regions repository from https://github.com/andizq/star-forming-regions (unzip it if necessary) and go into the folder using the Terminal:
+Installation process
+--------------------
+
+Once you have installed the required packages please clone or download the star-forming-regions repository from [https://github.com/andizq/star-forming-regions](https://github.com/andizq/star-forming-regions) (unzip it if necessary) and go into the folder using the Terminal:
 
 ```bash
 cd /path/to/local/repository/
