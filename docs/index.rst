@@ -1,4 +1,4 @@
-Documentation
+SF3dmodels
 =============
 
 This is the documentation for SF3dmodels.

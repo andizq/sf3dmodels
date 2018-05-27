@@ -28,3 +28,7 @@ if not _ASTROPY_SETUP_:
     from . import create_parabola
     Res = Resolution
     U = Utils
+
+
+from .Model import Struct, density_Env_Disc
+
