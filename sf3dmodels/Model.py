@@ -34,7 +34,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False):
     #NUMBER OF POINTS
     #----------------
     #Each NP becomes odd if it's not. This is done to force the grid to contain the midplane too.
-    NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in range(3) ] 
+    NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in xrange(3) ] 
     print('Changing the number of grid points to force it to contain the midplane...' 
           if NP != NP_dum
           else '... ... ...')
@@ -54,8 +54,8 @@ def grid(XYZmax, NP, artist = False, radmc3d = False):
     
     if radmc3d or artist: 
         step = 2. * XYZmax / (NP - np.ones(3))
-        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in range(3)]
-        #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in range(3)]
+        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in xrange(3)]
+        #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in xrange(3)]
         X, Y ,Z = XYZgrid #The grid must contain an extra node but...
         X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] )
         Y = 0.5 * ( Y[0:NP[1]] + Y[1:NP[1]+1] )  
@@ -63,7 +63,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False):
   
         #X = X[:-1]; Y = Y[:-1]; Z = Z[:-1] #...the calculations must be done w/o that node 
     else: #lime
-        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in range(3)]
+        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in xrange(3)]
         X, Y, Z = XYZgrid
     
     #--------------------------------------
@@ -954,7 +954,7 @@ def Rotation_Matrix(angle_dicts):
     tmp = Rot[0]
     Rot_iter = iter(Rot[1:]) #Iterator for Rot_list from 2nd value: (matriz for matriz in Rot_list[1:])
 
-    for i in range( len(Rot[1:]) ): 
+    for i in xrange( len(Rot[1:]) ): 
         tmp = np.dot( next(Rot_iter) , tmp )
         
     Rot_total = tmp
@@ -994,13 +994,13 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
         Rot_total = Rotation_Matrix(angle_dicts)     
         print ('Rotating Position vectors...')
         XYZ_it = iter(POS_vec)
-        POS_vec = np.array([ np.dot( Rot_total, next(XYZ_it) ) for i in range(NPoints) ])
+        POS_vec = np.array([ np.dot( Rot_total, next(XYZ_it) ) for i in xrange(NPoints) ])
         rotPos = True
         
         if vel:
             print ('Rotating Velocity vectors...')
             VEL_it = iter(VEL_vec)
-            VEL_vec = np.array([ np.dot( Rot_total, next(VEL_it) ) for i in range(NPoints) ])
+            VEL_vec = np.array([ np.dot( Rot_total, next(VEL_it) ) for i in xrange(NPoints) ])
             rotVel = True
         else: 
             print ('=================================================') 
@@ -1035,7 +1035,57 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
 #WRITING DATA (LIME v1.6)
 #------------------------
 
-def Make_Datatab(prop_list, GRID, format_list = False, 
+class Make_Datatab(object):
+   
+    def __init__(self, prop, GRID):
+        if len(np.shape(prop)) == 1: 
+            self.prop = [prop]
+            self.n = 1
+        else: 
+            self.prop = prop
+            self.n = len(prop)
+        self.GRID = GRID
+        super(Make_Datatab, self).__init__()
+    
+    def submodel(self, tag, format = False, folder = 'Subgrids'):
+        fmt, type_fmt = format, type(format) 
+        os.system('mkdir %s'%folder)
+        file_path = './%s/datatab_%s.dat'%(folder,tag)
+        nvec = xrange(self.n)
+        x,y,z = self.GRID.XYZ
+        tmp = '%d %e %e %e'
+
+        if type_fmt == str: #If a single format is provided
+            print ("Using format '%s'"%fmt) 
+            for i in nvec: tmp += ' '+fmt #The same format for all properties
+        elif type_fmt == list or type_fmt == np.ndarray: #If a list of formats
+            if len(fmt) != self.n: sys.exit('ERROR: The number of formats provided (%d) is not equal to the number of properties to be written (%d)'%(len(fmt),self.n))
+            print ('Using format list:', fmt) 
+            for f in fmt: tmp += ' '+f
+        elif not fmt: #If False
+            print ("Using default format '%e'")
+            for i in nvec: tmp += ' %e' #Default format for all properties
+        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid 'format_list' object (str, list or np.ndarray)"%type_fmt)
+
+        tmp += '\n'
+        tmp_write = []
+        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
+        id = np.arange(self.GRID.NPoints)
+        list2write = iter(np.array([id,x,y,z] + self.prop).T)
+        file = open(file_path, 'w')
+        print ('Writing Submodel data on %s'%file_path)        
+        for i in id:    
+            tmp_write.append( tmp % tuple(next(list2write)) )
+        
+        file.writelines(tmp_write)
+
+                
+class Lime(Make_Datatab):
+    def __init__(self, hola, prop, GRID):
+        self.hola = hola
+        super(Lime, self).__init__(prop, GRID)
+
+def Make_Datatab1(prop_list, GRID, format_list = False, 
                  submodel_tag = False, submodel_folder = 'Subgrids', 
                  lime = True, radmc3d = False):
     
@@ -1067,7 +1117,6 @@ def Make_Datatab(prop_list, GRID, format_list = False,
         if type(prop_list) == np.ndarray: prop_list = prop_list.tolist()
         id = np.arange(GRID.NPoints)
         list2write = iter(np.array([id,x,y,z] + prop_list).T)
-        
         file = open(file_path, 'w')
         print ('Writing Submodel data on %s'%file_path)        
         for i in id:    
@@ -1093,7 +1142,7 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
         x,y,z = GRID.XYZ
         print ('Writing Submodel data on %s'%file0)
         tmp = []
-        for i in range(GRID.NPoints): 
+        for i in xrange(GRID.NPoints): 
             #file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
              #          (i,x[i],y[i],z[i],dens[i],temp[i],vel['x'][i],vel['y'][i],vel['z'][i],abund[i],gtd[i]))
             tmp.append( "%d %e %e %e %e %e %e %e %e %e %e\n"% (i,x[i],y[i],z[i],dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
@@ -1109,13 +1158,13 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
         print ('Writing data on %s'%files[0])
         file = open(files[0],'w')
 
-        for i in range(GRID.NPoints): 
+        for i in xrange(GRID.NPoints): 
             file.write("%d %e %e %e %e %e %e %e\n"%
                        (i,dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
 
         df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
     
-        for i in range(1,4):
+        for i in xrange(1,4):
             print ('Writing data on %s'%files[i])
             df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
         
