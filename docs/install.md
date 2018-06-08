@@ -100,9 +100,9 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, ax
 	             palette = 'jet', colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$',
 		     output = 'Points%s.png'%tag, show = True)
 
-#-------------------------------------
+#--------------------------------------
 #2D Plotting (density and temperature) - UNDER DEVELOPMENT
-#-------------------------------------
+#--------------------------------------
 
 #FACE-ON and EDGE-ON profiles:
 
