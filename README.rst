@@ -13,8 +13,34 @@ package can couple different models in a single grid to recreate complex star
 forming systems as those being revealed by current instruments. 
 The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ 
 or `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ 
-to carry out radiative transfer calculations.
-`LIME`_
+to carry out radiative transfer calculations of the model.
+
+
+Requirements
+------------
+
+* [Matplotlib](https://matplotlib.org/users/installing.html)
+* [Numpy](https://www.scipy.org/install.html)
+* [Pandas](http://pandas.pydata.org/pandas-docs/stable/install.html)
+* [Astropy](http://docs.astropy.org/en/stable/install.html)
+* [IPython](https://ipython.org/install.html) (optional, but recommended)
+
+Installation process
+--------------------
+
+Once you have installed the required packages please clone or download the star-forming-regions repository from [https://github.com/andizq/star-forming-regions](https://github.com/andizq/star-forming-regions) (unzip it if necessary) and go into the folder using the Terminal:
+
+```bash
+cd /path/to/local/repository/
+```
+
+Finally, run the following command:
+
+```bash
+python setup.py develop
+```
+
+
 
 License
 -------
