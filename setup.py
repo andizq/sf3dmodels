@@ -37,7 +37,7 @@ conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
 PACKAGENAME = metadata.get('package_name', 'sf3dmodels')
-DESCRIPTION = metadata.get('description', 'Star Forming regions 3-D Modelling package')
+DESCRIPTION = metadata.get('description', 'Star Forming regions 3D Modelling package')
 AUTHOR = metadata.get('author', 'Andres Izquierdo')
 AUTHOR_EMAIL = metadata.get('author_email', 'andres.izquierdo.c@gmail.com')
 LICENSE = metadata.get('license', 'unknown')

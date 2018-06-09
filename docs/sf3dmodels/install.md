@@ -1,5 +1,5 @@
-Examples
---------
+Help
+====
 
 In this section some examples are shown to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Env_Disc`, type in your Python or IPython Command-Line the following commands:
 
@@ -9,7 +9,8 @@ In this section some examples are shown to illustrate the main features of the p
 >>> help(Model.density_Env_Disc)
 ```
 
-## Modelling a single star forming region
+Modelling a single star forming region
+=======================================
 
 **Example 1.** Creating a massive star forming region (with *Ulrich envelope + Pringle disc*):
 ```python
@@ -259,7 +260,8 @@ Edge-on and Face-on 3D distribution:
 
 <br>
 
-## Modelling multiple star forming regions
+Modelling multiple star forming regions
+=======================================
 
 **Example 1.** I will use the last two examples to illustrate how to join them in a *global grid*. The spatial region that is shared by two or more *sub-models* will inherit physical properties by weighting them with the local density, as explained in section 3.2 of Izquierdo et al (2018).
 
