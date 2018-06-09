@@ -28,7 +28,7 @@ Requirements
 Installation
 ------------
 
-Once you have installed the required packages please clone or download the star-forming-regions repository from [`GitHub https://github.com/andizq/star-forming-regions`](https://github.com/andizq/star-forming-regions) and go into the folder using the command line:
+Once you have installed the required packages please clone or `download`_  the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_ and go into the folder using the command line:
 
 ```bash
 cd /path/to/local/repository/
@@ -53,6 +53,7 @@ more information.
 
 
 .. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
+.. _download: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _View on Github: https://github.com/andizq/star-forming-regions/
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
