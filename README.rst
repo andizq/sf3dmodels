@@ -19,11 +19,11 @@ to carry out radiative transfer calculations of the model.
 Requirements
 ------------
 
-* [Matplotlib](https://matplotlib.org/users/installing.html)
-* [Numpy](https://www.scipy.org/install.html)
-* [Pandas](http://pandas.pydata.org/pandas-docs/stable/install.html)
-* [Astropy](http://docs.astropy.org/en/stable/install.html)
-* [IPython](https://ipython.org/install.html) (optional, but recommended)
+* `Matplotlib <https://matplotlib.org/users/installing.html>`_
+* `Numpy <https://www.scipy.org/install.html>`_
+* `Pandas <http://pandas.pydata.org/pandas-docs/stable/install.html>`_
+* `Astropy <http://docs.astropy.org/en/stable/install.html>`_
+* `IPython <https://ipython.org/install.html>`_ (optional, but recommended)
 
 Installation (from source)
 --------------------------
@@ -47,7 +47,7 @@ Using the command line go into the folder and run the ``setup.py`` installation 
 .. code-block:: bash
 
    $ cd /path/to/local/star-forming-regions/
-   $ python setup.py develop
+   $ python setup.py install
 
 
 License
