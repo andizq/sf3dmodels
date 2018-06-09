@@ -1,4 +1,4 @@
-`Documentation`_ | `View on Github`_ | `Download Stable ZIP`_  |  `Download Stable TAR`_
+`Documentation`_ | `View on Github`_ | `Download Stable ZIP`_
 
 Star Forming regions 3D Modelling package
 -----------------------------------------
@@ -24,8 +24,7 @@ which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
 
 
-.. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/zipball/stable
-.. _Download Stable TAR: https://github.com/andizq/star-forming-regions/tarball/stable
+.. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _View on Github: https://github.com/andizq/star-forming-regions/
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
