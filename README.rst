@@ -25,20 +25,27 @@ Requirements
 * [Astropy](http://docs.astropy.org/en/stable/install.html)
 * [IPython](https://ipython.org/install.html) (optional, but recommended)
 
-Installation
-------------
+Installation (from source)
+--------------------------
 
-Once you have installed the required packages please clone or `download`_  the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_ and go into the folder using the command line:
+Once you have installed the required packages please `download`_ or clone the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_:
 
-```bash
-cd /path/to/local/repository/
-```
+To clone the package, if you have a github account:
 
-Finally, run the following command:
+.. code-block:: bash
+   $ git clone git@github.com:andizq/star-forming-regions.git
 
-```bash
-python setup.py develop
-```
+if you don't have one:
+
+.. code-block:: bash
+   $ git clone https://github.com/andizq/star-forming-regions.git
+
+Using the command line go into the folder and run the setup.py installation script:
+
+.. code-block:: bash
+   $ cd /path/to/local/star-forming-regions/
+   $ python setup.py develop
+
 
 
 
