@@ -25,10 +25,10 @@ Requirements
 * [Astropy](http://docs.astropy.org/en/stable/install.html)
 * [IPython](https://ipython.org/install.html) (optional, but recommended)
 
-Installation process
---------------------
+Installation
+------------
 
-Once you have installed the required packages please clone or download the star-forming-regions repository from [https://github.com/andizq/star-forming-regions](https://github.com/andizq/star-forming-regions) (unzip it if necessary) and go into the folder using the Terminal:
+Once you have installed the required packages please clone or download the star-forming-regions repository from [`GitHub https://github.com/andizq/star-forming-regions`](https://github.com/andizq/star-forming-regions) and go into the folder using the command line:
 
 ```bash
 cd /path/to/local/repository/
