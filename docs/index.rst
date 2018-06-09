@@ -49,6 +49,9 @@ Using the command line go into the folder and run the ``setup.py`` installation 
    $ python setup.py install
 
 
+Examples
+========
+
 .. toctree::
   :maxdepth: 1
 
@@ -73,6 +76,7 @@ If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 201
 
   
 .. note:: Documentation under development.
+
 
 .. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
