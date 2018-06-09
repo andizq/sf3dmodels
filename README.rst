@@ -33,20 +33,21 @@ Once you have installed the required packages please `download`_ or clone the st
 To clone the package, if you have a github account:
 
 .. code-block:: bash
+
    $ git clone git@github.com:andizq/star-forming-regions.git
 
 if you don't have one:
 
 .. code-block:: bash
+
    $ git clone https://github.com/andizq/star-forming-regions.git
 
-Using the command line go into the folder and run the setup.py installation script:
+Using the command line go into the folder and run the ``setup.py`` installation script:
 
 .. code-block:: bash
+
    $ cd /path/to/local/star-forming-regions/
    $ python setup.py develop
-
-
 
 
 License
