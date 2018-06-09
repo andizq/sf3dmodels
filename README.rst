@@ -19,16 +19,16 @@ to carry out radiative transfer calculations of the model.
 Requirements
 ------------
 
+* `Astropy <http://docs.astropy.org/en/stable/install.html>`_
 * `Matplotlib <https://matplotlib.org/users/installing.html>`_
 * `Numpy <https://www.scipy.org/install.html>`_
 * `Pandas <http://pandas.pydata.org/pandas-docs/stable/install.html>`_
-* `Astropy <http://docs.astropy.org/en/stable/install.html>`_
 * `IPython <https://ipython.org/install.html>`_ (optional, but recommended)
 
 Installation (from source)
 --------------------------
 
-Once you have installed the required packages please `download`_ or clone the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_:
+`Download`_ or clone the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_:
 
 To clone the package, if you have a github account:
 
@@ -61,7 +61,12 @@ more information.
 
 
 .. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
-.. _download: https://github.com/andizq/star-forming-regions/archive/master.zip
+.. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _View on Github: https://github.com/andizq/star-forming-regions/
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
+
+Additional Links
+----------------
+
+If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 2018 <https://doi.org/10.1093/mnras/sty1096>` 
