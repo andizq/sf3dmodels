@@ -72,7 +72,7 @@ more information.
 Additional Links
 ----------------
 
-If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
+If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
 
   
 .. note:: Documentation under development.
