@@ -69,4 +69,4 @@ more information.
 Additional Links
 ----------------
 
-If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 2018 <https://doi.org/10.1093/mnras/sty1096>` 
+If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 2018 <https://doi.org/10.1093/mnras/sty1096>`_ 
