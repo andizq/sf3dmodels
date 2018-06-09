@@ -1,5 +1,5 @@
 Examples
---------
+========
 
 In this section some examples are shown to illustrate the main features of the package. Detailed information about modules, functions and parameters of specific models can be found in the help page of the package. For example, to see the help of the module `Model` and its function `density_Env_Disc`, type in your Python or IPython Command-Line the following commands:
 

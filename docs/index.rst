@@ -49,9 +49,6 @@ Using the command line go into the folder and run the ``setup.py`` installation 
    $ python setup.py install
 
 
-Examples
-========
-
 .. toctree::
   :maxdepth: 1
 
