@@ -60,13 +60,14 @@ which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
 
 
+Additional Links
+----------------
+
+If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
+
+
 .. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _View on Github: https://github.com/andizq/star-forming-regions/
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
-
-Additional Links
-----------------
-
-If you find the ``sf3dmodels`` package useful, please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
