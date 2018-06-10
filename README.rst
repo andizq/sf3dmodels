@@ -20,9 +20,8 @@ Requirements
 ------------
 
 * `Astropy <http://docs.astropy.org/en/stable/install.html>`__
-* `Matplotlib <https://matplotlib.org/users/installing.html>`_
 * `Numpy <https://www.scipy.org/install.html>`_
-* `Pandas <http://pandas.pydata.org/pandas-docs/stable/install.html>`_
+* `Matplotlib <https://matplotlib.org/users/installing.html>`_
 * `IPython <https://ipython.org/install.html>`_ (optional, but recommended)
 
 Installation (from source)
