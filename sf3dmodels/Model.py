@@ -1038,6 +1038,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
 class Make_Datatab(object):
    
     def __init__(self, prop, GRID):
+
         if len(np.shape(prop)) == 1: 
             self.prop = [prop]
             self.n = 1
@@ -1045,15 +1046,14 @@ class Make_Datatab(object):
             self.prop = prop
             self.n = len(prop)
         self.GRID = GRID
+        self.id = np.arange(GRID.NPoints)
         super(Make_Datatab, self).__init__()
     
-    def submodel(self, tag, format = False, folder = 'Subgrids'):
+    
+    def formatter(self, format, tmp = '%d'):
+
         fmt, type_fmt = format, type(format) 
-        os.system('mkdir %s'%folder)
-        file_path = './%s/datatab_%s.dat'%(folder,tag)
         nvec = xrange(self.n)
-        x,y,z = self.GRID.XYZ
-        tmp = '%d %e %e %e'
 
         if type_fmt == str: #If a single format is provided
             print ("Using format '%s'"%fmt) 
@@ -1066,71 +1066,54 @@ class Make_Datatab(object):
             print ("Using default format '%e'")
             for i in nvec: tmp += ' %e' #Default format for all properties
         else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid 'format_list' object (str, list or np.ndarray)"%type_fmt)
-
         tmp += '\n'
+        return tmp
+
+    def submodel(self, tag, format = False, folder = 'Subgrids'):        
+
+        os.system('mkdir %s'%folder)
+        file_path = './%s/datatab_%s.dat'%(folder,tag)
+        x,y,z = self.GRID.XYZ
+        
+        tmp = self.formatter(format, tmp = '%d %.8e %.8e %.8e')
         tmp_write = []
         if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
-        id = np.arange(self.GRID.NPoints)
-        list2write = iter(np.array([id,x,y,z] + self.prop).T)
+        list2write = iter(np.array([self.id,x,y,z] + self.prop).T)
         file = open(file_path, 'w')
-        print ('Writing Submodel data on %s'%file_path)        
-        for i in id:    
-            tmp_write.append( tmp % tuple(next(list2write)) )
+        print ('Writing Submodel data in %s'%file_path)        
+        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
         
         file.writelines(tmp_write)
 
                 
 class Lime(Make_Datatab):
-    def __init__(self, hola, prop, GRID):
-        self.hola = hola
+    def __init__(self, prop, GRID):
         super(Lime, self).__init__(prop, GRID)
 
-def Make_Datatab1(prop_list, GRID, format_list = False, 
-                 submodel_tag = False, submodel_folder = 'Subgrids', 
-                 lime = True, radmc3d = False):
-    
-    import pandas
-    n = len(prop_list)
+    def globalgrid(self, format = False, folder = './'):
+        Ns = self.GRID.Nodes
+        files = [folder+file for file in ['datatab.dat','x.dat','y.dat','z.dat']]
+        size_file = folder+'npoints.dat'
+        sfile = open(size_file,'w') 
+        print ('Writing grid size in %s'%size_file)
+        sfile.write("%d %d %d %d"%(Ns[0], Ns[1], Ns[2], self.GRID.NPoints))
+        sfile.close()
 
-    if submodel_tag:
-        
-        fold, tag, fmt, type_fmt = submodel_folder, submodel_tag, format_list, type(format_list)
-        os.system('mkdir %s'%fold)
-        file_path = './%s/datatab_%s.dat'%(fold,tag)
-        x,y,z = GRID.XYZ
-        tmp = '%d %e %e %e'
-
-        if type_fmt == str: #If a single format is provided
-            print ("Using format '%s'"%fmt) 
-            for i in range(n): tmp += ' '+fmt #The same format for all properties
-        elif type_fmt == list or type_fmt == np.ndarray: #If a list of formats
-            if len(fmt) != n: sys.exit('ERROR: The number of formats provided (%d) is not equal to the number of properties to be written (%d)'%(len(fmt),n))
-            print ('Using format list:', fmt) 
-            for f in fmt: tmp += ' '+f
-        elif not fmt: #If False
-            print ("Using default format '%e'")
-            for i in range(n): tmp += ' %e' #Default format for all properties
-        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid 'format_list' object (str, list or np.ndarray)"%type_fmt)
-
-        tmp += '\n'
+        tmp = self.formatter(format)
         tmp_write = []
-        if type(prop_list) == np.ndarray: prop_list = prop_list.tolist()
-        id = np.arange(GRID.NPoints)
-        list2write = iter(np.array([id,x,y,z] + prop_list).T)
-        file = open(file_path, 'w')
-        print ('Writing Submodel data on %s'%file_path)        
-        for i in id:    
-            tmp_write.append( tmp % tuple(next(list2write)) )
-        
+        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
+        list2write = iter(np.array([self.id] + self.prop).T)
+        file = open(files[0],'w')
+        print ('Writing Global grid data in %s'%files[0])        
+        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
+    
         file.writelines(tmp_write)
+        print (files)
+        for i in xrange(1,4):
+            print ('Writing spatial domain in %s'%files[i])
+            np.savetxt(files[i], self.GRID.XYZgrid[i-1], fmt = '%.8e')
             
-    else:
-        if lime:
-            pass
-        if radmc3d:
-            pass
 
-    file.close()
 def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
     
     import pandas
@@ -1277,3 +1260,50 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
     
+
+def Make_Datatab1(prop_list, GRID, format_list = False, 
+                 submodel_tag = False, submodel_folder = 'Subgrids', 
+                 lime = True, radmc3d = False):
+    
+    import pandas
+    n = len(prop_list)
+
+    if submodel_tag:
+        
+        fold, tag, fmt, type_fmt = submodel_folder, submodel_tag, format_list, type(format_list)
+        os.system('mkdir %s'%fold)
+        file_path = './%s/datatab_%s.dat'%(fold,tag)
+        x,y,z = GRID.XYZ
+        tmp = '%d %e %e %e'
+
+        if type_fmt == str: #If a single format is provided
+            print ("Using format '%s'"%fmt) 
+            for i in range(n): tmp += ' '+fmt #The same format for all properties
+        elif type_fmt == list or type_fmt == np.ndarray: #If a list of formats
+            if len(fmt) != n: sys.exit('ERROR: The number of formats provided (%d) is not equal to the number of properties to be written (%d)'%(len(fmt),n))
+            print ('Using format list:', fmt) 
+            for f in fmt: tmp += ' '+f
+        elif not fmt: #If False
+            print ("Using default format '%e'")
+            for i in range(n): tmp += ' %e' #Default format for all properties
+        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid 'format_list' object (str, list or np.ndarray)"%type_fmt)
+
+        tmp += '\n'
+        tmp_write = []
+        if type(prop_list) == np.ndarray: prop_list = prop_list.tolist()
+        id = np.arange(GRID.NPoints)
+        list2write = iter(np.array([id,x,y,z] + prop_list).T)
+        file = open(file_path, 'w')
+        print ('Writing Submodel data on %s'%file_path)        
+        for i in id:    
+            tmp_write.append( tmp % tuple(next(list2write)) )
+        
+        file.writelines(tmp_write)
+            
+    else:
+        if lime:
+            pass
+        if radmc3d:
+            pass
+
+    file.close()
