@@ -10,6 +10,7 @@ yr = 31557600 #s
 AU = 1.495978707e11 #m
 PC = 206264.806247 #pc to au
 MSun_yr = MSun/yr #kg/s
+cm = 100. #m
 
 Mu = 1.6726219e-27 #kg ->proton mass
 G = 6.67384e-11 #(N m^2 kg^-2)Cavendish-gravitational constant

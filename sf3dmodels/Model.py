@@ -3,7 +3,6 @@ from .Utils import *
 
 import numpy as np
 import random
-import pandas as pd
 import inspect
 import time
 import sys
@@ -57,7 +56,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False):
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in xrange(3)]
         #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in xrange(3)]
         X, Y ,Z = XYZgrid #The grid must contain an extra node but...
-        X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] )
+        X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] ) #Moving the node from the corner to the center of the boxel
         Y = 0.5 * ( Y[0:NP[1]] + Y[1:NP[1]+1] )  
         Z = 0.5 * ( Z[0:NP[2]] + Z[1:NP[2]+1] )
   
@@ -1049,7 +1048,6 @@ class Make_Datatab(object):
         self.id = np.arange(GRID.NPoints)
         super(Make_Datatab, self).__init__()
     
-    
     def formatter(self, format, tmp = '%d'):
 
         fmt, type_fmt = format, type(format) 
@@ -1079,90 +1077,198 @@ class Make_Datatab(object):
         tmp_write = []
         if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
         list2write = iter(np.array([self.id,x,y,z] + self.prop).T)
-        file = open(file_path, 'w')
         print ('Writing Submodel data in %s'%file_path)        
         for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
-        
-        file.writelines(tmp_write)
+        file_data = open(file_path, 'w')        
+        file_data.writelines(tmp_write)
 
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
                 
+
 class Lime(Make_Datatab):
     def __init__(self, prop, GRID):
+        print ('Set LIME format')
         super(Lime, self).__init__(prop, GRID)
 
     def globalgrid(self, format = False, folder = './'):
+        
+        tmp = self.formatter(format)
+        tmp_write = []
+        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
+        list2write = iter(np.array([self.id] + self.prop).T)
+        files = [folder + tag for tag in ['datatab.dat','x.dat','y.dat','z.dat']]
+        print ('Writing Global grid data in %s'%files[0])        
+        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
+        file_data = open(files[0],'w')
+        file_data.writelines(tmp_write)
+
         Ns = self.GRID.Nodes
-        files = [folder+file for file in ['datatab.dat','x.dat','y.dat','z.dat']]
         size_file = folder+'npoints.dat'
         sfile = open(size_file,'w') 
         print ('Writing grid size in %s'%size_file)
         sfile.write("%d %d %d %d"%(Ns[0], Ns[1], Ns[2], self.GRID.NPoints))
         sfile.close()
 
-        tmp = self.formatter(format)
-        tmp_write = []
-        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
-        list2write = iter(np.array([self.id] + self.prop).T)
-        file = open(files[0],'w')
-        print ('Writing Global grid data in %s'%files[0])        
-        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
-    
-        file.writelines(tmp_write)
-        print (files)
+        print ('Writing space domain in:')
         for i in xrange(1,4):
-            print ('Writing spatial domain in %s'%files[i])
+            print ('%s'%files[i])
             np.savetxt(files[i], self.GRID.XYZgrid[i-1], fmt = '%.8e')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+    
+class Radmc3d(object): #RADMC-3D uses the cgs units system
+    """
+    def __init__(self, prop, GRID):
+        print ('Set RADMC-3D format')
+        super(Radmc3d, self).__init__(prop, GRID)
+    """
+    
+    def __init__(self, prop_dict, GRID, amr_grid = False, nphot = 1000000):
+        print ('Set RADMC-3D format')
+        self.prop = prop_dict
+        self.GRID = GRID
+        self.amr_grid = amr_grid
+        self.nphot = nphot
+        self.nx, self.ny, self.nz = GRID.Nodes
+        self.nn = self.nx * self.ny * self.nz
+        self.xi, self.yi, self.zi = np.array(GRID.XYZgrid) * cm #from m to cm
+        
+    def write_amr_grid(self, iformat = 1, 
+                       grid_style = 0, 
+                       coord_system = 0,
+                       grid_info = 0, 
+                       include_dim = [1,1,1]):
+        
+        #------------------------
+        #Write the grid-info file
+        #------------------------
+        if not self.amr_grid:
+            with open('amr_grid.inp','w+') as f:
+                f.write('%s\n'%iformat)                             # iformat
+                f.write('%s\n'%grid_style)                          # AMR grid style  (0=regular grid, no AMR)
+                f.write('%s\n'%coord_system)                        # Coordinate system
+                f.write('%s\n'%grid_info)                           # grid_info
+                f.write('%s %s %s\n'%tuple(include_dim))            # Include x,y,z coordinate
+                f.write('%d %d %d\n'%(self.nx,self.ny,self.nz))     # Size of grid
+                for value in self.xi: f.write('%13.6e\n'%(value))   # X coordinates (cell walls)
+                for value in self.yi: f.write('%13.6e\n'%(value))   # Y coordinates (cell walls)
+                for value in self.zi: f.write('%13.6e\n'%(value))   # Z coordinates (cell walls)
+                f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+        
+    def write_electron_numdens(self, dens_elect, format = '%13.6e'):
+
+        #---------------------------------
+        #Write the electronic density file
+        #---------------------------------
+        with open('electron_numdens.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = dens_elect.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            dens_elect.tofile(f, sep='\n', format=format)
+            f.write('\n')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_ion_numdens(self, dens_ion, format = '%13.6e'):
+
+        #--------------------------
+        #Write the ion density file
+        #--------------------------
+        with open('ion_numdens.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = dens_ion.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            dens_ion.tofile(f, sep='\n', format=format)
+            f.write('\n')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_gas_temperature(self, tgas, format = '%13.6e'):
+        
+        #-------------------------
+        #Write the gas temperature
+        #-------------------------
+        with open('gas_temperature.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            tgas.tofile(f, sep='\n', format=format)
+            f.write('\n')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_radmc3d_control(self, scattering_mode_max = 1, 
+                              incl_freefree = 1,
+                              incl_dust = 1,
+                              tgas_eq_tdust = 1):
+
+        #----------------------------------
+        #Write the radmc3d.inp control file
+        #----------------------------------
+        with open('radmc3d.inp','w+') as f:
+            f.write('nphot = %d\n'%(self.nphot))
+            f.write('scattering_mode_max = %s\n'%scattering_mode_max)   # Put this to 1 for isotropic scattering
+            f.write('incl_freefree = %s\n'%incl_freefree)
+            f.write('incl_dust = %s\n'%incl_dust)
+            f.write('tgas_eq_tdust = %s'%tgas_eq_tdust)
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_wavelength_micron(self, lam = [5e2,2e4,4e4,3e5], nxx = [50,50,50], format = '%13.6e'):
+
+        #------------------------------------
+        #Write the wavelength_micron.inp file
+        #------------------------------------
+        len_lam = len(lam)
+        if len_lam - 1 == len(nxx):
+            lam_list = [np.logspace(np.log10(lam[i]),
+                                    np.log10(lam[i+1]),
+                                    nxx[i], endpoint=False) 
+                        for i in xrange(len_lam-2)]
+            lam_list.append(np.logspace(np.log10(lam[-2]),
+                                        np.log10(lam[-1]),
+                                        nxx[-1], endpoint=True))
+            lam_list = np.concatenate(lam_list)
+            nlam = lam_list.size
+            with open('wavelength_micron.inp','w+') as f:
+                f.write('%d\n'%(nlam))
+                tmp = format+'\n'
+                for value in lam_list: f.write(tmp%(value))
+
+        else: sys.exit("ERROR: Wrong length(s) for input list(s): len(lam)-1 must be equal to len(nxx)")
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+        
+    def freefree(self, format = '%13.6e', folder = './'):
+
+        prop = {} #Created a new dict bcause dont want to modify the self.prop variable at the minute
+        prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
+        prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
+        prop['tgas'] = self.prop['tgas']
+        
+        self.write_amr_grid()
+        self.write_electron_numdens(prop['dens_elect'], format=format)
+        self.write_ion_numdens(prop['dens_ion'], format=format)
+        self.write_gas_temperature(prop['tgas'])
+        self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
+        self.write_wavelength_micron()
             
-
-def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
-    
-    import pandas
-
-    if is_submodel:
-        os.system('mkdir Subgrids')
-        file0 = './Subgrids/datatab%s.dat'%tag
-        file = open(file0,'w')
-        x,y,z = GRID.XYZ
-        print ('Writing Submodel data on %s'%file0)
-        tmp = []
-        for i in xrange(GRID.NPoints): 
-            #file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
-             #          (i,x[i],y[i],z[i],dens[i],temp[i],vel['x'][i],vel['y'][i],vel['z'][i],abund[i],gtd[i]))
-            tmp.append( "%d %e %e %e %e %e %e %e %e %e %e\n"% (i,x[i],y[i],z[i],dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
-        file.writelines(tmp)
-        
-    else:
-        files=['datatab.dat','x.dat','y.dat','z.dat']
-        sizefile='./npoints.dat'
-        print ('Writing grid size on %s'%sizefile)
-        sfile = open(sizefile,'w') 
-        Ns = GRID.Nodes
-        sfile.write("%d %d %d %d"%(Ns[0],Ns[1],Ns[2],GRID.NPoints))
-        print ('Writing data on %s'%files[0])
-        file = open(files[0],'w')
-
-        for i in xrange(GRID.NPoints): 
-            file.write("%d %e %e %e %e %e %e %e\n"%
-                       (i,dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
-
-        df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
-    
-        for i in xrange(1,4):
-            print ('Writing data on %s'%files[i])
-            df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
-        
-        sfile.close()
-        
-    file.close()
-    
-    print ('%s is done!'%inspect.stack()[0][3])
-    print ('-------------------------------------------------\n-------------------------------------------------')
-
-#--------------
-#--------------
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
 
 #-----------------------------
-#WRITING DATA (RADMC-3d v0.41)
+#WRITING DATA (RADMC-3D v0.41)
 #-----------------------------
 
 def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
@@ -1259,7 +1365,56 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
     
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
+
+#-------------
+#-------------
+
+def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
     
+    import pandas
+
+    if is_submodel:
+        os.system('mkdir Subgrids')
+        file0 = './Subgrids/datatab%s.dat'%tag
+        file = open(file0,'w')
+        x,y,z = GRID.XYZ
+        print ('Writing Submodel data on %s'%file0)
+        tmp = []
+        for i in xrange(GRID.NPoints): 
+            #file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
+             #          (i,x[i],y[i],z[i],dens[i],temp[i],vel['x'][i],vel['y'][i],vel['z'][i],abund[i],gtd[i]))
+            tmp.append( "%d %e %e %e %e %e %e %e %e %e %e\n"% (i,x[i],y[i],z[i],dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        file.writelines(tmp)
+        
+    else:
+        files=['datatab.dat','x.dat','y.dat','z.dat']
+        sizefile='./npoints.dat'
+        print ('Writing grid size on %s'%sizefile)
+        sfile = open(sizefile,'w') 
+        Ns = GRID.Nodes
+        sfile.write("%d %d %d %d"%(Ns[0],Ns[1],Ns[2],GRID.NPoints))
+        print ('Writing data on %s'%files[0])
+        file = open(files[0],'w')
+
+        for i in xrange(GRID.NPoints): 
+            file.write("%d %e %e %e %e %e %e %e\n"%
+                       (i,dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+
+        df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
+    
+        for i in xrange(1,4):
+            print ('Writing data on %s'%files[i])
+            df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
+        
+        sfile.close()
+        
+    file.close()
+    
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+#--------------
+#--------------    
 
 def Make_Datatab1(prop_list, GRID, format_list = False, 
                  submodel_tag = False, submodel_folder = 'Subgrids', 
