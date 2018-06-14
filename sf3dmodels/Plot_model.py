@@ -31,7 +31,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     palette_c = getattr(cm , kwargs['cmap'])
 
     #population = range(NTotal) #All the population
-    population = list( np.where(abs(prop) > 2)[0] ) #Rejecting zero cells 
+    population = list( np.where(abs(prop) > 1e3)[0] ) # > 2. #Rejecting zero cells 
 
     indices = []
     power = 0.6
