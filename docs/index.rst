@@ -8,8 +8,8 @@ This is the documentation for the SF3dmodels package.
     :alt: Powered by Astropy Badge
 
 SF3dmodels is a star forming region(s) modelling package that brings together
-analytical models in order to compute their physical properties in a 3D grid. The
-package can couple different models in a single grid to recreate complex star
+analytical models in order to compute their physical properties in a 3-dimensional grid. 
+The package can couple different models in a single grid to recreate complex star
 forming systems as those being revealed by current instruments. 
 The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ 
 or `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ 
@@ -19,9 +19,8 @@ Requirements
 ------------
 
 * `Astropy <http://docs.astropy.org/en/stable/install.html>`__
-* `Matplotlib <https://matplotlib.org/users/installing.html>`_
 * `Numpy <https://www.scipy.org/install.html>`_
-* `Pandas <http://pandas.pydata.org/pandas-docs/stable/install.html>`_
+* `Matplotlib <https://matplotlib.org/users/installing.html>`_
 * `IPython <https://ipython.org/install.html>`_ (optional, but recommended)
 
 Installation (from source)
