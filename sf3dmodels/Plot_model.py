@@ -12,12 +12,12 @@ import inspect
 import sys
 
 
-def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0,
+def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
               colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True, **kwargs):
 
     print ('Plotting 3D model with %d random-weighted points...'%NRand)
 
-    defaults = dict(marker = '+', cmap = 'hot', s = 5)
+    defaults = dict(marker = '+', cmap = 'hot', s = 3)
     for key_def in defaults.keys():
         if key_def in kwargs.keys(): continue
         else: kwargs[key_def] = defaults[key_def]
@@ -31,10 +31,9 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     palette_c = getattr(cm , kwargs['cmap'])
 
     #population = range(NTotal) #All the population
-    population = list( np.where(abs(prop) > 1e3)[0] ) # > 2. #Rejecting zero cells 
+    population = list( np.where(abs(prop) > 2)[0] ) # > 1e3. #Rejecting zero cells 
 
     indices = []
-    power = 0.6
     count = 0
 
     for i in range(NRand):

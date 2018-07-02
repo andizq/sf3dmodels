@@ -52,7 +52,7 @@ densEnv = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = False, 
 #-------
 #DISC
 #-------
-H0sf = 0.03 #Disc scale height factor (H0 = 0.03 * RStar)
+H0sf = 0.03 #Disc scale height factor (H0 = H0sf * RStar)
 Arho = 5.25
 Rdisc = 1.5 * Rd
 densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag = True, 
@@ -63,6 +63,8 @@ densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag 
 density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
                             'disc': densDisc.total, 
                             'env': densEnv.total,
+                            'H': densDisc.H,
+                            'Rt': densDisc.Rt,
                             'discFlag': True,
                             'envFlag': True,
                             'r_disc': densDisc.r_disc, 
@@ -75,8 +77,8 @@ density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
 T10Env = 250. #Envelope temperature at 10 AU
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, H0sf, Tmin, 
-                                           BT, None, density, GRID, inverted = False)
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, Tmin, 
+                                           BT, density, GRID, inverted = False)
 
 #--------
 #VELOCITY
@@ -113,7 +115,7 @@ print ('-------------------------------------------------\n---------------------
 #----------------------------------------
 tag = 'Burger'
 weight = 10*T10Env
-Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, palette = 'hot', 
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, cmap = 'hot', 
                      colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'totalPoints%s.png'%tag, show = True)
 
 

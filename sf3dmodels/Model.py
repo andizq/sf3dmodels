@@ -326,7 +326,6 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False,
     return Struct( **{'total': RHO, 'disc': rhoDISC, 'env': rhoENV, 'discFlag': discFlag, 'envFlag': envFlag, 
                       'r_disc': rdisc_max, 'r_env': renv_max, 'streamline': costheta0} )
 
-
 #-------------------
 #-------------------
 
@@ -334,13 +333,15 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False,
 #DENSITY (Hamburguers) FUNCTION
 #------------------------------
 
-def density_Hamburgers(RStar, shFactor, Rd, rhoE0, Arho, GRID, discFlag=True, rdisc_max = False):
+def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID, 
+                       p = 2.25, q = 0.5, 
+                       Rt = False, discFlag=True, rdisc_max = False):
 
 #RStar: Star radius
-#shFactor: H0 = shFactor * RStar
-#Rd: Centrifugal radius
+#shFactor: Scaleheight normalization constant: H0 = shFactor * RStar
+#Ro: Outer radius of the disk
 #rhoE0: density at Rd and theta=pi/2
-#Arho: Factor between envelope and disk densities
+#Arho: Density factor 
 #GRID
 
     XYZ, rRTP = GRID.XYZ, GRID.rRTP
@@ -351,20 +352,22 @@ def density_Hamburgers(RStar, shFactor, Rd, rhoE0, Arho, GRID, discFlag=True, rd
     zList = XYZ[2]
     rList, RList = rRTP[:-2] 
 
-    #----------------------------------------------
-    #MODEL. Galvan-Madrid, A. Izquierdo (2017)
-    #----------------------------------------------
+    #-----------------------------------------------------
+    #MODEL. Chin-Fei Lee, Zhi-Yun Li, Paul Ho, et al. 2017
+    #-----------------------------------------------------
 
     #------------
     #DISC PROFILE
     #------------
     if discFlag:
         print ('Calculating Burger-disc density...')
-        if not rdisc_max: rdisc_max = Rd
+        if not rdisc_max: rdisc_max = Ro
         rhoD0 = Arho * rhoE0 
         H0 = shFactor * RStar
-        H = H0 * (RList / RStar)**1.25  #Scaleheight
-        rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (Rd / RList)**2.25 * np.exp(-0.5 * zList**2 / H**2), 1.0)
+        print ('Scaleheight normalization constant:', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
+        H = H0 * (RList / RStar)**(1 + 0.5*(1-q)) #Scaleheight, with no tapering 
+        if Rt: H = H * np.exp(-((RList-Rt) / (Ro-Rt))**2)  #Scaleheight, with tapering 
+        rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (RList / Ro)**-p * np.exp(-0.5 * zList**2 / H**2), 1.0)
         rhoDISC = np.where( rhoDISC < 1.0, 1.0, rhoDISC)
     else: 
         print ('No Disc was invoked!')
@@ -376,7 +379,8 @@ def density_Hamburgers(RStar, shFactor, Rd, rhoE0, Arho, GRID, discFlag=True, rd
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
-    return Struct( **{'total': rhoDISC, 'disc': rhoDISC, 'env': 0., 'discFlag': True, 'envFlag': False, 'r_disc': rdisc_max, 'r_env': False} ) 
+    return Struct( **{'total': rhoDISC, 'disc': rhoDISC, 'env': 0., 'H': H,  
+                      'discFlag': discFlag, 'envFlag': False, 'Rt': Rt, 'r_disc': rdisc_max, 'r_env': False} ) 
 
 #------------------------------
 #------------------------------
@@ -647,7 +651,8 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
 #TEMPERATURE (Hamburgers) FUNCTION
 #---------------------------------
 
-def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, shFactor, T_min, BT, p, density, GRID, inverted = False):
+def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, T_min, BT, density, GRID, 
+                           p = 0.33, inverted = False):
 
 #TStar: Star temperature
 #T10Env: Envelope temperature at 10AU
@@ -665,9 +670,9 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, shFactor, T_m
     rList, RList = rRTP[:-2] 
     rhoDISC, rhoENV = density.disc, density.env
 
-    #-----------------------------------------
-    #MODEL. Galvan-Madrid, A. Izquierdo (2017)
-    #-----------------------------------------
+    #-----------------------------------------------------------
+    #MODEL. Galvan-Madrid et al. 2018 + Chin-Fei Lee et al. 2017
+    #-----------------------------------------------------------
 
     #------------
     #DISC Profile
@@ -675,20 +680,24 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, shFactor, T_m
     if density.discFlag:
         print ('Calculating Burger-disc temperature...')
         zList = XYZ[2]
-        rdisc = density.r_disc
-        H0 = shFactor * RStar 
-        H = H0 * (RList / RStar)**1.25  #Whitney et al. (2003)
-        
+        Rdisc = density.r_disc
+        H = density.H
+        T_R = BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25
+
         if inverted: 
             print ('Set inverted temperature for Burger-disc...')
-            tempDISC = np.where( RList <= rdisc, ( BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25
-                                                   * np.exp(- 0.5 * zList**2 / H**2) ), 1.0) #Maximum in z = 0
+            if density.Rt: 
+                tempDISC = np.where( RList < density.Rt, T_R * np.exp(- 0.5 * zList**2 / H**2), 1.0) 
+                tempDISC = np.where( (RList >= density.Rt) & (RList <= Rdisc), T_R, tempDISC)
+            else: tempDISC = np.where( RList <= Rdisc, T_R * np.exp(- 0.5 * zList**2 / H**2), 1.0) #Maximum in z = 0
         else: 
             print ('Set not inverted temperature for Burger-disc...')
-            tempDISC = np.where( RList <= rdisc, ( BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25 
-                                                   * np.exp(- 0.5  * (abs(zList) - H)**2 / H**2) ), 1.0) #Maximum in z = H
+            if density.Rt: 
+                tempDISC = np.where( RList < density.Rt, T_R * np.exp(- 0.5 * (abs(zList) - H)**2 / H**2), 1.0) 
+                tempDISC = np.where( (RList >= density.Rt) & (RList <= Rdisc), T_R, tempDISC)
+            else: tempDISC = np.where( RList <= Rdisc, T_R * np.exp(- 0.5 * (abs(zList) - H)**2 / H**2), 1.0) #Maximum in z = H
 
-        tempDISC = np.where( (RList <= rdisc) & (tempDISC <= T_min), T_min, tempDISC)
+        tempDISC = np.where( (RList <= Rdisc) & (tempDISC <= T_min), T_min, tempDISC)
 
     else: tempDISC = 1.
 
@@ -698,7 +707,7 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, shFactor, T_m
     if density.envFlag:
         print ('Calculating Envelope temperature...')
         renv = density.r_env
-        tempENV = np.where( rList <= renv, T10Env * 10**0.33 * (rList / AU)**-0.33, 1.0)
+        tempENV = np.where( rList <= renv, T10Env * 10**p * (rList / AU)**-p, 1.0)
         #tempENV = TStar * (RStar / (2.*rList))**(2. / (4+p))
     else: tempENV = 1.
     
