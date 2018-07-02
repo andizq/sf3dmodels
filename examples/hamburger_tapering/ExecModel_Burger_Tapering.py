@@ -126,7 +126,6 @@ norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
                    norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensVertical_%s.png'%tag, show = False)
 
-
 vmin, vmax = np.array([27, 1e3])
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 

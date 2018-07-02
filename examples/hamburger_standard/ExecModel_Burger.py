@@ -9,6 +9,7 @@ from sf3dmodels import *
 #-----------------
 #Extra libraries
 #-----------------
+from matplotlib import colors
 import numpy as np
 import os
 import time
@@ -114,8 +115,45 @@ print ('-------------------------------------------------\n---------------------
 #3D PLOTTING (weighting with temperature)
 #----------------------------------------
 tag = 'Burger'
+dens_plot = density.total / 1e6
+
 weight = 10*T10Env
-Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, cmap = 'hot', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'totalPoints%s.png'%tag, show = True)
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = dens_plot , axisunit = U.AU, cmap = 'hot', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'totalPoints%s.png'%tag, show = False)
+
+#----------------------------------------
+#2D PLOTTING (Density and Temperature)
+#----------------------------------------
+
+vmin, vmax = np.array([1e12, 1e17]) / 1e6
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'z': 0*U.AU},
+                   norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensMidplane_%s.png'%tag, show = False)
+
+vmin, vmax = np.array([1e11, 5e15]) / 1e6
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
+                   norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensVertical_%s.png'%tag, show = False)
+
+vmin, vmax = np.array([5e1, 3e3])
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, temperature.total, axisunit = U.AU, cmap = 'ocean_r', plane = {'z': 0*U.AU},
+                   norm = norm, colorlabel = r'[Kelvin]', output = 'TempMidplane_%s.png'%tag, show = False)
+
+vmin, vmax = np.array([5e1, 2e3])
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, temperature.total, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
+                   norm = norm, colorlabel = r'[Kelvin]', output = 'TempVertical_%s.png'%tag, show = False)
+
+
+vmin, vmax = np.array([3e7, 5e12])
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, temperature.total * dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
+                   norm = norm, colorlabel = r'[$\rho$ T]', output = 'Emissivity_%s.png'%tag, show = False)
 
 
