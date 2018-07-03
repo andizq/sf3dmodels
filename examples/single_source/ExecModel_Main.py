@@ -9,6 +9,7 @@ from sf3dmodels import *
 #-----------------
 #Extra libraries
 #-----------------
+from matplotlib import colors
 import numpy as np
 import os
 import time
@@ -33,7 +34,7 @@ print ('RStar:', RStar/U.RSun,', LStar:', LStar/U.LSun, ', TStar:', TStar)
 #Cubic grid, each edge ranges [-500, 500] AU.
 
 sizex = sizey = sizez = 500 * U.AU
-Nx = Ny = Nz = 150 #Number of divisions for each axis
+Nx = Ny = Nz = 200 #Number of divisions for each axis
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
 
@@ -89,8 +90,25 @@ print ('-------------------------------------------------\n---------------------
 #3D PLOTTING (weighting with density)
 #------------------------------------
 tag = 'Main'
+dens_plot = density.total / 1e6
+
 weight = 10*Rho0
 r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, palette = 'jet', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', output = 'totalPoints%s.png'%tag, show = True)
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, cmap = 'jet', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', output = '3Dpoints%s.png'%tag, show = False)
 
+#---------------------
+#2D PLOTTING (Density)
+#---------------------
+
+vmin, vmax = np.array([2e13, 1e19]) / 1e6
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'jet', plane = {'z': 0*U.AU},
+                   norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensMidplane_%s.png'%tag, show = False)
+
+vmin, vmax = np.array([1e13, 3e17]) / 1e6
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
+Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'jet', plane = {'y': 0*U.AU},
+                   norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensVertical_%s.png'%tag, show = False)

@@ -63,8 +63,10 @@ densDisc = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag 
 density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
                             'disc': densDisc.total, 
                             'env': densEnv.total,
+                            'H': densDisc.H,
                             'discFlag': True,
                             'envFlag': True,
+                            'Rt': densDisc.Rt,
                             'r_disc': densDisc.r_disc, 
                             'r_env': densEnv.r_env,
                             'streamline': densEnv.streamline} )
@@ -75,8 +77,8 @@ density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
 T10Env = 250. #Envelope temperature at 10 AU
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, H0sf, Tmin, 
-                                           BT, None, density, GRID, inverted = False)
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, Tmin, 
+                                           BT, density, GRID, inverted = False)
 
 #--------
 #VELOCITY
@@ -131,7 +133,7 @@ print ('-------------------------------------------------\n---------------------
 #----------------------------------------
 tag = 'Burger'
 weight = 10*T10Env
-Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, palette = 'hot', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'totalPoints%s.png'%tag, show = True)
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, cmap = 'hot', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = '3Dpoints%s.png'%tag, show = True)
 
 

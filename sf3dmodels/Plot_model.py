@@ -17,7 +17,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
 
     print ('Plotting 3D model with %d random-weighted points...'%NRand)
 
-    defaults = dict(marker = '+', cmap = 'hot', s = 3)
+    defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none')
     for key_def in defaults.keys():
         if key_def in kwargs.keys(): continue
         else: kwargs[key_def] = defaults[key_def]
@@ -31,7 +31,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     palette_c = getattr(cm , kwargs['cmap'])
 
     #population = range(NTotal) #All the population
-    population = list( np.where(abs(prop) > 2)[0] ) # > 1e3. #Rejecting zero cells 
+    population = list( np.where(abs(prop) > 2.725)[0] ) # > 1e3. #Rejecting zero cells 
 
     indices = []
     count = 0
@@ -93,7 +93,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
-
+    return prop2plot
 
 def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False, 
             colorlabel = '', output = 'figplane.png', show = True, auto = True, **kwargs):

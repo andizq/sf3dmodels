@@ -108,7 +108,7 @@ dens_plot = density.total / 1e6
 weight = 5000. #Kelvin
 norm = colors.LogNorm()
 Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, cmap = 'ocean_r', 
-                     norm = norm, power = 0.8, colorlabel = r'$\rho [cm^{-3}]$', output = 'totalPoints%s.png'%tag, show = False)
+                     norm = norm, power = 0.8, colorlabel = r'$\rho [cm^{-3}]$', output = '3Dpoints%s.png'%tag, show = False)
 
 #----------------------------------------
 #2D PLOTTING (Density and Temperature)

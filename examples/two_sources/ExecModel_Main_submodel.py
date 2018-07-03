@@ -109,5 +109,5 @@ print ('-------------------------------------------------\n---------------------
 tag = 'Main'
 weight = 10*Rho0
 r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, palette = 'jet', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', output = 'totalPoints%s.png'%tag, show = True)
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, cmap = 'jet', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', output = '3Dpoints%s.png'%tag, show = True)

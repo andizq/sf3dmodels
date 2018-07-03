@@ -63,5 +63,9 @@ Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
 #------------------------------------
 tag = 'plsphere_HII'
 weight = 10*rho_s
-#Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
-#                     colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = '%s.png'%tag, show = True)
+
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, cmap = 'jet', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}$($n_{\rm e}$ [cm$^{-3}$])', output = '3Ddens_%s.png'%tag, show = True)
+
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = U.AU, cmap = 'binary', marker = 'o', s = 4,
+                     colorscale = 'uniform', colorlabel = r'$T_{\rm e}$ [Kelvin]', output = '3Dtemp_%s.png'%tag, show = True)

@@ -8,6 +8,7 @@ from sf3dmodels import *
 #-----------------
 #Extra libraries
 #-----------------
+from matplotlib import colors
 import numpy as np
 import time
 
@@ -85,7 +86,12 @@ Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
 #------------------------------------
 tag = 'keto+disc_HII'
 weight = rho_s
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, palette = 'jet', 
-                     colorscale = 'log', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', output = '%s.png'%tag, show = True)
+
+norm = colors.LogNorm()
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, cmap = 'jet', 
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}$($n_{\rm e}$ [cm$^{-3}$])', output = '3Ddens_%s.png'%tag, show = True)
+
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = U.AU, cmap = 'jet', marker = 'o',
+                     colorscale = 'uniform', colorlabel = r'$T_{\rm e}$ [Kelvin]', output = '3Dtemp_%s.png'%tag, show = True)
 
 

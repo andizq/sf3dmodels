@@ -32,11 +32,11 @@ weight = 400 * np.mean(density)
 #-----------------
 #Plot for DENSITY
 #-----------------
-Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = U.AU, colorscale = 'log', palette = 'hot',
+Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = U.AU, colorscale = 'log', cmap = 'hot',
   	     colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'global_grid_dens.png')
 
 #--------------------
 #Plot for TEMPERATURE
 #--------------------
 Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = U.AU, colorscale = 'log',
-             palette = 'brg', colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png')
+             cmap = 'brg', colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png')
