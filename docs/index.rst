@@ -88,7 +88,7 @@ more information.
 Citing SF3dmodels
 -----------------
 
-If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018`_
+If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018`_.
 
   
 .. note:: The documentation is under development.
