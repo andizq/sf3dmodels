@@ -17,7 +17,8 @@ class Struct:
 #------------------------
  
 def grid(XYZmax, NP, artist = False, radmc3d = False):
-
+    """
+    """
     """
     XYZmax: Maximum physical domain of the grid
     Please provide XYZmax as a 3D-list. XYZmax=[Xmax,Ymax,Zmax]

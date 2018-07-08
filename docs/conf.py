@@ -69,6 +69,9 @@ rst_epilog += """
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
 .. _Izquierdo et al. 2018: http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096
+.. _Izquierdo+2018: `Izquierdo et al. 2018`_
+.. _Galvan-Madrid+2010: http://adsabs.harvard.edu/abs/2010ApJ...725...17G 
+.. _Maud+2017: http://adsabs.harvard.edu/doi/10.1093/mnrasl/slx010
 """
 
 # -- Project information ------------------------------------------------------

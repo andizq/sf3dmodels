@@ -1,12 +1,14 @@
 Modelling a single star forming region
 =======================================
 
-Code and figures on GitHub: `single_region <https://github.com/andizq/star-forming-regions/tree/master/examples/single_source>`_  
+Source code and figures on GitHub: `single_region <https://github.com/andizq/star-forming-regions/tree/master/examples/single_source>`_  
 
 .. note:: 
-   `W33A-MM1 Main`: Massive star-forming region (model: *Ulrich envelope + Pringle disc*).
+   `W33A MM1-Main`: Most massive compact source of a complex star forming region. 
+   
+   `Model`: *Ulrich envelope + Pringle disc*.
 
-   Useful references: `Izquierdo et al. 2018`_
+   `Useful references`: `Galvan-Madrid+2010`_, `Maud+2017`_ & `Izquierdo+2018`_
 
 The preamble:
 
@@ -101,7 +103,4 @@ The preamble:
 
 **e.** Plot the results:
 
-
-.. _Galvan:
-.. _Maud:
-.. _Izquierdo:
+.. image:: ../../examples/single_source/DensMidplane_Main.png

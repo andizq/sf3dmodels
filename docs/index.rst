@@ -91,12 +91,4 @@ Citing SF3dmodels
 If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018`_
 
   
-.. note:: Documentation under development.
-
-.. _GitHub: https://github.com/andizq/star-forming-regions
-.. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
-
-.. _View on Github: https://github.com/andizq/star-forming-regions/
-.. _docs: http://star-forming-regions.readthedocs.io
-.. _Documentation: http://star-forming-regions.readthedocs.io
-.. _Izquierdo et al. 2018: http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096
+.. note:: The documentation is under development.
