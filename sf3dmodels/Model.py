@@ -1130,6 +1130,8 @@ class Lime(Make_Datatab):
     
 class Radmc3d(object): #RADMC-3D uses the cgs units system
     """
+    """
+    """
     def __init__(self, prop, GRID):
         print ('Set RADMC-3D format')
         super(Radmc3d, self).__init__(prop, GRID)

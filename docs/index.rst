@@ -48,15 +48,28 @@ Using the command line go into the folder and run the ``setup.py`` installation 
    $ python setup.py install
 
 
-Examples
-========
+Using SF3dmodels
+----------------
 
 .. toctree::
   :maxdepth: 1
 
-  sf3dmodels/index.rst
   sf3dmodels/install.md
 
+Reference/API
+-------------
+
+.. automodapi:: sf3dmodels
+   :headings: '**'
+   :no-inheritance-diagram:
+
+.. automodapi:: sf3dmodels.Model
+   :headings: '**'
+   :no-inheritance-diagram:
+
+.. automodapi:: sf3dmodels.Plot_model	   
+   :headings: '**'
+   :no-inheritance-diagram:
 
 License
 -------
@@ -68,8 +81,8 @@ which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
 
 
-Additional Links
-----------------
+Citing SF3dmodels
+-----------------
 
 If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
 

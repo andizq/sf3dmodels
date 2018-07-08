@@ -1,5 +1,5 @@
 from __future__ import print_function
-from .BuildGlobalGrid import mindistance
+from . import BuildGlobalGrid as BGG
 from . import Model
 
 import matplotlib.pyplot as plt
@@ -142,9 +142,9 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
         Nx, Ny, Nz = GRID.Nodes
         Num = []
         for x,y,z in zip(X,Y,Z):
-            i = mindistance(x,Xgrid,Nx)
-            j = mindistance(y,Ygrid,Ny)
-            k = mindistance(z,Zgrid,Nz)
+            i = BGG.mindistance(x,Xgrid,Nx)
+            j = BGG.mindistance(y,Ygrid,Ny)
+            k = BGG.mindistance(z,Zgrid,Nz)
             Num.append(i*(Ny)*(Nz)+j*(Nz)+k) #ID for the Global Grid
         Num = sorted(set(Num), key=lambda x: Num.index(x)) #Keep the order and delete duplicates
         Num = np.array(Num)
