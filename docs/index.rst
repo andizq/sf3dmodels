@@ -3,6 +3,8 @@ SF3dmodels
 
 This is the documentation for the SF3dmodels package.
 
+Find the source code on `GitHub`_.
+
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
@@ -10,7 +12,7 @@ This is the documentation for the SF3dmodels package.
 SF3dmodels is a star forming region(s) modelling package that brings together
 analytical models in order to compute their physical properties in a 3-dimensional grid. 
 The package can couple different models in a single grid to recreate complex star
-forming systems as those being revealed by current instruments. 
+forming systems as those being revealed by current data. 
 The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ 
 or `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ 
 to carry out radiative transfer calculations of the model.
@@ -26,7 +28,7 @@ Requirements
 Installation (from source)
 --------------------------
 
-`Download`_ or clone the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_:
+`Download`_ or clone the star-forming-regions repository from `GitHub`_:
 
 To clone the package, if you have a github account:
 
@@ -53,8 +55,10 @@ Using SF3dmodels
 
 .. toctree::
   :maxdepth: 1
-
+  
+  single_source/single_source.rst	
   sf3dmodels/install.md
+
 
 Reference/API
 -------------
@@ -84,14 +88,15 @@ more information.
 Citing SF3dmodels
 -----------------
 
-If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
+If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018`_
 
   
 .. note:: Documentation under development.
 
-
+.. _GitHub: https://github.com/andizq/star-forming-regions
 .. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
-.. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
+
 .. _View on Github: https://github.com/andizq/star-forming-regions/
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
+.. _Izquierdo et al. 2018: http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096

@@ -64,6 +64,11 @@ exclude_patterns.append('_templates')
 # This is added to the end of RST files - a good place to put substitutions to
 # be used globally.
 rst_epilog += """
+.. _GitHub: https://github.com/andizq/star-forming-regions
+.. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
+.. _docs: http://star-forming-regions.readthedocs.io
+.. _Documentation: http://star-forming-regions.readthedocs.io
+.. _Izquierdo et al. 2018: http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096
 """
 
 # -- Project information ------------------------------------------------------
