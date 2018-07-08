@@ -8,7 +8,7 @@ Source code and figures on GitHub: `single_region <https://github.com/andizq/sta
    
    `Model`: *Ulrich envelope + Pringle disc*.
 
-   `Useful references`: `Galvan-Madrid+2010`_, `Maud+2017`_ & `Izquierdo+2018`_
+   `Useful references`: `Galvan-Madrid+2010`_, `Maud+2017`_, `Izquierdo+2018`_
 
 The preamble:
 
