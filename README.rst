@@ -59,10 +59,10 @@ which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
 
 
-Additional Links
-----------------
+Citing SF3dmodels
+-----------------
 
-If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_ 
+If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_. 
 
 
 .. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
