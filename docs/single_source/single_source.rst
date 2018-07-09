@@ -25,6 +25,7 @@ The preamble:
    import os
    import time
 
+
 **a.** Define some general parameters:
 
 .. code-block:: python
@@ -37,13 +38,11 @@ The preamble:
    Rd = 152. * U.AU #Centrifugal radius  
 
 
-
 **b.** Create the grid that will host the region:
 
 .. code-block:: python
 
    # Cubic grid, each edge ranges [-500, 500] AU.
-
    sizex = sizey = sizez = 500 * U.AU
    Nx = Ny = Nz = 150 #Number of divisions for each axis
    GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
@@ -65,7 +64,6 @@ The preamble:
    	     		            discFlag = True, envFlag = True, 
 				    renv_max = Renv, ang_cavity = Cavity)
 				 
-
    #-----------
    #TEMPERATURE
    #-----------
