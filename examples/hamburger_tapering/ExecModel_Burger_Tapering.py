@@ -57,8 +57,9 @@ else: Arho = 150.0  # (Mdisk=0.106*1.4=Msun=0.149Msun)
 H0sf = 0.04 #Disc scale-height factor (H0 = H0sf * RStar)
 Rdisc = 1.0 * Rd
 Rho0 = Res.Rho0(MRate, Rd, MStar) #Normalization density
-density = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag = True, 
-                                   Rt = 36 * U.AU, rdisc_max = Rdisc)
+Rtap = 36 * U.AU #Radius where the tapering begins
+density = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, 
+                                   discFlag = True, Rt = Rtap, rdisc_max = Rdisc)
 
 #-----------
 #TEMPERATURE
@@ -66,8 +67,8 @@ density = Model.density_Hamburgers(RStar, H0sf, Rd, Rho0, Arho, GRID, discFlag =
 T10Env = None #There is no envelope
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 2.7 #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, Tmin, 
-                                           BT, density, GRID, inverted = False)
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, 
+                                           density, GRID, Tmin_disc = Tmin, inverted = False)
 
 #--------
 #VELOCITY

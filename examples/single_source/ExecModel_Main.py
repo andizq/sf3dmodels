@@ -45,7 +45,8 @@ Rho0 = Res.Rho0(MRate, Rd, MStar)
 Arho = 24.1 #Disc-envelope density factor
 Renv = 500 * U.AU #Envelope radius
 Cavity = 40 * np.pi/180 #Cavity opening angle 
-density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = True, 
+density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, 
+                                 discFlag = True, envFlag = True, 
                                  renv_max = Renv, ang_cavity = Cavity)
 
 #-----------
@@ -53,8 +54,8 @@ density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, e
 #-----------
 T10Env = 375. #Envelope temperature at 10 AU
 BT = 5. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, None, density, GRID,
-                                ang_cavity = Cavity)
+temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, 
+                                BT, density, GRID, ang_cavity = Cavity)
 
 #--------
 #VELOCITY

@@ -78,8 +78,8 @@ density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
 T10Env = 250. #Envelope temperature at 10 AU
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, Tmin, 
-                                           BT, density, GRID, inverted = False)
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, 
+                                           density, GRID, Tmin_disc = Tmin, inverted = False)
 
 #--------
 #VELOCITY
@@ -155,5 +155,3 @@ norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
 Plot_model.plane2D(GRID, temperature.total * dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
                    norm = norm, colorlabel = r'[$\rho$ T]', output = 'Emissivity_%s.png'%tag, show = False)
-
-

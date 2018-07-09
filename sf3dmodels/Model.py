@@ -588,7 +588,8 @@ def gastodust(val, NPoints):
 #TEMPERATURE FUNCTION
 #----------------------
 
-def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, ang_cavity = False):
+def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID, 
+                Tmin_disc = 30., Tmin_env = 30., p = 0.33, ang_cavity = False):
 
 #TStar: Star temperature
 #T10Env: Envelope temperature at 10AU
@@ -596,7 +597,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
 #MStar: Star mass
 #MRate: Mass accretion rate
 #BT: Disc temperature factor
-#p: Temperature power law exponent 
+#p: (Envelope) Temperature power law exponent 
 #GRID: Grid to work in
 
     rRTP = GRID.rRTP
@@ -618,8 +619,12 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
         rdisc = density.r_disc
         if density.envFlag:
             renv = density.r_env
-            tempDISC = np.where( (RList <= rdisc) & (rList <= renv) , BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25, 30.0)
-        else: tempDISC = np.where( RList <= rdisc , BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25, 30.0)
+            tempDISC = np.where( (RList <= rdisc) & (rList <= renv) , 
+                                 BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25, 
+                                 Tmin_disc)
+        else: tempDISC = np.where(RList <= rdisc , 
+                                  BT * (3*G * MStar * MRate / (4*np.pi * sigma * RList**3) * (1 - (RStar / RList)**0.5))**0.25, 
+                                  Tmin_disc)
     else: tempDISC = 1.
 
     #----------------
@@ -630,7 +635,9 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
     if density.envFlag:
         print ('Calculating Envelope temperature...')
         renv = density.r_env
-        tempENV = np.where( (rList <= renv) & (thetaList >= ang_cavity), T10Env * 10**0.33 * (rList / AU)**-0.33, 30.0)
+        tempENV = np.where( (rList <= renv) & (thetaList >= ang_cavity), 
+                            T10Env * 10**p * (rList / AU)**-p, 
+                            Tmin_env)
         #tempENV = TStar * (RStar / (2.*rList))**(2. / (4+p))
     else: tempENV = 1.
     
@@ -652,8 +659,8 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, p, density, GRID, an
 #TEMPERATURE (Hamburgers) FUNCTION
 #---------------------------------
 
-def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, T_min, BT, density, GRID, 
-                           p = 0.33, inverted = False):
+def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, density, GRID, 
+                           p = 0.33, Tmin_disc = 30., Tmin_env = 30., inverted = False):
 
 #TStar: Star temperature
 #T10Env: Envelope temperature at 10AU
@@ -698,7 +705,7 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, T_min, BT, de
                 tempDISC = np.where( (RList >= density.Rt) & (RList <= Rdisc), T_R, tempDISC)
             else: tempDISC = np.where( RList <= Rdisc, T_R * np.exp(- 0.5 * (abs(zList) - H)**2 / H**2), 1.0) #Maximum in z = H
 
-        tempDISC = np.where( (RList <= Rdisc) & (tempDISC <= T_min), T_min, tempDISC)
+        tempDISC = np.where( (RList <= Rdisc) & (tempDISC <= Tmin_disc), Tmin_disc, tempDISC)
 
     else: tempDISC = 1.
 
@@ -708,7 +715,7 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, T_min, BT, de
     if density.envFlag:
         print ('Calculating Envelope temperature...')
         renv = density.r_env
-        tempENV = np.where( rList <= renv, T10Env * 10**p * (rList / AU)**-p, 1.0)
+        tempENV = np.where( rList <= renv, T10Env * 10**p * (rList / AU)**-p, Tmin_env)
         #tempENV = TStar * (RStar / (2.*rList))**(2. / (4+p))
     else: tempENV = 1.
     
