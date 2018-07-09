@@ -4,7 +4,7 @@ Modelling a single star forming region
 Source code and figures on GitHub: `single_region <https://github.com/andizq/star-forming-regions/tree/master/examples/single_source>`_  
 
 .. note:: 
-   `W33A MM1-Main`: Most massive compact source of a complex star forming region. 
+   `W33A MM1-Main`: The most massive compact source of the complex star forming region W33A MM1. 
    
    `Model`: *Ulrich envelope + Pringle disc*.
 
