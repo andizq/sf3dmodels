@@ -57,7 +57,24 @@ Using SF3dmodels
   :maxdepth: 1
   
   single_source/single_source.rst	
+  two_sources/two_sources.rst
   sf3dmodels/install.md
+
+
+License
+-------
+
+This project is Copyright (c) Andres Izquierdo and licensed under
+the terms of the BSD 3-Clause license. This package is based upon
+the `Astropy package template <https://github.com/astropy/package-template>`_
+which is licensed under the BSD 3-clause licence. See the licenses folder for
+more information.
+
+
+Citing SF3dmodels
+-----------------
+
+If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018`_.
 
 
 Reference/API
@@ -75,20 +92,5 @@ Reference/API
    :headings: '**'
    :no-inheritance-diagram:
 
-License
--------
-
-This project is Copyright (c) Andres Izquierdo and licensed under
-the terms of the BSD 3-Clause license. This package is based upon
-the `Astropy package template <https://github.com/astropy/package-template>`_
-which is licensed under the BSD 3-clause licence. See the licenses folder for
-more information.
-
-
-Citing SF3dmodels
------------------
-
-If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018`_.
-
   
-.. note:: The documentation is under development.
+.. note:: This documentation is currently under development.

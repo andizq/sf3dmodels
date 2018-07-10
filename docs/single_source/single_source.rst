@@ -4,7 +4,7 @@ Modelling a single star forming region
 Example 1
 ---------
 
-Source code and figures on GitHub: `single_region <https://github.com/andizq/star-forming-regions/tree/master/examples/single_source>`_  
+Source code and figures on GitHub: `single_main <https://github.com/andizq/star-forming-regions/tree/master/examples/single_main>`_  
 
 .. note:: 
    `W33A MM1-Main`: The most massive compact source of the complex star forming region W33A MM1. 
@@ -112,7 +112,7 @@ Source code and figures on GitHub: `single_region <https://github.com/andizq/sta
 			colorlabel = r'${\rm log}_{10}(r [au])$', 
 			output = '3Dpoints%s.png'%tag, show = False) 
 
-.. image:: ../../examples/single_source/3DpointsMain.png
+.. image:: ../../examples/single_main/3DpointsMain.png
    :width: 500
    :align: center
 
@@ -130,7 +130,7 @@ Source code and figures on GitHub: `single_region <https://github.com/andizq/sta
 		      norm = norm, colorlabel = r'$[\rm cm^{-3}]$', 
 		      output = 'DensMidplane_%s.png'%tag, show = False)
 
-.. image:: ../../examples/single_source/DensMidplane_Main.png
+.. image:: ../../examples/single_main/DensMidplane_Main.png
    :width: 400
    :align: center
 
@@ -146,7 +146,7 @@ Source code and figures on GitHub: `single_region <https://github.com/andizq/sta
 
 
 
-.. image:: ../../examples/single_source/DensVertical_Main.png
+.. image:: ../../examples/single_main/DensVertical_Main.png
    :width: 400
    :align: center
 
@@ -207,7 +207,7 @@ Source code and figures on GitHub: `hamburger_standard <https://github.com/andiz
 **c.** The physical properties. 
 
 .. note:: 
-   The final density *Structure* should be defined joining both the Envelope density and the Disc density (as shown in the following lines) since they were calculated separately from 2 different models.
+   The final density **Structure** should be defined by merging both the **Envelope density** and the **Disc density** (as shown in the following lines) since they were calculated separately from 2 different models.
 
 .. code-block:: python
  

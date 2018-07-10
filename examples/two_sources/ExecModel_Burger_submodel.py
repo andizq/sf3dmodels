@@ -99,12 +99,12 @@ gtdratio = Model.gastodust(gtd0, NPoints)
 #-------------------------
 xc, yc, zc = [350*U.AU, -150*U.AU, -200*U.AU]
 CENTER = [xc, yc, zc] #Center of the region in the global grid
-v_sys = -2000. #m/s
+v_sys = -2000. #Systemic velocity (vz) of the region (in m/s)
 newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
 	      	 	             rot_dict = { 'angles': [np.pi/2, np.pi/3], 'axis': ['x','z'] })
 
 #At the minute, the Model library only modifies the XYZ lists. 
- #It is enough information for LIME
+ #This is enough information for LIME
 GRID.XYZ = newProperties.newXYZ
 
 #The velocity should inherit the new velocity distribution 

@@ -142,9 +142,9 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/', all = False, radmc3d
             vel_tmp[2][m][ind] = vel_tmp[2][m][ind] / dens_tot 
             dens_tmp[m][0][ind] = dens_tot / dens_tmp[m][1][ind]
 
-            #----------------
-            #FOR GLOBAL GRID
-            #----------------
+            #-------------------
+            #FOR THE GLOBAL GRID
+            #-------------------
 
             dens_dum = dens_tmp[m][0][ind]
             temp_dum = temp_tmp[m][ind]

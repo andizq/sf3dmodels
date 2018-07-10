@@ -52,7 +52,7 @@ density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, e
 #-----------
 T10Env = 375. #Envelope temperature at 10 AU
 BT = 5. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, None, density, GRID,
+temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
                                 ang_cavity = Cavity)
 
 #--------
@@ -73,24 +73,25 @@ gtdratio = Model.gastodust(gtd0, NPoints)
 #ROTATION, VSYS, CENTERING
 #-------------------------
 xc, yc, zc = [-250*U.AU, 350*U.AU, 300*U.AU]
-CENTER = [xc, yc, zc] #Center of the region in the global grid
-v_sys = 3320. #m/s
+CENTER = [xc, yc, zc] #New center of the region in the global grid
+v_sys = 3320. #Systemic velocity (vz) of the region (in m/s)
 newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
 	      	 	             rot_dict = { 'angles': [np.pi/4, 1.87*np.pi], 'axis': ['x','z'] })
 
 #At the minute, the Model library only modifies the XYZ lists. 
- #It is enough information for LIME
-GRID.XYZ = newProperties.newXYZ
+ #This is enough information for LIME
+GRID.XYZ = newProperties.newXYZ #Redefinition of the XYZ grid
 
 #The velocity should inherit the new velocity distribution 
- #(as we rotated the system and added a systemic velocity)
+ #(because we rotated the system and added a systemic velocity)
 vel.x, vel.y, vel.z = newProperties.newVEL 
 
 #-----------------------------
 #WRITING DATA with LIME format
 #-----------------------------
-tag = '_Main' #A tag to identify the final files from others
-Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, is_submodel = True, tag = tag)
+tag = '_Main' #A tag to identify the final files from those of other sub-models
+Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, 
+                   is_submodel = True, tag = tag)
 
 #-----------------------------
 #PRINTING resultant PROPERTIES
