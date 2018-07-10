@@ -259,7 +259,10 @@ def streamline(Rd, GRID):
 #DENSITY FUNCTION
 #-------------------
 
-def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False, rdisc_max = False, renv_max = False, ang_cavity = False):
+def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, 
+                     discFlag = True, envFlag = False, 
+                     rdisc_max = False, renv_max = False, 
+                     ang_cavity = False):
 
 #RStar: Star radius
 #Rd: Centrifugal radius
@@ -302,14 +305,16 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, discFlag=True, envFlag=False,
     
     if envFlag:
         print ('Calculating stream lines for Ulrich envelope...')
-        if not renv_max: renv_max = np.max(XYZgrid[0]) #A sphere inscribed in the coordinate X.
+        if not renv_max: renv_max = np.max(XYZgrid[0]) #A sphere inscribed in the coordinate X. ##CHANGE this by the smallest of the 3 maximum (1 for each axis)
 
         costheta = np.cos(thetaList)
         costheta0 = streamline(Rd,GRID)
         print ('Calculating Envelope density...')
-        rhoENV = np.where( (rList <= renv_max) & (thetaList >= ang_cavity), ( (rhoE0 * (rList / Rd)**-1.5) *
-                                                                               ( (1 + (costheta / costheta0))**-0.5 ) *
-                                                                               (1 + (Rd / rList) * (3. * costheta0**2 - 1))**-1 ), 1.0e9 )
+        rhoENV = np.where( (rList <= renv_max) & (thetaList >= ang_cavity), 
+                           ((rhoE0 * (rList / Rd)**-1.5) *
+                            ((1 + (costheta / costheta0))**-0.5) *
+                            (1 + (Rd / rList) * (3. * costheta0**2 - 1))**-1), 
+                           1.0e9 )
         rhoENV = np.where( rhoENV < 1.0, 1.0, rhoENV)
     else:
         print ('No Envelope was invoked!')
