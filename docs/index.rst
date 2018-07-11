@@ -58,7 +58,6 @@ Using SF3dmodels
   single_source/single_source.rst	
   two_sources/two_sources.rst
   ionized_sources/ionized_sources.rst
-  sf3dmodels/install.md
 
 
 License
