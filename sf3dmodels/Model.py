@@ -301,7 +301,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
     #----------------
     #ENVELOPE PROFILE
     #----------------
-    if ang_cavity: print ('Set cavity for density with aperture %.1f deg'%(ang_cavity * 180 / np.pi))
+    if ang_cavity: print ('Set cavity for density with half-aperture %.1f deg'%(ang_cavity * 180 / np.pi))
     
     if envFlag:
         print ('Calculating stream lines for Ulrich envelope...')
@@ -370,7 +370,7 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
         if not rdisc_max: rdisc_max = Ro
         rhoD0 = Arho * rhoE0 
         H0 = shFactor * RStar
-        print ('Scaleheight normalization constant:', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
+        print ('Scale-height normalization constant:', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
         H = H0 * (RList / RStar)**(1 + 0.5*(1-q)) #Scaleheight, with no tapering 
         if Rt: H = H * np.exp(-((RList-Rt) / (Ro-Rt))**2)  #Scaleheight, with tapering 
         rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (RList / Ro)**-p * np.exp(-0.5 * zList**2 / H**2), 1.0)
@@ -635,7 +635,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
     #----------------
     #ENVELOPE PROFILE
     #----------------
-    if ang_cavity: print ('Set cavity for temperature with aperture %.1f deg'%(ang_cavity * 180 / np.pi))
+    if ang_cavity: print ('Set cavity for temperature with half-aperture %.1f deg'%(ang_cavity * 180 / np.pi))
 
     if density.envFlag:
         print ('Calculating Envelope temperature...')

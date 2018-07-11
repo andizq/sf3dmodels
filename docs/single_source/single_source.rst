@@ -159,7 +159,7 @@ Source code and figures on GitHub: `single_main <https://github.com/andizq/star-
    #-----------------------------
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID)
 
-**f.** Print useful information:
+**f.** And print some useful information:
 
 .. code-block:: python
 
@@ -282,10 +282,13 @@ Source code and figures on GitHub: `hamburger_standard <https://github.com/andiz
    tag = 'Burger'
    dens_plot = density.total / 1e6
 
+   vmin, vmax = np.array([5e11, 5e15]) / 1e6
+   norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
    weight = 10*T10Env
    Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, 
    			colordim = dens_plot, axisunit = U.AU, cmap = 'hot', 
-			colorscale = 'log', 
+			norm = norm,
 			colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', 
 			output = '3Dpoints%s.png'%tag, show = False)
 
@@ -383,9 +386,13 @@ Source code and figures on GitHub: `hamburger_standard <https://github.com/andiz
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID) 
 
 
-**f.** Print useful information:
+**f.** And print some useful information:
 
 .. code-block:: python
 
    Model.PrintProperties(density, temperature, GRID)
    print ('Ellapsed time: %.3fs' % (time.time() - t0)) #TIMING
+
+
+Example 3
+---------

@@ -117,9 +117,12 @@ print ('-------------------------------------------------\n---------------------
 tag = 'Burger'
 dens_plot = density.total / 1e6
 
+vmin, vmax = np.array([5e11, 5e15]) / 1e6
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
 weight = 10*T10Env
 Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = dens_plot , axisunit = U.AU, cmap = 'hot', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = '3Dpoints%s.png'%tag, show = False)
+                     norm = norm, colorlabel = r'$\rho$ $[cm^{-3}]$', output = '3Dpoints%s.png'%tag, show = False)
 
 #----------------------------------------
 #2D PLOTTING (Density and Temperature)

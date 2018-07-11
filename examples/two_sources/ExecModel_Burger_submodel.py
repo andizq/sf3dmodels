@@ -9,6 +9,7 @@ from sf3dmodels import *
 #-----------------
 #Extra libraries
 #-----------------
+from matplotlib import colors
 import numpy as np
 import os
 import time
@@ -77,8 +78,8 @@ density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
 T10Env = 250. #Envelope temperature at 10 AU
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
-temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, Tmin, 
-                                           BT, density, GRID, inverted = False)
+temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, 
+                                           density, GRID, Tmin_disc = Tmin, inverted = False)
 
 #--------
 #VELOCITY
@@ -133,7 +134,11 @@ print ('-------------------------------------------------\n---------------------
 #----------------------------------------
 tag = 'Burger'
 weight = 10*T10Env
+
+vmin, vmax = np.array([5e11, 5e15]) / 1e6
+norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
 Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, cmap = 'hot', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = '3Dpoints%s.png'%tag, show = True)
+                     norm = norm, colorlabel = r'$\rho$ $[cm^{-3}]$', output = '3Dpoints%s.png'%tag, show = True)
 
 

@@ -131,9 +131,13 @@ The 3D plot of the modelled region, shifted and rotated:
    #----------------------------------------
    tag = 'Burger'
    weight = 10*T10Env
+
+   vmin, vmax = np.array([5e11, 5e15]) / 1e6
+   norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+
    Plot_model.scatter3D(GRID, temperature.total, weight, 
    			NRand = 4000, colordim = density.total / 1e6, 
-			axisunit = U.AU, cmap = 'jet', colorscale = 'log', 
+			axisunit = U.AU, cmap = 'jet', norm = norm,
 			colorlabel = r'${\rm log}_{10}(r [au])$', 
 			output = '3Dpoints%s.png'%tag, show = False)
 
@@ -199,7 +203,6 @@ Plotting the result:
 
 .. code-block:: python
 
-   GRID = global_prop.GRID #### ?? 
    density = global_prop.density / 1e6 #cm^-3
    temperature = global_prop.temperature
 

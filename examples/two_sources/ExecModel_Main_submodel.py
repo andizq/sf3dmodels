@@ -9,6 +9,7 @@ from sf3dmodels import *
 #-----------------
 #Extra libraries
 #-----------------
+from matplotlib import colors
 import numpy as np
 import os
 import time
@@ -111,4 +112,4 @@ tag = 'Main'
 weight = 10*Rho0
 r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
 Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, cmap = 'jet', 
-                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r [au])$', output = '3Dpoints%s.png'%tag, show = True)
+                     colorscale = 'log', colorlabel = r'${\rm log}_{10}(r$ $[au])$', output = '3Dpoints%s.png'%tag, show = True)

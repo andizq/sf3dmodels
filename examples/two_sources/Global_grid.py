@@ -23,7 +23,7 @@ global_prop = BGG.overlap(GRID, submodels = list_sub)
 #PLOTTING
 #--------
 
-GRID = global_prop.GRID 
+#GRID = global_prop.GRID 
 density = global_prop.density / 1e6 #1e6 to convert from m^-3 to cm^-3
 temperature = global_prop.temperature
 
