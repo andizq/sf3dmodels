@@ -12,7 +12,7 @@ Example 1
    `Useful references`: `Pratap+1992`_, `Keto+2008`_
 
 
-You can create electronic density distributions with the ``Model`` library and use 
+You can create electronic density distributions with the ``Model`` library and call 
 the ``Datatab_RADMC3D_FreeFree`` module to obtain formatted data files that may be used 
 later to predict the Free-Free emission of the region with `RADMC-3D`_.
 
