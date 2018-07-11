@@ -13,8 +13,7 @@ SF3dmodels is a star forming region(s) modelling package that brings together
 analytical models in order to compute their physical properties in a 3-dimensional grid. 
 The package can couple different models in a single grid to recreate complex star
 forming systems as those being revealed by current data. 
-The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ 
-or `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ 
+The output data can be read with `LIME`_ or `RADMC-3D`_
 to carry out radiative transfer calculations of the model.
 
 Requirements
@@ -58,6 +57,7 @@ Using SF3dmodels
   
   single_source/single_source.rst	
   two_sources/two_sources.rst
+  ionized_sources/ionized_sources.rst
   sf3dmodels/install.md
 
 

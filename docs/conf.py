@@ -74,6 +74,12 @@ rst_epilog += """
 .. _Maud+2017: http://adsabs.harvard.edu/doi/10.1093/mnrasl/slx010
 .. _Lee+2017b: http://adsabs.harvard.edu/abs/2017SciA....3E2935L
 .. _Li+2017: http://adsabs.harvard.edu/abs/2017ApJ...840...72L
+.. _RADMC-3D: http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/
+.. _LIME: https://lime.readthedocs.io/en/latest/
+.. _Keto+2010: http://adsabs.harvard.edu/abs/2010MNRAS.406..102K
+.. _Keto+2008: http://adsabs.harvard.edu/abs/2008ApJ...672..423K
+.. _Pratap+1992: http://adsabs.harvard.edu/abs/1992ApJ...387..241P
+.. _Peters+2010: http://adsabs.harvard.edu/abs/2010ApJ...719..831P
 """
 
 # -- Project information ------------------------------------------------------

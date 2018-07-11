@@ -11,7 +11,7 @@ Source code and figures on GitHub: `single_main <https://github.com/andizq/star-
    
    `Model`: *Ulrich envelope + Pringle disc*.
 
-   `Useful references`: `Galvan-Madrid+2010`_, `Maud+2017`_, `Izquierdo+2018`_
+   `Useful references`: `Keto+2010`_, `Galvan-Madrid+2010`_, `Maud+2017`_, `Izquierdo+2018`_
 
 **The preamble**:
 
@@ -386,7 +386,7 @@ Source code and figures on GitHub: `hamburger_standard <https://github.com/andiz
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID) 
 
 
-**f.** And print some useful information:
+**f.** To finish, print some useful information:
 
 .. code-block:: python
 
