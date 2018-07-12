@@ -4,6 +4,8 @@ Modelling HII regions. *RT with RADMC-3D*
 Example 1
 ---------
 
+Source codes and figures on GitHub: `ionized_constant <https://github.com/andizq/star-forming-regions/tree/master/examples/ionized_constant>`_
+
 .. note::
    `Uniform spherical HII region`
    
