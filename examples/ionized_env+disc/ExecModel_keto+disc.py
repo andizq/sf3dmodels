@@ -22,7 +22,7 @@ t0 = time.time()
 MStar = 34 * U.MSun
 r_max = 2530 * U.AU #1000 * U.AU #H II sphere size
 r_min = r_max / 200 #Minimum distance (!= 0 to avoid indeterminations)
-rho_s = 2 * 1.5e6 * 1e6 / 5 #from cgs to SI. Density at sonic radius
+rho_s = 1.0e6 * 1e6 / 5 #from cgs to SI. Density at sonic radius
 q = 1.3 #Density powerlaw
 t_e = 1.e4 #K
 
@@ -53,7 +53,7 @@ densEnv = Model.density_Keto_HII(MStar, r_min, r_max, rho_s, t_e, GRID, q = 1.5)
 #-------
 Rd = 10*densEnv.rs #10 times the sonic radius, just to make it visible
 Rho0 = Res.Rho0(MRate, Rd, MStar)
-Arho = 2 * 2.0 / 80 # 60.0
+Arho = 1.2 / 80 # 60.0
 densDisc = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = False, 
                                   rdisc_max = Rd)
 
