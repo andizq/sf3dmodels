@@ -62,3 +62,6 @@ distribute-*.tar.gz
 # Output data
 examples/*.dat
 examples/*.inp
+*.inp
+*.out
+*.dat
