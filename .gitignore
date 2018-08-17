@@ -65,3 +65,6 @@ examples/*.inp
 *.inp
 *.out
 *.dat
+*.x
+*.pop
+*.vtk

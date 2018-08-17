@@ -78,7 +78,7 @@ palette_helix.set_under('white', 1)#colormm(0), 0.8)
 #---------
 images = data_349
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 4.5))
+fig, ax = plt.subplots(nrows=1, ncols=1) #, figsize=(8, 4.5))
 if id == "CONV_noise": ax.set_facecolor('darkgray')
 else: ax.set_facecolor('black')
 
