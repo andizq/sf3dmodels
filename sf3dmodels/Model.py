@@ -620,7 +620,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
     #DISC Profile
     #------------
     if density.discFlag:
-        print ('Calculating Keplerian thin-disc temperature...')
+        print ('Calculating Keplerian flared-disc temperature...')
         rdisc = density.r_disc
         if density.envFlag:
             renv = density.r_env
@@ -699,16 +699,18 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, density, 
 
         if inverted: 
             print ('Set inverted temperature for Burger-disc...')
-            if density.Rt: 
-                tempDISC = np.where( RList < density.Rt, T_R * np.exp(- 0.5 * zList**2 / H**2), 1.0) 
-                tempDISC = np.where( (RList >= density.Rt) & (RList <= Rdisc), T_R, tempDISC)
-            else: tempDISC = np.where( RList <= Rdisc, T_R * np.exp(- 0.5 * zList**2 / H**2), 1.0) #Maximum in z = 0
+            T_z = np.exp(- 0.5 * zList**2 / H**2)
+            tempDISC = np.where( RList <= Rdisc, T_R * T_z, 1.0) #Maximum in z = 0
         else: 
             print ('Set not inverted temperature for Burger-disc...')
-            if density.Rt: 
-                tempDISC = np.where( RList < density.Rt, T_R * np.exp(- 0.5 * (abs(zList) - H)**2 / H**2), 1.0) 
-                tempDISC = np.where( (RList >= density.Rt) & (RList <= Rdisc), T_R, tempDISC)
-            else: tempDISC = np.where( RList <= Rdisc, T_R * np.exp(- 0.5 * (abs(zList) - H)**2 / H**2), 1.0) #Maximum in z = H
+            T_z = np.exp(- 0.5 * (abs(zList) - H)**2 / H**2)
+            tempDISC = np.where( RList <= Rdisc, T_R * T_z, 1.0) #Maximum in z = H
+            """
+            if density.Rt:
+               tempDISC = np.where( RList < density.Rt, T_R * T_z, 1.0) 
+               tempDISC = np.where( (RList >= density.Rt) & (RList <= Rdisc), T_R, tempDISC)
+            else: tempDISC = np.where( RList <= Rdisc, T_R * T_z, 1.0) #Maximum in z = H
+            """
 
         tempDISC = np.where( (RList <= Rdisc) & (tempDISC <= Tmin_disc), Tmin_disc, tempDISC)
 

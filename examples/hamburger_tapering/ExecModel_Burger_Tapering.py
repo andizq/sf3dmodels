@@ -50,7 +50,6 @@ NPoints = GRID.NPoints #Number of nodes in the grid
 #-------
 #DISC
 #-------
-
 if args.Arho: Arho = float(args.Arho)
 else: Arho = 150.0  # (Mdisk=0.106*1.4=Msun=0.149Msun)
 
