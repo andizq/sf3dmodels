@@ -69,6 +69,13 @@ ifeq (${VERBOSE},no)
   CCFLAGS += -DNOVERBOSE
 endif
 
+#------------------------
+#SF3DMODELS
+ifeq (${SF3DMODELS},yes)
+  CCFLAGS += -DSF3DMODELS
+endif
+#------------------------
+
 ifeq (${USEHDF5},yes)
   CPPFLAGS += -DUSEHDF5
   CCFLAGS += -DH5_NO_DEPRECATED_SYMBOLS

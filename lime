@@ -37,10 +37,11 @@ function tip {
     echo "Try 'lime -h' for more information."
 }
 
-options=":Vfnstp:h"
+options=":Vfnstp:hS"
 cpp_flags=""
 verbose="yes"
 do_test="no"
+sf3dmodels="no"
 
 while getopts ${options} opt; do
     case $opt in
@@ -74,6 +75,9 @@ while getopts ${options} opt; do
 	t)
 	    do_test="yes"
 	    ;;
+	S)
+	    sf3dmodels="yes"
+	    ;;
 	\?)
 	    echo "lime: error: unknown option" >&2
 	    tip
@@ -96,7 +100,7 @@ export WORKDIR=$PWD
 
 # Compile the code
 pushd ${PATHTOLIME} >> /dev/null
-make -s EXTRACPPFLAGS="${cpp_flags}" MODELS=$WORKDIR/$1 TARGET=$WORKDIR/lime_$$.x DOTEST=$do_test VERBOSE=$verbose
+make -s EXTRACPPFLAGS="${cpp_flags}" MODELS=$WORKDIR/$1 TARGET=$WORKDIR/lime_$$.x DOTEST=$do_test VERBOSE=$verbose SF3DMODELS=$sf3dmodels
 # USEHDF5="yes"
 make -s limeclean
 

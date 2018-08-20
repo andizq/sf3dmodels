@@ -16,6 +16,11 @@ int silent = 1;
 int silent = 0;
 #endif
 
+#ifdef SF3DMODELS
+int sf3dmodels = 1;
+#else
+int sf3dmodels = 0;
+#endif
 /*....................................................................*/
 int
 initParImg(inputPars *par, image **img)
@@ -145,8 +150,8 @@ int main() {
   char message[STR_LEN_0];
 
   (void)status; // just to stop compiler warnings because this return value is currently unused.
-
-  readDatatab(); // sf3dmodels
+  
+  if(sf3dmodels) readDatatab(); // sf3dmodels{
 
   nImages = initParImg(&par, &img);
 
