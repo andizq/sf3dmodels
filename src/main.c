@@ -8,6 +8,7 @@
  */
 
 #include "lime.h"
+#include "readdata.h"
 
 #ifdef NOVERBOSE
 int silent = 1;
@@ -144,6 +145,8 @@ int main() {
   char message[STR_LEN_0];
 
   (void)status; // just to stop compiler warnings because this return value is currently unused.
+
+  readDatatab(); // sf3dmodels
 
   nImages = initParImg(&par, &img);
 

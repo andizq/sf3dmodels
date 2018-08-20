@@ -15,3 +15,6 @@ example/vlog.txt
 
 # Ignore html doc files
 doc/*.html
+
+# Ignore configure output files
+*.defs
