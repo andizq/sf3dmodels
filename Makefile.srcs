@@ -28,7 +28,9 @@ CORESOURCES = \
 	src/sourcefunc.c\
 	src/tcpsocket.c\
 	src/tree_random.c\
-	src/writefits.c
+	src/writefits.c\
+	src/readdata.c\
+	src/mindistance.c
 
 STDSOURCES = \
 	src/lime_defaults.c\
@@ -53,7 +55,7 @@ CONVSOURCES = \
 	src/popsin.c\
 	src/popsout.c\
 	src/predefgrid.c
-
+	
 PYSOURCES = \
 	src/messages.c\
 	src/py_main.c\
@@ -74,7 +76,9 @@ COREINCLUDES = \
 	src/lime.h\
 	src/raythrucells.h\
 	src/tree_random.h\
-	src/ufunc_types.h
+	src/ufunc_types.h\
+	src/readdata.h\
+	src/mindistance.h	
 
 HDF5INCLUDES = \
 	src/grid2hdf5.h
@@ -86,7 +90,7 @@ CONVINCLUDES = \
 	src/gridio.h\
 	src/inpars.h\
 	src/lime.h
-
+		
 PYINCLUDES = \
 	src/error_codes.h\
 	src/py_lime.h\

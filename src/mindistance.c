@@ -1,16 +1,11 @@
-#ifndef _mindistance_h
-#define _mindistance_h
-
-int Ndata, Nx, Ny, Nz, *ID;
-double *xm, *ym, *zm;
-double *DENS, *TEMP, *VEL_x, *VEL_y, *VEL_z, *ABUND, *GTD;
-
+#include "lime.h"
+#include "mindistance.h"
 
 double mindistance(double x,double *xma,int Nx){
 
   double mindist,distx;
 
-  mindist=100000*AU;
+  mindist=1000000*AU;
   int i,j;
   for( i = 0; i < Nx; i++){
     distx = fabs(x-xma[i]);
@@ -19,10 +14,7 @@ double mindistance(double x,double *xma,int Nx){
 
       mindist=distx;
       j=i;
-
     }
-
   }
-
   return j;
 }

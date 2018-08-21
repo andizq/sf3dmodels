@@ -150,7 +150,7 @@ int main() {
   char message[STR_LEN_0];
 
   (void)status; // just to stop compiler warnings because this return value is currently unused.
-  
+
   if(sf3dmodels) readDatatab(); // sf3dmodels{
 
   nImages = initParImg(&par, &img);
