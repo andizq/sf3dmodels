@@ -8,6 +8,8 @@
  */
 
 #include "lime.h"
+#include "readdata.h"
+#include "mindistance.h"
 
 /******************************************************************************/
 
@@ -19,8 +21,8 @@ input(inputPars *par, image *img){
    */
   par->radius                   = 500*AU;
   par->minScale                 = 2.5*AU; // 2 * sizex / Nx / 2
-  par->pIntensity               = 20000; 
-  par->sinkPoints               = 5000; 
+  par->pIntensity               = 2000; 
+  par->sinkPoints               = 500; 
   par->dust                     = "opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "ch3cn.dat";
   //par->antialias                = 1;
@@ -105,31 +107,6 @@ input(inputPars *par, image *img){
 
 /******************************************************************************/
 
-int Ndata, Nx, Ny, Nz, *ID;
-double *xm, *ym, *zm;
-double *DENS, *TEMP, *VEL_x, *VEL_y, *VEL_z, *ABUND, *GTD;
-
-
-double mindistance(double x,double *xma,int Nx){
-
-  double mindist,distx;
-
-  mindist=100000*AU;
-  int i,j;
-  for( i = 0; i < Nx; i++){
-    distx = fabs(x-xma[i]);
-
-    if (distx<mindist){
-
-      mindist=distx;
-      j=i;
-
-    }
-
-  }
-
-  return j;
-}
 
 void
 density(double x, double y, double z, double *density){
