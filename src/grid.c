@@ -14,7 +14,11 @@ TODO:
 #include "gridio.h"
 #include "defaults.h"
 
-
+//#ifdef SF3DMODELS
+int sf3dmodels;
+//#else
+//int sf3dmodels = 0;
+//#endif
 /*....................................................................*/
 void
 sanityCheckOfRead(const int status, configInfo *par, struct gridInfoType gridInfoRead){
@@ -522,9 +526,13 @@ Generate the remaining values if needed. **Note** that we check a few of them to
 exit(1);
       }
     }
-
-    for(i=0;i<par->pIntensity;i++)
-      temperature((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].t);
+    if(sf3dmodels)
+      for(i=0;i<par->pIntensity;i++)
+	temperature((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].t);
+    else
+      for(i=0;i<par->pIntensity;i++)
+	temperature((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].t);
+    
     for(i=par->pIntensity;i<par->ncell;i++){
       (*gp)[i].t[0]=par->tcmb;
       (*gp)[i].t[1]=par->tcmb;
