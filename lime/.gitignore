@@ -1,0 +1,20 @@
+# Ignore backups
+*~
+
+# Ignore MacOS files
+.DS_Store
+
+# Ignore example files
+example/*.vtk
+example/*.pop
+example/*.fits*
+example/lime_*.x
+example/*.dat
+example/*_archive
+example/vlog.txt
+
+# Ignore html doc files
+doc/*.html
+
+# Ignore configure output files
+*.defs
