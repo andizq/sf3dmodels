@@ -27,6 +27,7 @@ input(inputPars *par, image *img){
   par->moldatfile[0]            = "ch3cn.dat";
   //par->antialias                = 1;
   par->sampling                 = 1; // if 0: log distr. for radius, directions distr. uniformly on a sphere.
+  // par->samplingAlgorithm                 = 1; //This option allows the user to build their own gridDensity (fracdensity) function to reject or accept points.
 
   par->lte_only = 1;
   //  par->outputfile               = "populations.pop";
