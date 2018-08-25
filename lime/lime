@@ -1,0 +1,112 @@
+#!/bin/bash -e
+# LIME main driver script
+# This file is part of LIME, the versatile line modeling engine
+#
+# Copyright (C) 2006-2014 Christian Brinch
+# Copyright (C) 2015-2017 The LIME development team
+
+export PATHTOLIME=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+vernum=`grep VERSION ${PATHTOLIME}/src/lime.h` | awk '{print $3}' | sed s/\"//g
+
+function version {
+    echo "This is LIME, The versatile line modeling engine, version $vernum"
+    echo "Copyright (C) 2006-2014 Christian Brinch"
+    echo "Copyright (C) 2015-2017 The LIME development team"
+}
+
+function usage {
+    echo "Usage: lime [OPTIONS] [[FILE]]"
+    echo " "
+    echo "Arguments:"
+    echo "   FILE   C model file"
+    echo " "
+    echo "Options:"
+    echo "   -V           Display version information"
+    echo "   -h           Display this message"
+    echo "   -f           Use fast exponential computation"
+    echo "   -s           Suppress output messages"
+    echo "   -t           Compile with debugging and fixed RNG seeds"
+    echo "   -n           Turn off ncurses output"
+    echo "   -p NTHREADS  Run in parallel with NTHREADS threads (default: 1)"
+    echo ""
+    echo "See <http://lime.readthedocs.org> for more information."
+    echo "Report bugs to <http://github.com/lime-rt/lime/issues>."
+}
+
+function tip {
+    echo "Try 'lime -h' for more information."
+}
+
+options=":Vfnstp:hS"
+cpp_flags=""
+verbose="yes"
+do_test="no"
+sf3dmodels="no"
+
+while getopts ${options} opt; do
+    case $opt in
+	V)
+	    version
+	    exit 0
+	    ;;
+	h)
+	    usage
+	    exit 0
+	    ;;
+	f)
+	    cpp_flags+="-DFASTEXP "
+	    ;;
+	n)
+	    cpp_flags+="-DNO_NCURSES "
+	    ;;
+	p)
+	    nthreads=${OPTARG}
+	    if [[ $nthreads =~ ^[1-9][0-9]*$ ]]; then
+		cpp_flags+="-DNTHREADS=${nthreads} "
+	    else
+		echo "lime: error: invalid number of threads" >&2
+		tip
+		exit 1
+	    fi
+	    ;;
+	s)
+	    verbose="no"
+	    ;;
+	t)
+	    do_test="yes"
+	    ;;
+	S)
+	    sf3dmodels="yes"
+	    ;;
+	\?)
+	    echo "lime: error: unknown option" >&2
+	    tip
+	    exit 1
+	    ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ $# -ne 1 ]; then
+    echo "lime: error: incorrect number of arguments" >&2
+    tip
+    exit 1
+fi
+
+# Set up the PATHTOLIME, LD_LIBRARY_PATH and WORKDIR variables
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PATHTOLIME}/lib
+export WORKDIR=$PWD
+
+# Compile the code
+pushd ${PATHTOLIME} >> /dev/null
+make -s EXTRACPPFLAGS="${cpp_flags}" MODELS=$WORKDIR/$1 TARGET=$WORKDIR/lime_$$.x DOTEST=$do_test VERBOSE=$verbose SF3DMODELS=$sf3dmodels
+# USEHDF5="yes"
+make -s limeclean
+
+# Run the code
+popd >> /dev/null
+./lime_$$.x
+rm -rf lime_$$.x
+
+exit 0
