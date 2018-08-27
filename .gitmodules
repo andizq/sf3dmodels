@@ -2,3 +2,7 @@
 	url = https://github.com/astropy/astropy-helpers.git
 	path = astropy_helpers
 	branch = refs/heads/v2.0.6
+[submodule "lime_/lime"]
+	path = lime_/lime
+	url = git@github.com:andizq/lime.git
+	branch = sf3dmodels
