@@ -21,8 +21,8 @@ input(inputPars *par, image *img){
    */
   par->radius                   = 500*AU;
   par->minScale                 = 2.5*AU; // 2 * sizex / Nx / 2
-  par->pIntensity               = 2000; 
-  par->sinkPoints               = 500; 
+  par->pIntensity               = 20000; 
+  par->sinkPoints               = 5000; 
   par->dust                     = "opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "ch3cn.dat";
   //par->antialias                = 1;
@@ -108,57 +108,37 @@ input(inputPars *par, image *img){
 
 /******************************************************************************/
 
+int id_int;
 
 void
-density(double x, double y, double z, double *density){
+density(double dummy0, double dummy1, double id, double *density){
   
-  int i,j,k,Num;
-
-  // printf("%e %e %e\n",x,y,z);
-  i=mindistance(x,xm,Nx);
-  j=mindistance(y,ym,Ny);
-  k=mindistance(z,zm,Nz);
-
-  Num=i*(Ny)*(Nz)+j*(Nz)+k;
-
-  density[0] = DENS[Num]*1.0; 
+  id_int=ceil(id);
+  density[0] = DENS[id_int]; 
 }
 
 /******************************************************************************/
 
 void
-temperature(double x, double y, double z, double *temperature){
+temperature(double dummy0, double dummy1, double id, double *temperature){
 
-  int i,j,k,Num;
-
-  i=mindistance(x,xm,Nx);
-  j=mindistance(y,ym,Ny);
-  k=mindistance(z,zm,Nz);
-
-  Num=i*(Ny)*(Nz)+j*(Nz)+k;
-
-  temperature[0] = TEMP[Num];
+  id_int=ceil(id);
+  temperature[0] = TEMP[id_int];
 }
 
 /******************************************************************************/
 
 void
-abundance(double x, double y, double z, double *abundance){
+abundance(double dummy0, double dummy1, double id, double *abundance){
 
-  int i,j,k,Num;
-
-  i=mindistance(x,xm,Nx);
-  j=mindistance(y,ym,Ny);
-  k=mindistance(z,zm,Nz);
-
-  Num=i*(Ny)*(Nz)+j*(Nz)+k;
-  abundance[0] = ABUND[Num];
+  id_int=ceil(id);
+  abundance[0] = ABUND[id_int];
 }
 
 /******************************************************************************/
 
 void
-doppler(double x, double y, double z, double *doppler){
+doppler(double dummy0, double dummy1, double id, double *doppler){
   /*
    * 200 m/s as the doppler b-parameter. This
    * can be a function of (x,y,z) as well.
@@ -171,21 +151,12 @@ doppler(double x, double y, double z, double *doppler){
 /******************************************************************************/
 
 void
-velocity(double x, double y, double z, double *vel){
-  
-  int i,j,k,Num;
+velocity(double dummy0, double dummy1, double id, double *vel){
 
-  i=mindistance(x,xm,Nx);
-  j=mindistance(y,ym,Ny);
-  k=mindistance(z,zm,Nz);
-  
-
-  Num=i*(Ny)*(Nz)+j*(Nz)+k;
-  //  printf("%d %d %d %lf %lf %lf %lf %lf %lf %d\n", i,j,k,x,y,z,Num,VEL_x[Num],VEL_y[Num],VEL_z[Num]);
-
-  vel[0] = VEL_x[Num];
-  vel[1] = VEL_y[Num];
-  vel[2] = VEL_z[Num];
+  id_int=ceil(id);
+  vel[0] = VEL_x[id_int];
+  vel[1] = VEL_y[id_int];
+  vel[2] = VEL_z[id_int];
 }
 
 /******************************************************************************/
