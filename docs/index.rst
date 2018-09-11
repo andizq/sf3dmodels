@@ -72,8 +72,8 @@ Installation
 LIME must be configured separately once the ``sf3dmodels`` package has been installed with success. 
 
 The installation procedure of this LIME is identical to its standard installation 
-(have a look at the LIME `installation <https://github.com/andizq/lime/tree/sf3dmodels>`_ notes section). 
-Please make sure you are configuring and setting everything in/to the LIME directory included in this repository.
+(have a look at the LIME `installation <https://github.com/andizq/lime/tree/sf3dmodels>`_ notes section). Please 
+make sure you are configuring and setting everything in/to the LIME directory included in this repository.
 
 Running it
 ``````````
