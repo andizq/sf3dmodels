@@ -53,7 +53,7 @@ LIME in *sf3dmodels* mode
 -------------------------
 
 The package includes the standard LIME v1.9.5 + an additional feature for ``sf3dmodels`` users. 
-We included an ingestor in its source codes that allows the user to employ the ``sf3dmodels`` output as the LIME input. 
+We included an ingestor in the LIME source codes that allows the user to employ the ``sf3dmodels`` output as the LIME input. 
 
 Installation
 ============
