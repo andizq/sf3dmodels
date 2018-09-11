@@ -68,6 +68,7 @@ examples/*.inp
 *.x
 *.pop
 *.vtk
+*.fits
 
 # Specific files
 rt-lime.c
