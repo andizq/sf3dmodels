@@ -56,7 +56,7 @@ The package contains the standard LIME v1.9.5 + an additional feature for ``sf3d
 An ingestor was included within the LIME source codes, it allows the user to employ the ``sf3dmodels`` output as the LIME input. 
 
 Installation
-============
+************
 LIME must be configured separately once the ``sf3dmodels`` package has been installed with success. 
 
 The installation procedure of this LIME is identical to its standard installation 
