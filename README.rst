@@ -52,8 +52,6 @@ Using the command line, go into the folder and run the ``setup.py`` installation
 LIME in *sf3dmodels* mode
 -------------------------
 
-=========================
-
 The package contains the standard LIME v1.9.5 + an additional feature for ``sf3dmodels`` users. 
 An ingestor was included within the LIME source codes, it allows the user to employ the ``sf3dmodels`` output as the LIME input. 
 
