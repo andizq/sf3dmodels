@@ -14,7 +14,7 @@ if sys.version_info < tuple((int(val) for val in "2.7".split('.'))):
 import ah_bootstrap
 from setuptools import setup
 
-os.system("git submodule update --init --recursive lime")
+if sys.argv[1]=='install' or sys.argv[1]=='develop': os.system("git submodule update --init --recursive lime")
 
 # A dirty hack to get around some early import/configurations ambiguities
 if sys.version_info[0] >= 3:
