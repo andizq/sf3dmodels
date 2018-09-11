@@ -73,7 +73,7 @@ non-interactive mode and to read the ``sf3dmodels`` output as well you should ru
    $ lime -n -S model.c
 
 
-**Note** that if the ``-S`` option **is not set** you will get the standard operation of LIME.
+*Note* that if the ``-S`` option *is not set* you will get back to the standard operation of LIME.
 
 License
 -------
