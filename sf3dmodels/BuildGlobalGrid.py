@@ -13,7 +13,8 @@ import time
 
 def mindistance(x,xma,Nx):
     distx = 0
-    mindist = 100000*U.AU
+    mindist = 1000000 * U.PC * U.AU 
+    j = None
 
     for i in range(Nx):
         distx = abs(x-xma[i])
@@ -27,7 +28,10 @@ def mindistance(x,xma,Nx):
 #------------------------------
 #------------------------------
 
-def overlap(GRID, submodels = [''], folder = './Subgrids/', all = False, radmc3d = False):
+def overlap(GRID, submodels = [''], folder = './Subgrids/', 
+            T_min = 30., rho_min = 1.e9,
+            all = False, radmc3d = False):
+            
 
     if folder[-1] != '/': folder = folder + '/'
     t0 = time.time()
@@ -52,13 +56,11 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/', all = False, radmc3d
     Nx, Ny, Nz = GRID.Nodes
 
     cm3_to_m3 = 1e6
-    dens_back = 5e5 * cm3_to_m3 #Background density
-    temp_back = 150. #Background temperature
     gamma = 7./5 #Gamma for diatomic molecules
     kb = 1.38064852e-23 #Boltzmann constant
     H_mass = 1.6733e-27 #kg
 
-    DENS = np.ones(NTotal)#, dtype='float64') * 0.5 # * dens_back
+    DENS = -1*np.ones(NTotal) #, dtype='float64') * 0.5 # * dens_back
     TEMP = np.zeros(NTotal) # * temp_back * dens_back
 
     ab0 = 5e-8 
@@ -123,8 +125,8 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/', all = False, radmc3d
                 gtd_tmp[m][Num] = n[4] * n[10]
                 IDList[m].append(Num)
         
-#        hg+=1
-#        if hg%50000 == 0: print (hg)
+            hg+=1
+            if hg%50000 == 0: print (hg)
 
         print ('Finished with the file: %s'%names[m])
 
@@ -172,11 +174,11 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/', all = False, radmc3d
 
     VEL = Model.Struct( **{'x': VEL[0], 'y': VEL[1], 'z': VEL[2]})
 
-    ind = np.where(DENS == 1.0)
-    DENS[ind] = 1.e9
-    ABUND[ind] = ab0
-    GTD[ind] = gtd0
-    TEMP = np.where(TEMP == 0., 30, TEMP)
+    ind = np.where(DENS == -1.0)
+    DENS[ind] = rho_min
+    ABUND[ind] = ab0 #?
+    GTD[ind] = gtd0 #?
+    TEMP = np.where(TEMP == 0., T_min, TEMP)
 
     if radmc3d: Model.Datatab_RADMC3D_FreeFree(DENS,TEMP,GRID)
     else: Model.DataTab_LIME(DENS,TEMP,VEL,ABUND,GTD,GRID)
