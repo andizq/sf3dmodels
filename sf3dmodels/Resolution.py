@@ -11,7 +11,7 @@ def FieldView(xmax, radius, NP, d, scale=False):
     -> radius (AU): Maximum limit of the Lime domain
     -> NP : Number of boxels of the model (Number of nodes minus 1)
     -> d (PC): distance to the source
-    -> scale (AU): [False by default] Usage: Calc(0,0,0,d,scale = value)
+    -> scale (AU): [False by default] Usage: FieldView(0,0,0,d,scale = value)
                 minimum scale of the grid. In case of irregular grids 
                 this must be provided and xmax and NP won't have relevance.  
 

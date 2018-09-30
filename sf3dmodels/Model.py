@@ -1032,7 +1032,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
             print ('=================================================')
 
     if center is not False:
-        print ('Moving the object to the new center...')
+        print ('Moving the grid to the new center...')
         center = np.array(center)
         POS_vec = POS_vec + center
         modCenter = True

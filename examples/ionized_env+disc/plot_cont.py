@@ -59,7 +59,7 @@ except KeyError: pass
 #-----------------------------
 #COLORS IN LIMITS OF COLORBARS
 #-----------------------------
-
+#Use copy so that we don't mutate the global colormap instance
 colormm = plt.cm.hot
 palette_hot = copy(colormm)
 palette_hot.set_over('red', 0.8)#colormm(255), 0.8)
