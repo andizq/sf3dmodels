@@ -125,8 +125,8 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
                 gtd_tmp[m][Num] = n[4] * n[10]
                 IDList[m].append(Num)
         
-            hg+=1
-            if hg%50000 == 0: print (hg)
+            #hg+=1
+            #if hg%50000 == 0: print (hg)
 
         print ('Finished with the file: %s'%names[m])
 
@@ -178,6 +178,8 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
     DENS[ind] = rho_min
     ABUND[ind] = ab0 #?
     GTD[ind] = gtd0 #?
+    DENS = np.where(DENS < rho_min, rho_min, DENS)
+    
     TEMP = np.where(TEMP == 0., T_min, TEMP)
 
     if radmc3d: Model.Datatab_RADMC3D_FreeFree(DENS,TEMP,GRID)

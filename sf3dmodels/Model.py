@@ -16,7 +16,7 @@ class Struct:
 #SPATIAL (Spherical-)GRID
 #------------------------
  
-def grid(XYZmax, NP, artist = False, radmc3d = False):
+def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     """
     """
     """
@@ -34,11 +34,19 @@ def grid(XYZmax, NP, artist = False, radmc3d = False):
     #NUMBER OF POINTS
     #----------------
     #Each NP becomes odd if it's not. This is done to force the grid to contain the midplane too.
-    NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in xrange(3) ] 
-    print('Changing the number of grid points to force it to contain the midplane...' 
-          if NP != NP_dum
-          else '... ... ...')
-    NP = NP_dum
+    
+    if include_zero:
+        NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in xrange(3) ] 
+        print('Changing the number of grid points to force it to contain the midplane...' 
+              if NP != NP_dum
+              else '... ... ...'
+              )
+        NP = NP_dum
+    else: 
+        for i in xrange(3): print('Coordinate zero NOT included for axis: %d'%i
+                                  if NP[i]%2 == 0
+                                  else 'Coordinate zero included for axis: %d'%i
+                                  )
     
     #--------
     #XYZ GRID
