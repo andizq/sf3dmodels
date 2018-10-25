@@ -1450,6 +1450,54 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
 #--------------
 #--------------    
 
+def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
+    
+    import pandas
+
+    if is_submodel:
+        os.system('mkdir Subgrids')
+        file0 = './Subgrids/datatab%s.dat'%tag
+        file = open(file0,'w')
+        x,y,z = GRID.XYZ
+        print ('Writing Submodel data on %s'%file0)
+        tmp = []
+        for i in xrange(GRID.NPoints): 
+            #file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
+             #          (i,x[i],y[i],z[i],dens[i],temp[i],vel['x'][i],vel['y'][i],vel['z'][i],abund[i],gtd[i]))
+            tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        file.writelines(tmp)
+        
+    else:
+        files=['datatab.dat','x.dat','y.dat','z.dat']
+        sizefile='./npoints.dat'
+        print ('Writing grid size on %s'%sizefile)
+        sfile = open(sizefile,'w') 
+        Ns = GRID.Nodes
+        sfile.write("%d %d %d %d"%(Ns[0],Ns[1],Ns[2],GRID.NPoints))
+        print ('Writing data on %s'%files[0])
+        file = open(files[0],'w')
+
+        for i in xrange(GRID.NPoints): 
+            file.write("%d %e %e %e %e %e %e %e %e %e\n"%
+                       (i,dens_H2[i],dens_H[i],dens_Hp[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+
+        df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
+    
+        for i in xrange(1,4):
+            print ('Writing data on %s'%files[i])
+            df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
+        
+        sfile.close()
+        
+    file.close()
+    
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+#--------------
+#--------------    
+
+
 def Make_Datatab1(prop_list, GRID, format_list = False, 
                  submodel_tag = False, submodel_folder = 'Subgrids', 
                  lime = True, radmc3d = False):
