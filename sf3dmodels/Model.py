@@ -403,7 +403,7 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
 #DENSITY (PowerLaw) FUNCTION
 #---------------------------
 
-def density_Powerlaw(r_max, rho_mean, q, GRID):
+def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
 
 #r_max: Maximum radius of the envelope 
 #rho_mean: Mean density of the Envelope 
@@ -423,7 +423,10 @@ def density_Powerlaw(r_max, rho_mean, q, GRID):
 
     #As rho_mean = 1/NTotal * np.sum(rho0 * r**q), the normalization rho0 is calculated as follows:  
     rho0 = NPoints * rho_mean / np.sum(rqList)
-    rhoENV = np.where( rho0 * rqList < 1.0, 1.0e9, rho0 * rqList )
+    rhoENV = rho0 * rqList
+    rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
+
+    #rhoENV = np.where( rho0 * rqList < 1.0, rho_min, rho0 * rqList )
 
     #------------------------
     #------------------------
@@ -651,6 +654,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
         tempENV = np.where( (rList <= renv) & (thetaList >= ang_cavity), 
                             T10Env * 10**p * (rList / AU)**-p, 
                             Tmin_env)
+        tempENV = np.where(tempENV < Tmin_env, Tmin_env, tempENV)
         #tempENV = TStar * (RStar / (2.*rList))**(2. / (4+p))
     else: tempENV = 1.
     
