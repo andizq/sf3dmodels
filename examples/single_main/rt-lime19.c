@@ -8,8 +8,6 @@
  */
 
 #include "lime.h"
-#include "readdata.h"
-#include "mindistance.h"
 
 /******************************************************************************/
 
@@ -160,5 +158,3 @@ velocity(double dummy0, double dummy1, double id, double *vel){
 }
 
 /******************************************************************************/
-
-
