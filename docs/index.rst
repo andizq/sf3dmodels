@@ -93,13 +93,12 @@ non-interactive mode and read the ``sf3dmodels`` output as well you should run:
    $ lime -n -S model.c
 
 
-*Note* that if the ``-S`` option *is not set* you will get back to the standard operation of LIME.
+*Note* that if the ``-S`` option *is not set* you will get back the 'traditional' operation of LIME.
 
 Examples
 ````````
 
-Check the ``example_sf3dmodels/`` folder included in ``lime/``.
-
+Take a look at the ``example_sf3dmodels/`` folder included in ``lime/``.
 
 
 License
