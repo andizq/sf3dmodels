@@ -1454,7 +1454,7 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
 #--------------
 #--------------    
 
-def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
+def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, is_submodel = False, tag = False):
     
     import pandas
 
@@ -1465,10 +1465,14 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID, is_submodel = 
         x,y,z = GRID.XYZ
         print ('Writing Submodel data on %s'%file0)
         tmp = []
-        for i in xrange(GRID.NPoints): 
-            #file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
-             #          (i,x[i],y[i],z[i],dens[i],temp[i],vel['x'][i],vel['y'][i],vel['z'][i],abund[i],gtd[i]))
-            tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
+            for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                                       (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                                        tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        else: 
+            for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                                       (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                                        vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
         file.writelines(tmp)
         
     else:
@@ -1481,9 +1485,14 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID, is_submodel = 
         print ('Writing data on %s'%files[0])
         file = open(files[0],'w')
 
-        for i in xrange(GRID.NPoints): 
-            file.write("%d %e %e %e %e %e %e %e %e %e\n"%
-                       (i,dens_H2[i],dens_H[i],dens_Hp[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
+            for i in xrange(GRID.NPoints): 
+                file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
+                           (i,dens_H2[i],dens_H[i],dens_Hp[i],temp[i],tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        else:
+            for i in xrange(GRID.NPoints): 
+                file.write("%d %e %e %e %e %e %e %e %e %e\n"%
+                           (i,dens_H2[i],dens_H[i],dens_Hp[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
 
         df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
     
