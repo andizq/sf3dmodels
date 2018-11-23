@@ -1,7 +1,13 @@
-`Documentation`_ | `View on Github`_ | `Download Stable ZIP`_
+.. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
+.. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
+.. _View on Github: https://github.com/andizq/star-forming-regions/
+.. _docs: http://star-forming-regions.readthedocs.io
+.. _Full Documentation: http://star-forming-regions.readthedocs.io
 
-Star Forming regions 3D Modelling package
------------------------------------------
+`Full Documentation`_ | `View on Github`_ | `Download Stable ZIP`_
+
+SF3dmodels
+----------
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org
@@ -14,6 +20,11 @@ forming systems as those being revealed by current instruments.
 The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ (see below) 
 or `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ 
 to carry out radiative transfer calculations of the modelled region.
+
+Documentation
+-------------
+
+Find the documentation and examples at the `ReadTheDocs _Full Documentation`_ website.
 
 
 Requirements
@@ -99,14 +110,7 @@ which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
 
 
-Citing SF3dmodels
+Citing sf3dmodels
 -----------------
 
 If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_. 
-
-
-.. _Download Stable ZIP: https://github.com/andizq/star-forming-regions/archive/master.zip
-.. _Download: https://github.com/andizq/star-forming-regions/archive/master.zip
-.. _View on Github: https://github.com/andizq/star-forming-regions/
-.. _docs: http://star-forming-regions.readthedocs.io
-.. _Documentation: http://star-forming-regions.readthedocs.io
