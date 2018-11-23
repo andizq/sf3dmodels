@@ -4,7 +4,7 @@
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Full Documentation: http://star-forming-regions.readthedocs.io
 
-`Full Documentation` | `View on Github`_ | `Download Stable ZIP`_
+`Full Documentation`_ | `View on Github`_ | `Download Stable ZIP`_
 
 SF3dmodels
 ----------
@@ -94,10 +94,10 @@ non-interactive mode and read the ``sf3dmodels`` output as well you should run:
 
 *Note* that if the ``-S`` option *is not set* you will get back the 'traditional' operation of LIME.
 
-Examples
-********
+LIME Examples
+*************
 
-Take a look at the ``example_sf3dmodels/`` folder included in ``lime/``.
+Take a look at the folder ``example_sf3dmodels/`` included in ``lime/``.
 
 License
 -------
