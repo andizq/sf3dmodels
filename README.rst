@@ -24,7 +24,7 @@ to carry out radiative transfer calculations of the modelled region.
 Documentation
 -------------
 
-Find the documentation and examples at the `ReadTheDocs _Full Documentation`_ website.
+Find the documentation and examples at the `ReadTheDocs Full Documentation`_ website.
 
 
 Requirements
