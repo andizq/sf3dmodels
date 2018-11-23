@@ -97,7 +97,7 @@ non-interactive mode and read the ``sf3dmodels`` output as well you should run:
 LIME Examples
 *************
 
-Take a look at the folder ``example_sf3dmodels/`` included in the module ``lime/``.
+Take a look at the folder ``example_sf3dmodels/`` included in the submodule ``lime/`` of this repository.
 
 License
 -------
