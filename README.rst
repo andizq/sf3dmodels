@@ -4,7 +4,7 @@
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Full Documentation: http://star-forming-regions.readthedocs.io
 
-`Full Documentation`_ | `View on Github`_ | `Download Stable ZIP`_
+`Full Documentation` | `View on Github`_ | `Download Stable ZIP`_
 
 SF3dmodels
 ----------
@@ -24,8 +24,7 @@ to carry out radiative transfer calculations of the modelled region.
 Documentation
 -------------
 
-Find the documentation and examples at the `ReadTheDocs <http://star-forming-regions.readthedocs.io>`_ website.
-
+Find the full documentation and examples at the `ReadTheDocs <http://star-forming-regions.readthedocs.io>`_ website.
 
 Requirements
 ------------
