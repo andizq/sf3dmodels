@@ -1462,17 +1462,40 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
         os.system('mkdir Subgrids')
         file0 = './Subgrids/datatab%s.dat'%tag
         file = open(file0,'w')
-        x,y,z = GRID.XYZ
+        x,y,z = GRID.XYZ 
+    
         print ('Writing Submodel data on %s'%file0)
         tmp = []
-        if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
-            for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
-                                                       (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
-                                                        tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
-        else: 
-            for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
-                                                       (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
-                                                        vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+    
+        fixed_grid = True
+        if fixed_grid:
+            
+            rr = np.linalg.norm(GRID.XYZ, axis = 0)
+            ind_rr = iter(np.argsort(rr))
+
+            id = 0       
+            if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
+                for i in ind_rr: 
+                    tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                (id,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                 tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+                    id+=1
+            else: 
+                for i in ind_rr: 
+                    tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                (id,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                 vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+                    id+=1
+        else:
+            if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
+                for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                                           (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                                            tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+            else: 
+                for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                                           (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                                            vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+        
         file.writelines(tmp)
         
     else:
