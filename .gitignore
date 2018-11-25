@@ -72,3 +72,4 @@ examples/*.inp
 
 # Specific files
 rt-lime.c
+test_examples/

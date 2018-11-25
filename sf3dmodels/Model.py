@@ -790,6 +790,8 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
     #----------------------------------------------
     
     #Weighted temperature with density 
+    
+    #TEMP = tempENV
     TEMP = (tempDISC * rhoDISC + tempENV * rhoENV) / density.total
         
     print ('%s is done!'%inspect.stack()[0][3])
@@ -1094,7 +1096,7 @@ class Make_Datatab(object):
             for i in nvec: tmp += ' '+fmt #The same format for all properties
         elif type_fmt == list or type_fmt == np.ndarray: #If a list of formats
             if len(fmt) != self.n: sys.exit('ERROR: The number of formats provided (%d) is not equal to the number of properties to be written (%d)'%(len(fmt),self.n))
-            print ('Using format list:', fmt) 
+            print ('Using formats list:', fmt) 
             for f in fmt: tmp += ' '+f
         elif not fmt: #If False
             print ("Using default format '%e'")
@@ -1103,7 +1105,7 @@ class Make_Datatab(object):
         tmp += '\n'
         return tmp
 
-    def submodel(self, tag, format = False, folder = 'Subgrids'):        
+    def submodel(self, tag = '0', format = False, folder = 'Subgrids'):        
 
         os.system('mkdir %s'%folder)
         file_path = './%s/datatab_%s.dat'%(folder,tag)
@@ -1135,7 +1137,7 @@ class Lime(Make_Datatab):
         list2write = iter(np.array([self.id] + self.prop).T)
         files = [folder + tag for tag in ['datatab.dat','x.dat','y.dat','z.dat']]
         print ('Writing Global grid data in %s'%files[0])        
-        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
+        for _ in xrange(self.GRID.NPoints): tmp_write.append( tmp % tuple(next(list2write)) )
         file_data = open(files[0],'w')
         file_data.writelines(tmp_write)
 
@@ -1244,6 +1246,27 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
+    def write_gas_velocity(self, vel, format = '%13.6e'):
+        
+        #-------------------------
+        #Write the gas temperature
+        #-------------------------
+        vel2wrt = np.array((vel.x,vel.y,vel.z)).T * cm
+        tmp_write = []
+        tmp = ((format+'\t')*3)[:-1] + '\n'
+        
+        with open('gas_velocity.inp','w+') as f: 
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            for i in xrange(self.nn): tmp_write.append(tmp % tuple(vel2wrt[i]))         
+            f.writelines(tmp_write)
+            #vel2wrt.tofile(f, sep='\n', format=format)
+            f.write('\n')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
     def write_radmc3d_control(self, scattering_mode_max = 1, 
                               incl_freefree = 1,
                               incl_dust = 1,
@@ -1288,9 +1311,9 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
         
-    def freefree(self, format = '%13.6e', folder = './'):
+    def freefree(self, format = '%13.6e', folder = './'): #Create kwargs for each invoked function
 
-        prop = {} #Created a new dict bcause dont want to modify the self.prop variable at the minute
+        prop = {} #Creating a new dict bcause dont want to modify the self.prop variable at the minute
         prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
         prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
         prop['tgas'] = self.prop['tgas']
@@ -1302,6 +1325,27 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
         self.write_wavelength_micron()
             
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+
+    ##UNDER DEVELOPMENT
+    def recomblines(self, format = '%13.6e', folder = './'): 
+
+        prop = {} #Creating a new dict bcause dont want to modify the self.prop variable at the minute
+        prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
+        prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
+        prop['tgas'] = self.prop['tgas']
+        prop['vel'] = self.prop['vel']
+        
+        self.write_amr_grid()
+        self.write_electron_numdens(prop['dens_elect'], format=format)
+        self.write_ion_numdens(prop['dens_ion'], format=format)
+        self.write_gas_temperature(prop['tgas'])
+        #self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
+        #self.write_wavelength_micron()
+        self.write_gas_velocity(prop['vel'], format=format) #--> Create this function
+    
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
 
@@ -1467,7 +1511,7 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
         print ('Writing Submodel data on %s'%file0)
         tmp = []
     
-        fixed_grid = True
+        fixed_grid = True*1
         if fixed_grid:
             
             rr = np.linalg.norm(GRID.XYZ, axis = 0)
