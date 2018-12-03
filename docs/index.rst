@@ -86,7 +86,7 @@ To invoke this option, a ``-S`` flag (in capital letter) must be added in the us
 
    $ lime -S model.c
 
-The LIME standard command line options may be invoked too. For instance, to run LIME in a 
+The LIME standard command line options may also be invoked. For instance, to run LIME in a 
 non-interactive mode and read the ``sf3dmodels`` output as well you should run:
 
 .. code-block:: bash
