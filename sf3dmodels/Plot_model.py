@@ -191,7 +191,7 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
         grid_2d = [[0 for i in range(len(perpdim0))] for i in range(len(perpdim1))]
         i,j,k = 0,0,0
         prop2plot = prop[indices]
-    
+        print (np.shape(prop2plot), np.shape(prop_2d), dim2plot)
         for u in perpdim0:
             for v in perpdim1:
                 prop_2d[j,i] = prop2plot[k] 
