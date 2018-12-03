@@ -65,7 +65,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in xrange(3)]
         #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in xrange(3)]
         X, Y ,Z = XYZgrid #The grid must contain an extra node but...
-        X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] ) #Moving the node from the corner to the center of the boxel
+        X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] ) #Moving the node from the corner to the center of the boxel. length = lengthofcorners - 1
         Y = 0.5 * ( Y[0:NP[1]] + Y[1:NP[1]+1] )  
         Z = 0.5 * ( Z[0:NP[2]] + Z[1:NP[2]+1] )
   
@@ -82,7 +82,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     rList = rRxyzList[:,0] ; RList = rRxyzList[:,1]; xList = rRxyzList[:,2]; yList = rRxyzList[:,3]; zList = rRxyzList[:,4]
     rList = np.where(rList < 1., sorted(set(rList))[1] / 2 , rList ) # If r == 0: use the second minimum value of r divided by 2
     
-    #"set" eliminates duplicates and "sorted" sorts values upward 
+    #"set" eliminates duplicates and "sorted" sorts values upwards 
     RList = np.where(RList < 1., sorted(set(RList))[1] / 2 , RList )
     
     #-----
@@ -334,11 +334,13 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
     
     RHO = rhoDISC + rhoENV 
 
+    nonzero_ids = np.where(RHO != 0.0)
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
     return Struct( **{'total': RHO, 'disc': rhoDISC, 'env': rhoENV, 'discFlag': discFlag, 'envFlag': envFlag, 
-                      'r_disc': rdisc_max, 'r_env': renv_max, 'streamline': costheta0} )
+                      'r_disc': rdisc_max, 'r_env': renv_max, 'streamline': costheta0,
+                      'nonzero_ids': nonzero_ids} )
 
 #-------------------
 #-------------------
@@ -390,18 +392,22 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
     #----------------------------------------------
     #----------------------------------------------
 
+    nonzero_ids = np.where(rhoDISC != 0.0)
+
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
     return Struct( **{'total': rhoDISC, 'disc': rhoDISC, 'env': 0., 'H': H,  
-                      'discFlag': discFlag, 'envFlag': False, 'Rt': Rt, 'r_disc': rdisc_max, 'r_env': False} ) 
+                      'discFlag': discFlag, 'envFlag': False, 'Rt': Rt, 
+                      'r_disc': rdisc_max, 'r_env': False,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #------------------------------
 #------------------------------
 
-#---------------------------
-#DENSITY (PowerLaw) FUNCTION
-#---------------------------
+#-----------------------------------
+#DENSITY (PowerLaw-mean_rho) FUNCTION
+#-----------------------------------
 
 def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
 
@@ -427,14 +433,57 @@ def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
     rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
 
     #rhoENV = np.where( rho0 * rqList < 1.0, rho_min, rho0 * rqList )
-
+    
     #------------------------
     #------------------------
+    
+    nonzero_ids = np.where(rhoENV != 0.0)
 
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
-    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max} ) 
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 
+                      'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max,
+                      'nonzero_ids': nonzero_ids} ) 
+
+#---------------------------
+#---------------------------
+
+#------------------------------------
+#DENSITY (PowerLaw-standard) FUNCTION
+#------------------------------------
+
+def density_Powerlaw2(r_max, r_min, rho0, q, GRID, rho_min = 1.0e3):
+
+#r_max: Maximum radius of the envelope 
+#rho_mean: Mean density of the Envelope 
+#q: power-law for density
+#GRID: Grid to work in
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #------------------------
+    #MODEL. Envelope powerlaw
+    #------------------------
+    print ('Calculating Envelope density with power-law...')
+    rqList = np.where((rList >= r_min) & (rList <= r_max) , rList**q, 0.)
+    rhoENV = rho0 * rqList
+    rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
+
+    #------------------------
+    #------------------------
+    
+    nonzero_ids = np.where(rhoENV != 0.0)
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 
+                      'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #---------------------------
 #---------------------------
@@ -479,10 +528,15 @@ def density_Keto_HII(MStar, r_min, r_max, rho_s, T, GRID, q = 1.5):
     #------------------------
     #------------------------
 
+    nonzero_ids = np.where(rhoENV != 0.0)
+
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
-    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_min': r_min, 'r_env': r_max, 'rs': rs} ) 
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 
+                      'discFlag': False, 'envFlag': True, 'r_disc': False, 
+                      'r_min': r_min, 'r_env': r_max, 'rs': rs,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #---------------------------
 #---------------------------
@@ -513,10 +567,14 @@ def density_Powerlaw_HII(r_min, r_max, r_s, rho_s, q, GRID):
     #------------------------
     #------------------------
 
+    nonzero_ids = np.where(rhoENV != 0.0)
+
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
-    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max} ) 
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 
+                      'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #---------------------------
 #---------------------------
@@ -560,10 +618,15 @@ def density_Constant(Rd, GRID, discDens = 0, rdisc_max = False, envDens = 0, ren
     #----------------------------------------------
     RHO = rhoDISC + rhoENV
         
+    nonzero_ids = np.where(RHO != 0.0)
+
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
-    return Struct( **{'total': RHO, 'disc': rhoDISC, 'env': rhoENV, 'discFlag': bool(discDens), 'envFlag': bool(envDens), 'r_disc': rdisc_max, 'r_env': renv_max} ) 
+    return Struct( **{'total': RHO, 'disc': rhoDISC, 'env': rhoENV, 
+                      'discFlag': bool(discDens), 'envFlag': bool(envDens), 
+                      'r_disc': rdisc_max, 'r_env': renv_max,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #---------------------------
 #---------------------------
@@ -788,11 +851,11 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
         
     #----------------------------------------------
     #----------------------------------------------
-    
     #Weighted temperature with density 
-    
-    #TEMP = tempENV
-    TEMP = (tempDISC * rhoDISC + tempENV * rhoENV) / density.total
+
+    #zerodens_mask = np.equal(density.total, 0.0)
+    TEMP = np.where(density.total != 0.0, (tempDISC * rhoDISC + tempENV * rhoENV) / density.total, backTemp)
+    #TEMP = np.choose(zerodens_mask, ((tempDISC * rhoDISC + tempENV * rhoENV) / density.total, backTemp))
         
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
@@ -1246,6 +1309,22 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
+    def write_microturbulence(self, microturbulence, format = '%13.6e'):
+        
+        #-------------------------
+        #Write the gas temperature
+        #-------------------------
+        microturb = np.ones(self.nn) * microturbulence * cm
+        with open('microturbulence.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            microturb.tofile(f, sep='\n', format=format)
+            f.write('\n')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
     def write_gas_velocity(self, vel, format = '%13.6e'):
         
         #-------------------------
@@ -1337,7 +1416,8 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
         prop['tgas'] = self.prop['tgas']
         prop['vel'] = self.prop['vel']
-        
+        prop['microturb'] = self.prop['microturb']
+
         self.write_amr_grid()
         self.write_electron_numdens(prop['dens_elect'], format=format)
         self.write_ion_numdens(prop['dens_ion'], format=format)
@@ -1345,7 +1425,8 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         #self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
         #self.write_wavelength_micron()
         self.write_gas_velocity(prop['vel'], format=format) #--> Create this function
-    
+        #self.write_microturbulence(prop['microturb'], format=format)
+
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
 
