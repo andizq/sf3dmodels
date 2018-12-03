@@ -86,8 +86,8 @@ To invoke this option, a ``-S`` flag (in capital letter) must be added in the us
 
 The LIME standard command line options may also be invoked. For instance, to set LIME to 
 (1.) produce normal output rather than the default ncurses output style, (2.)  
-read the ``sf3dmodels`` output and (3.) at the same time run in parallel mode with 4 
-threads you should run:
+read the ``sf3dmodels`` output and (3.) run in parallel mode with 4 threads 
+you should execute:
 
 .. code-block:: bash
 
