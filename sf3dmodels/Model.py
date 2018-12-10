@@ -1579,7 +1579,7 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
 #--------------
 #--------------    
 
-def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, is_submodel = False, tag = False):
+def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, is_submodel = False, tag = False, fixed_grid = False):
     
     import pandas
 
@@ -1592,7 +1592,6 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
         print ('Writing Submodel data on %s'%file0)
         tmp = []
     
-        fixed_grid = True*1
         if fixed_grid:
             
             """
