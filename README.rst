@@ -19,7 +19,7 @@ The package can couple different models in a single grid to recreate complex sta
 forming systems as those being revealed by current instruments. 
 The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ (see below) 
 or `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ 
-to carry out radiative transfer calculations of the modelled region.
+to carry out radiative transfer calclations of the modelled region.
 
 Documentation
 -------------
