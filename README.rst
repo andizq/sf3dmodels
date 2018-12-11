@@ -29,6 +29,7 @@ Find the full documentation and examples at the `ReadTheDocs <http://star-formin
 Requirements
 ------------
 
+* Python 2.7
 * `Astropy <http://docs.astropy.org/en/stable/install.html>`__
 * `Numpy <https://www.scipy.org/install.html>`_
 * `Matplotlib <https://matplotlib.org/users/installing.html>`_
