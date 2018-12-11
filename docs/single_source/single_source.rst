@@ -31,7 +31,7 @@ Source code and figures on GitHub: `single_main <https://github.com/andizq/star-
 
    t0 = time.time()
 
-**a.** Define some general parameters:
+**a.** Let's define some general parameters:
 
 .. code-block:: python
 
@@ -150,13 +150,13 @@ Source code and figures on GitHub: `single_main <https://github.com/andizq/star-
    :width: 400
    :align: center
 
-**e.** Write the data into a file. In this case the output file will be in the LIME format:
+**e.** Write the numbers into a file, in this case readable in LIME:
 
 .. code-block:: python
 
-   #-----------------------------
-   #WRITING DATA with LIME format
-   #-----------------------------
+   #-------------------------------------
+   #WRITING DATA into file in LIME format
+   #-------------------------------------
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID)
 
 **f.** And print some useful information:
@@ -380,9 +380,9 @@ Source code and figures on GitHub: `hamburger_standard <https://github.com/andiz
 
 .. code-block:: python
 
-   #-----------------------------
-   #WRITING DATA with LIME format
-   #-----------------------------
+   #-------------------------------------
+   #WRITING DATA into file in LIME format
+   #-------------------------------------
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID) 
 
 

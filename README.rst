@@ -14,7 +14,7 @@ SF3dmodels
     :alt: Powered by Astropy Badge
 
 SF3dmodels is a star forming region(s) modelling package that brings together
-analytical models in order to compute their physical properties in a 3-dimensional grid. 
+analytical models in order to compute their physical properties in a 3-Dimensional grid. 
 The package can couple different models in a single grid to recreate complex star
 forming systems as those being revealed by current instruments. 
 The output data can be read with `LIME <https://lime.readthedocs.io/en/latest/>`_ (see below) 
@@ -37,7 +37,7 @@ Requirements
 Installation (from source)
 --------------------------
 
-`Download`_ or clone the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_:
+Clone the star-forming-regions repository from `GitHub <https://github.com/andizq/star-forming-regions>`_:
 
 To clone the package, if you have a github account:
 
@@ -51,7 +51,7 @@ if you don't have one:
 
    $ git clone https://github.com/andizq/star-forming-regions.git
 
-Using the command line, go into the folder and run the ``setup.py`` installation script:
+Then get into the folder and run the ``setup.py`` script in installation mode:
 
 .. code-block:: bash
 

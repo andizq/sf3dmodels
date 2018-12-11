@@ -30,7 +30,8 @@ are computed as explained in section 3.2 of `Izquierdo et al. 2018`_.
 
 .. warning:: The execution codes for both compact sources are identical, except for the additions that are made explicit here. 
    	     **The following lines must be added after the definition of the Physical properties 
-	     and for each compact source separately. The Writing-into-file process is slightly different (see below)**.
+	     and for each compact source separately. Since we are going to overlap the models the writing-into-file process 
+	     is slightly different (see below)**.
 
 |
 
@@ -87,9 +88,9 @@ model is actually a **sub-model** that will eventually be part of a **global-mod
 
 .. code-block:: python
 
-   #-----------------------------
-   #WRITING DATA with LIME format
-   #-----------------------------
+   #-----------------------------------
+   #WRITING DATA to file in LIME format
+   #-----------------------------------
    tag = '_Main' #A tag to identify the final files from those of other sub-models
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID,
 		      is_submodel = True, tag = tag)
@@ -150,9 +151,9 @@ And the writing command:
 
 .. code-block:: python
 
-   #-----------------------------
-   #WRITING DATA with LIME format
-   #-----------------------------
+   #-----------------------------------
+   #WRITING DATA to file in LIME format
+   #-----------------------------------
    tag = '_Burger' #A tag to identify the final files from those of other sub-models
    Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID,
 		      is_submodel = True, tag = tag)

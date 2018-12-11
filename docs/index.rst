@@ -11,11 +11,30 @@ Find the source code on `GitHub`_.
     :alt: Powered by Astropy Badge
 
 SF3dmodels is a star forming region(s) modelling package that brings together
-analytical models in order to compute their physical properties in a 3-dimensional grid. 
+analytical models in order to compute their physical properties in a 3-Dimensional grid. 
 The package can couple different models in a single grid to recreate complex star
 forming systems as those being revealed by current data. 
 The output data can be read with `LIME`_ or `RADMC-3D`_
 to carry out radiative transfer calculations of the model.
+
+.. image:: ../images/burger_face.png
+   :width: 112
+
+.. image:: ../images/burger_edge.png
+   :width: 112
+
+.. image:: ../images/burger_tapering.png
+   :width: 112
+
+.. image:: ../images/global_objects.png
+   :width: 112
+
+.. image:: ../images/compact_sources.png
+   :width: 112
+
+.. image:: ../images/pIntensitypoints.png
+   :width: 112
+
 
 Requirements
 ============
@@ -28,7 +47,7 @@ Requirements
 Installation (from source)
 ==========================
 
-`Download`_ or clone the star-forming-regions repository from `GitHub`_:
+Clone the star-forming-regions repository from `GitHub`_:
 
 To clone the package, if you have a github account:
 
@@ -42,7 +61,7 @@ if you don't have one:
 
    $ git clone https://github.com/andizq/star-forming-regions.git
 
-Using the command line go into the folder and run the ``setup.py`` installation script:
+Then get into the folder and run the ``setup.py`` script in installation mode:
 
 .. code-block:: bash
 
@@ -93,7 +112,7 @@ you should execute:
 
 .. code-block:: bash
 
-   $ lime -n -S model.c
+   $ lime -nS -p 4 model.c
 
 
 *Note* that if the ``-S`` option *is not set* you will get back the 'traditional' operation of LIME.
