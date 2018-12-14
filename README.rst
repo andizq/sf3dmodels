@@ -52,7 +52,7 @@ if you don't have one:
 
    $ git clone https://github.com/andizq/star-forming-regions.git
 
-Then get into the folder and run the ``setup.py`` script in installation mode:
+Get into the star-forming-regions cloned folder and run the ``setup.py`` script in installation mode:
 
 .. code-block:: bash
 
