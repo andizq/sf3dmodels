@@ -18,6 +18,15 @@ class Struct:
  
 def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     """
+    Computes the hosting grid for the model(s).
+    
+    Parameters
+    ----------
+    
+    Returns
+    -------
+    
+    
     """
     """
     XYZmax: Maximum physical domain of the grid
@@ -177,9 +186,9 @@ def grid_FIXED(Fx=False,xF=False,Fmax=False,NP=False,File=False):
     return fList
 """
 
-#---------------------------------
-#Spherical base --> Cartesian base
-#---------------------------------
+#--------------------------------------------
+#Vector in Spherical base --> Cartesian base
+#--------------------------------------------
 
 def sphe_cart(V_sphe, theta, phi):
     

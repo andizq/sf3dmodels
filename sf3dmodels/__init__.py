@@ -16,6 +16,7 @@ if not _ASTROPY_SETUP_:
     from . import Model
     from . import Resolution
     from . import Plot_model
+    from . import Tools
     from . import Utils
     from . import create_cylinder
     from . import create_parabola

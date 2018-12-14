@@ -1,6 +1,6 @@
-#------------
-#CONSTANTS
-#------------
+#*******************
+#Useful CONSTANTS
+#*******************
 
 MSun = 1.9891e30 #kg
 RSun = 696000000. #m
@@ -18,6 +18,3 @@ kb = 1.38064852e-23 #(J K^-1) Boltzmann constant
 sigma = 5.670373e-8 #(W m^-2 K^-4)Stefan-Boltzmann constant
 
 arcsecs = 206264.806247 #radians->arcsecs
-
-
-
