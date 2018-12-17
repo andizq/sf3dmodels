@@ -152,7 +152,18 @@ Reference/API
 .. automodapi:: sf3dmodels.Plot_model	   
    :no-inheritance-diagram:
 
-.. automodapi:: sf3dmodels.Tools
+.. automodapi:: sf3dmodels.Tools_v0
+   :no-inheritance-diagram:
+
+.. automodapi:: sf3dmodels.tools
+   :no-inheritance-diagram:
+
+.. automodapi:: sf3dmodels.grid
+   :no-inheritance-diagram:
+
+.. automodapi:: sf3dmodels.tools.fillgrid
+
+.. automodapi:: sf3dmodels.tools.transformations
    :no-inheritance-diagram:
   
 .. warning:: This package, as well as its documentation, are currently under development.
