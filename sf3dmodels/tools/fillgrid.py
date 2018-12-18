@@ -3,7 +3,6 @@ Fills the grid in with dummy (empty) points.
 
 This is particularly useful for irregular grids containing large voids between its
 real cells and the border of the eventual radiative transfer domain.
-
 """
 import numpy as np
 from .transformations import spherical2cartesian
