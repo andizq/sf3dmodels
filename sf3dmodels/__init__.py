@@ -13,17 +13,17 @@ if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
     
-#    from . import Model
-#    from . import Resolution
-#    from . import Plot_model
+    from . import Model
+    from . import Resolution
+    from . import Plot_model
 #    from . import Tools_v0
 #    from . import grid
     
-#    from . import Utils
-#    from . import create_cylinder
-#    from . import create_parabola
-#    Res = Resolution
-#    U = Utils
+    from . import Utils
+    from . import create_cylinder
+    from . import create_parabola
+    Res = Resolution
+    U = Utils
     pass
 
 #from .Model import grid, sphe_cart, streamline, density_Env_Disc
