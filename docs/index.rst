@@ -152,8 +152,8 @@ Reference/API
 .. automodapi:: sf3dmodels.Plot_model	   
    :no-inheritance-diagram:
 
-Working on now
-==============
+Working on...
+=============
 
 .. toctree::
    :maxdepth: 1   
