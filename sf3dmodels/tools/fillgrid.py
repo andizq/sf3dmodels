@@ -1,11 +1,11 @@
 """
 Fills the grid in with dummy (empty) points.
 
-This is particularly useful for irregular grids containing large voids between its
+This is particularly useful for irregular grids that have large voids between its
 real cells and the border of the eventual radiative transfer domain.
 """
 import numpy as np
-from .transformations import spherical2cartesian
+from .transform import spherical2cartesian
 from ..grid import Build_r
 
 __all__ = ['Random']
@@ -15,19 +15,54 @@ __all__ = ['Random']
 
 class Random(Build_r): 
     """    
-    Contains random methods to fill the grid in.
+    Contains methods for filling the grid in randomly.
     """
-    _def0 = False
-    __doc__ += Build_r._pars%_def0 + Build_r._returns
+    __doc__ += Build_r._pars + Build_r._returns
 
-    def __init__(self,GRID,get_r=_def0):
-        super(Random,self).__init__(GRID,get_r=get_r)
-
-    def by_density(self):
+    def by_density(self, density, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
         r"""
         Under development.
 
-        Fills the grid with uniformly-distributed random points weighted by the inverse of the density field.
+        Fills the grid with uniformly-distributed random points according to a mass criterion, given a density field.
+
+        Useful when the model does provide the density but not the mass. However the aim is identical to the method `by_mass`.
+
+        The mass is calculated via the mean density enclosed in a sphere growing on each iteration until the ``mass_fraction`` 
+        is reached, which sets the inner radius of the spherical section where the dummy points will be generated.  
+        
+        Parameters
+        ----------
+        density: array_like
+           `list` or `numpy.ndarray` hosting the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
+        
+        mass_fraction : float
+           The mass fraction to be enclosed by the inner radius of the spherical section.
+           Sets the inner radius ``r_min`` at `spherical`.
+
+           Defaults to 0.5, i.e, by default the computed inner radius will enclose (approx.) the 50% of the total mass.
+        
+        r_max : float
+           Outer radius of the spherical section enclosing the random dummy points.
+
+           Defaults to `None`. In that case it takes the distance of the farthest point in the grid.
+
+        n_dummy : int
+           Number of dummy points to be generated.
+
+           Defaults to `None`. In that case n_dummy = GRID.NPoints / 100
+
+        r_steps : int
+           Number of divisions along the radial coordinate to compute the enclosed mass.
+           
+           Defaults to 100.
+
+        Returns
+        -------
+        ???????
+        
+        See Also
+        --------
+        by_mass, spherical
         """
         t = 4+4
         return t
@@ -67,7 +102,7 @@ class Random(Build_r):
         
         See Also
         --------
-        by_density, shell
+        box
         """
 
         if r_max == None: r_max = self._r_max
@@ -84,21 +119,21 @@ class Random(Build_r):
         return {"r_rand": r_rand, "n_dummy": n_dummy}
 
 
-    def by_mass(self, mass_field, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
+    def by_mass(self, mass, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
         r"""
         Fills the grid with uniformly-distributed random dummy points in a spherical section according to a mass criterion.
         
         The inner radius of the spherical section will be equal to the radius of a sphere which encloses the input ``mass_fraction``.
-        The function iterates over the radial coordinate until the enclosed mass fraction surpass the input ``mass_fraction``.
+        The function iterates over the radial coordinate until the enclosed mass fraction exceeds the input ``mass_fraction``.
         
         Parameters
         ----------
-        mass_field: array_like
-           `list` or `numpy.ndarray` containing the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
+        mass: array_like
+           `list` or `numpy.ndarray` hosting the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
         
-        fraction : float
+        mass_fraction : float
            The mass fraction to be enclosed by the inner radius of the spherical section.
-           Sets the inner radius r_min at `random_spherical`.
+           Sets the inner radius r_min at `spherical`.
 
            Defaults to 0.5, i.e, by default the computed inner radius will enclose (approx.) the 50% of the total mass.
         
@@ -140,18 +175,18 @@ class Random(Build_r):
         
         See Also
         --------
-        spherical
+        by_density, spherical
         """
         if r_max == None: r_max = self._r_max
 
-        mass_field = np.asarray(mass_field)
-        total_mass = np.sum(mass_field)
+        mass = np.asarray(mass)
+        total_mass = np.sum(mass)
         min_mass = mass_fraction * total_mass
         enc_mass = 0
         r_min = None
         for r in np.linspace(0,r_max,r_steps):
             inds = np.where(self._r_grid < r)
-            enc_mass = np.sum(mass_field[inds])
+            enc_mass = np.sum(mass[inds])
             if enc_mass > min_mass: 
                 r_min = r
                 break

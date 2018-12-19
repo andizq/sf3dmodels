@@ -13,5 +13,4 @@ if not _ASTROPY_SETUP_:
     #from .example_mod import *
 
     from . import fillgrid
-    from . import transformations 
-
+#    from . import transform
