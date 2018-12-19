@@ -4,7 +4,7 @@ from . import GridInit
 __all__ = ['GridSet']
 class GridSet(object):
     """
-    Base class for calling the grid and setting new flags.
+    Base class for all classes invoking non-new grids.
     """
     _pars = """
     Parameters
@@ -17,6 +17,6 @@ class GridSet(object):
     def _set_flag(self, a): 
         try: 
             self.GRID.flag[a] = True
-        except AttributeError:
+        except AttributeError: #Call flag setter class
             self.GRID.flag = {}
             self.GRID.flag[a] = True
