@@ -1450,7 +1450,6 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
     nx,ny,nz = GRID.Nodes
     xi, yi, zi = np.array(GRID.XYZgrid) * 100 #to cm
     nphot = 1000000
-
 #
 # Write the grid file
 #
@@ -1461,12 +1460,19 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
         f.write('0\n')                       # gridinfo
         f.write('1 1 1\n')                   # Include x,y,z coordinate
         f.write('%d %d %d\n'%(nx,ny,nz))     # Size of grid
+        tmp = ['%13.6e '*(n+1) for n in [nx,ny,nz]]
+        f.write((tmp[0]+'\n')%tuple(xi))
+        f.write((tmp[1]+'\n')%tuple(yi))
+        f.write((tmp[2]+'\n')%tuple(zi))
+
+        """
         for value in xi:
             f.write('%13.6e\n'%(value))      # X coordinates (cell walls)
         for value in yi:
             f.write('%13.6e\n'%(value))      # Y coordinates (cell walls)
         for value in zi:
             f.write('%13.6e\n'%(value))      # Z coordinates (cell walls)
+        """
 #
 # Write the electronic density file.
 #
@@ -1532,8 +1538,9 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
         f.write('scattering_mode_max = 1\n')   # Put this to 1 for isotropic scattering
         f.write('incl_freefree = 1\n')
         f.write('incl_dust = 0\n')
+        f.write('setthreads = 4\n')
         #f.write('tgas_eq_tdust = 1')
-
+        
     
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')

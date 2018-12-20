@@ -50,7 +50,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
     detected = [tmp.split(folder)[1] for tmp in data]
     read = [tmp.split(folder)[1] for tmp in names]
     print ('Number of files detected:', num, '\nFiles detected:', detected, 
-           '\nNumber of files read:', len(files), '\nFiles read:', read)
+           '\nNumber of files to merge in grid:', len(files), '\nFiles to merge in grid:', read)
 
     NTotal = GRID.NPoints
     Nx, Ny, Nz = GRID.Nodes
@@ -128,7 +128,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
             #hg+=1
             #if hg%50000 == 0: print (hg)
 
-        print ('Finished with the file: %s'%names[m])
+        print ('Merging finished for: %s'%names[m])
 
     print ('Calculating combined densities, temperatures, etc....')
     for m in range(NFiles):
