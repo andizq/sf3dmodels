@@ -19,6 +19,8 @@ if not _ASTROPY_SETUP_:
     from . import Utils
     from . import create_cylinder
     from . import create_parabola
+    U = Utils
+    Res = Resolution
 
 #from .Model import grid, sphe_cart, streamline, density_Env_Disc
 
