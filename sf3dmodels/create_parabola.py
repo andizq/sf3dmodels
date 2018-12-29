@@ -229,17 +229,17 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
                     r_max = 0, vsys=0, name = 'paraboloid0.dat'):
     
     """
-    pos_c: Position of the paraboloid center
-    pos_f: Final position of the paraboloid 
-    drBIGGRID: Maximum separation between nodes of the Global Grid
+    pos_c: Position of the paraboloid's center
+    pos_f: Position of the farthest point from the center along the paraboloid's axis   
+    drBIGGRID: Maximum separation between nodes in the Global Grid
 
-    Note: If r_max is set, pos_f could just store the vectorial direction of the outflow: pos_f = pos_i + dir. 
+    Note: If r_max is set, pos_f will just store the vectorial direction of the paraboloid's axis: pos_f = pos_i + dir. 
     For example: pos_i = np.array([100*AU, 0, 0]), r_max = 2000 * AU, then an outflow pointing towards the Y direction should have
     pos_f = pos_i + np.array([0, 1, 0]). The equivalent solution (without setting r_max) would be pos_f = np.array([100*AU, 2000*AU, 0]).
     
     """
     #------------------------------------------
-    #Paraboloid Model (Ginsburg-Izquierdo 2018)
+    #Paraboloid Model (Izquierdo-Ginsburg 2018)
     #------------------------------------------
     r_min = float(r_min)
     r0 = r_min
@@ -313,7 +313,7 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
         
     file = open(name,'w')
 
-    if width: hwidth = 0.5*width
+    hwidth = 0.5*width
     x,y,z = (0,0,0)
     vx,vy,vz = (0,0,0)
     speed = 0
@@ -324,7 +324,7 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
     
     for i in range(Npoints):
         
-        r = np.random.uniform(r_min, r_seg_mag) #Random r from low_mass disk border until high_mass disk border        
+        r = np.random.uniform(r_min, r_seg_mag) #Random z along the paraboloid's axis
 
         if width: 
             X = np.random.uniform(-r**0.5*a, r**0.5*a) #Random X. Must be inside the range of the projected ellipse 
@@ -343,7 +343,6 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
             Y = Y * np.random.choice([-1,1]) #Random choice between + and -
             x,y,z = X,Y,r
             
-
      #   xn,yn,zn = r_real_n
             
         rr = np.sqrt(x**2 + y**2 + z**2)

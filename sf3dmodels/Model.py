@@ -1032,26 +1032,21 @@ def PrintProperties(density, temperature, GRID):
 def Rotation_Matrix(angle_dicts):
     
     Rot = []
-
     for item in angle_dicts:
-
         #Rotation along X
         if item['axis'] == 'x':
-            
             thX = item['angle'] 
             Rot.append( np.array([[1,0,0],
                                   [0,np.cos(thX),-np.sin(thX)],
                                   [0,np.sin(thX),np.cos(thX)]]) )
             print ("Added: rotation matrix along '%s' axis, %.1f deg"%('X',thX * 180/np.pi) )
-
         #Rotation along Y
         if item['axis'] == 'y':
             thY = item['angle'] 
             Rot.append( np.array([[np.cos(thY),0,-np.sin(thY)],
                                   [0,1,0],
                                   [np.sin(thY),0,np.cos(thY)]]) )
-            print ("Added: rotation matrix along '%s' axis, %.1f deg"%('Y',thY * 180/np.pi) )
-    
+            print ("Added: rotation matrix along '%s' axis, %.1f deg"%('Y',thY * 180/np.pi) )    
         #Rotation along Z
         if item['axis'] == 'z':
             thZ = item['angle'] 
@@ -1061,7 +1056,7 @@ def Rotation_Matrix(angle_dicts):
             print ("Added: rotation matrix along '%s' axis, %.1f deg"%('Z',thZ * 180/np.pi) )
 
     tmp = Rot[0]
-    Rot_iter = iter(Rot[1:]) #Iterator for Rot_list from 2nd value: (matriz for matriz in Rot_list[1:])
+    Rot_iter = iter(Rot[1:]) #Iterator for Rot_list from 2nd value: (matrix for matrix in Rot_list[1:])
 
     for i in xrange( len(Rot[1:]) ): 
         tmp = np.dot( next(Rot_iter) , tmp )
@@ -1113,7 +1108,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
             rotVel = True
         else: 
             print ('=================================================') 
-            print ('WARNING: No VELOCITY distribution was provided to rotate!')
+            print ('WARNING: No VELOCITY distribution was provided to be rotated!')
             print ('Please provide it if you are going to calculate line emission.')
             print ('=================================================')
 
