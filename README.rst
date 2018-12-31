@@ -100,7 +100,7 @@ you should execute:
 LIME Examples
 *************
 
-Take a look at the folder ``example_sf3dmodels/`` included in the submodule ``lime/`` of this repository.
+Take a look at the folder ``lime/example_sf3dmodels/`` included in this repository.
 
 License
 -------
@@ -115,4 +115,4 @@ more information.
 Citing sf3dmodels
 -----------------
 
-If you find the ``sf3dmodels`` package useful for your work please cite `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_. 
+If you find the ``sf3dmodels`` package useful for your research please cite the work of `Izquierdo et al. 2018 <http://adsabs.harvard.edu/doi/10.1093/mnras/sty1096>`_. 
