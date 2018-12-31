@@ -270,8 +270,8 @@ def make_paraboloid(z_min, z_max, drBIGGRID, a, b, dens, temp,
         return cd * r**dens[1] #* (y/(300*AU))**1.2
 
     a2 = a**2; b2 = b**2
-    def normal_vec(x,y,z):
-        vec = np.array([2*x/a2, 2*y/b2, 1])
+    def normal_vec(x,y,z): #Returns the normal vector to the tangent plane at x,y,z, where x,y,z on paraboloid.
+        vec = np.array([2*x/a2, 2*y/b2, 1]) #Paraboloid gradient at point x,y,z
         nor = np.linalg.norm(vec)
         dir = vec/nor
         return dir
@@ -324,7 +324,7 @@ def make_paraboloid(z_min, z_max, drBIGGRID, a, b, dens, temp,
             coords.append([x,y,z])
             props.append([ne,T,0,0,0,0,0]) #dens,temp,vx,vy,vz,abund,gtdratio
 
-    else: #i.e. if a full paraboloid is invoked
+    else: #i.e. if a compact paraboloid is invoked
         for i in range(Npoints):
             Z = np.random.uniform(z_min, z_max) #Random z along the paraboloid's axis
             X = np.random.uniform(-Z**0.5*a, Z**0.5*a) #Random X from the segment 
@@ -340,18 +340,6 @@ def make_paraboloid(z_min, z_max, drBIGGRID, a, b, dens, temp,
             coords.append([x,y,z])
             props.append([ne,T,0,0,0,0,0]) #dens,temp,vx,vy,vz,abund,gtdratio
 
-        """
-        xp,yp,zp = [x,xn],[y,yn],[z,zn]
-        for j in range(2): 
-            k+=1
-            file.write('%d %e %e %e %e %e %e %e %e %e %e\n'%(k,xp[j],yp[j],zp[j],ne,T,vx,vy,vz,0,0))
-        """
-        """
-        while flag:
-            x,y,z = np.random.uniform(0,500,3)
-            #Equation of a plane with the normal unitary vector (a,b,c) in (x0,y0,z0): 
-            # f = a*(x-x0) + b*(y-y0) + c*(z-z0) = 0 
-        """
     #file.close()
     coords = np.array(coords)
     props = np.array(props).T

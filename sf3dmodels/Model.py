@@ -1368,7 +1368,7 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
-    def write_wavelength_micron(self, lam = [5e2,2e4,4e4,3e5], nxx = [50,50,50], format = '%13.6e'):
+    def write_wavelength_micron(self, lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], format = '%13.6e'):
 
         #------------------------------------
         #Write the wavelength_micron.inp file
