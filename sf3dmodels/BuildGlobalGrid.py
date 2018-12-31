@@ -128,7 +128,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
             #hg+=1
             #if hg%50000 == 0: print (hg)
 
-        print ('Merging finished for: %s'%names[m])
+        print ('Finished merging for: %s'%names[m])
 
     print ('Calculating combined densities, temperatures, etc....')
     for m in range(NFiles):

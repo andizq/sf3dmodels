@@ -1071,7 +1071,7 @@ def Rotation_Matrix(angle_dicts):
 
 def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = False):
 
-#order: indicates the order of the axes to make the rotation  
+#order: indicates the order of the axes along which the rotations will be performed
  
     rotPos, rotVel, modCenter, modVsys = [False]*4
 
@@ -1107,10 +1107,10 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
             VEL_vec = np.array([ np.dot( Rot_total, next(VEL_it) ) for i in xrange(NPoints) ])
             rotVel = True
         else: 
-            print ('=================================================') 
+            print ('==========================================================') 
             print ('WARNING: No VELOCITY distribution was provided to be rotated!')
-            print ('Please provide it if you are going to calculate line emission.')
-            print ('=================================================')
+            print ('Please provide it if you are interested in computing line emission.')
+            print ('==========================================================')
 
     if center is not False:
         print ('Moving the grid to the new center...')
@@ -1153,36 +1153,36 @@ class Make_Datatab(object):
         self.id = np.arange(GRID.NPoints)
         super(Make_Datatab, self).__init__()
     
-    def formatter(self, format, tmp = '%d'):
+    def formatter(self, format, base = '%d'):
 
         fmt, type_fmt = format, type(format) 
         nvec = xrange(self.n)
 
-        if type_fmt == str: #If a single format is provided
-            print ("Using format '%s'"%fmt) 
-            for i in nvec: tmp += ' '+fmt #The same format for all properties
-        elif type_fmt == list or type_fmt == np.ndarray: #If a list of formats
-            if len(fmt) != self.n: sys.exit('ERROR: The number of formats provided (%d) is not equal to the number of properties to be written (%d)'%(len(fmt),self.n))
+        if isinstance(fmt, str): #If a single format is provided
+            print ("Using format '%s' for all the properties"%fmt) 
+            for i in nvec: base += ' '+fmt #Same format for all properties
+        elif isinstance(fmt, list) or isinstance(fmt, np.ndarray): #If a list of formats
+            if len(fmt) != self.n: sys.exit('ERROR: The number of formats provided (%d) differs to the number of properties to be written (%d)'%(len(fmt),self.n))
             print ('Using formats list:', fmt) 
-            for f in fmt: tmp += ' '+f
-        elif not fmt: #If False
-            print ("Using default format '%e'")
-            for i in nvec: tmp += ' %e' #Default format for all properties
-        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid 'format_list' object (str, list or np.ndarray)"%type_fmt)
-        tmp += '\n'
-        return tmp
+            for f in fmt: base += ' '+f
+        elif fmt is None: #If no input fmt
+            print ("Using default format '%e' for all the properties")
+            for i in nvec: base += ' %e' #Default format for all properties
+        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid format object as input (str, list or np.ndarray)"%type_fmt)
+        base += '\n'
+        return base
 
-    def submodel(self, tag = '0', format = False, folder = 'Subgrids'):        
+    def submodel(self, tag = '0', format = None, folder = 'Subgrids'):        
 
         os.system('mkdir %s'%folder)
-        file_path = './%s/datatab_%s.dat'%(folder,tag)
+        file_path = './%s/%s'%(folder,tag)
         x,y,z = self.GRID.XYZ
         
-        tmp = self.formatter(format, tmp = '%d %.8e %.8e %.8e')
+        tmp = self.formatter(format, base = '%d %.8e %.8e %.8e')
         tmp_write = []
-        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
+        if isinstance(self.prop, np.ndarray): self.prop = self.prop.tolist()
         list2write = iter(np.array([self.id,x,y,z] + self.prop).T)
-        print ('Writing Submodel data in %s'%file_path)        
+        print ('Writing Submodel data in %s'%file_path)
         for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
         file_data = open(file_path, 'w')        
         file_data.writelines(tmp_write)
@@ -1396,7 +1396,7 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         
     def freefree(self, format = '%13.6e', folder = './'): #Create kwargs for each invoked function
 
-        prop = {} #Creating a new dict bcause dont want to modify the self.prop variable at the minute
+        prop = {} #Creating a new dict bcause dont want to modify the original self.prop for the moment
         prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
         prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
         prop['tgas'] = self.prop['tgas']
