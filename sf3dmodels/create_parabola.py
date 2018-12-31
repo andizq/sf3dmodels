@@ -1,5 +1,6 @@
 from __future__ import print_function
 from .Utils import *
+from . import Model
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -225,24 +226,12 @@ def make_parabola(p,Mass,xlims,width,drBIGGRID,angles,order,traslation,function_
     return np.array(xList),np.array(yList)
 
 
-def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0, 
-                    r_max = 0, vsys=0, name = 'paraboloid0.dat'):
+def make_paraboloid(z_min, z_max, drBIGGRID, a, b, dens, temp, 
+                    width = None, vsys=0):
     
     """
-    pos_c: Position of the paraboloid's center
-    pos_f: Position of the farthest point from the center along the paraboloid's axis   
     drBIGGRID: Maximum separation between nodes in the Global Grid
-
-    Note: If r_max is set, pos_f will just store the vectorial direction of the paraboloid's axis: pos_f = pos_i + dir. 
-    For example: pos_i = np.array([100*AU, 0, 0]), r_max = 2000 * AU, then an outflow pointing towards the Y direction should have
-    pos_f = pos_i + np.array([0, 1, 0]). The equivalent solution (without setting r_max) would be pos_f = np.array([100*AU, 2000*AU, 0]).
-    
     """
-    #------------------------------------------
-    #Paraboloid Model (Izquierdo-Ginsburg 2018)
-    #------------------------------------------
-    r_min = float(r_min)
-    r0 = r_min
 
     """
     cw = w[0] * r0**-w[1]
@@ -268,11 +257,15 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
         return ci * r**ionfrac[1]
     """
 
+    #------------------------------------------
+    #Paraboloid Model (Izquierdo-Ginsburg 2018)
+    #------------------------------------------
+
     def ellipse_func_y(z,x): #Returns the positive Y for a given Z,X
         y = np.sqrt(b**2 * (z - (x / a)**2))
         return y    
 
-    cd = dens[0] * r0**-dens[1]
+    cd = dens[0] * z_min**-dens[1]
     def density(r,y):
         return cd * r**dens[1] #* (y/(300*AU))**1.2
 
@@ -283,24 +276,17 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
         dir = vec/nor
         return dir
 
-    pos_c = np.array(pos_c)
-    pos_f = np.array(pos_f)
-    
-    r_seg = pos_f - pos_c
-    r_seg_mag = np.linalg.norm(r_seg) #Magnitude of the segment between low mass and high mass
-    r_seg_dir = r_seg/r_seg_mag #Direction of the segment
-
-    r_seg = r_seg - r_min * r_seg_dir
-    
-    if r_max: r_seg = (r_max - r_min) * r_seg_dir  
-
-    r_seg_mag = np.linalg.norm(r_seg) #Magnitude of the segment between low mass and high mass
-    r_seg_dir = r_seg/r_seg_mag #Direction of the segment
+    dir_c = np.array([0,0,0])
+    dir_f = np.array([0,0,1])
+    r_seg_dir = dir_f - dir_c #Paraboloid's main axis direction
+    r_seg = (z_max - z_min) * r_seg_dir  
+    r_seg_mag = np.linalg.norm(r_seg) #Paraboloid's main axis length
+    r_seg_dir = r_seg/r_seg_mag 
 
     #Guess of the number of points to generate: (approximation to a rectangular region)
     # Number of divisions along the main segment, 
     #  times the number of divisions perpendicular to the segment,
-    #   times the number of divisions in the perpendicular to both segments above
+    #   times the number of divisions in a perpendicular line to both of the segments above.
     
     drmax = drBIGGRID
     dr = drmax/4.
@@ -310,54 +296,50 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
     print ('Number of points generated:', Npoints)
     
     flag = True
-        
-    file = open(name,'w')
-
-    hwidth = 0.5*width
     x,y,z = (0,0,0)
     vx,vy,vz = (0,0,0)
     speed = 0
-    vmean, nemean, Tmean = [], [], []
+    coords, props = [], []
     rho = 0
     T = 0
     k = 0
-    
-    for i in range(Npoints):
-        
-        r = np.random.uniform(r_min, r_seg_mag) #Random z along the paraboloid's axis
 
-        if width: 
-            X = np.random.uniform(-r**0.5*a, r**0.5*a) #Random X. Must be inside the range of the projected ellipse 
-            Y = ellipse_func_y(r,X) #Resultant +Y
+    if width is not None: #i.e. if a paraboloid shell is invoked
+        hwidth = 0.5*width
+        for i in range(Npoints):
+            Z = np.random.uniform(z_min, z_max) #Random z along the paraboloid's axis
+            X = np.random.uniform(-Z**0.5*a, Z**0.5*a) #Random X. Must be inside the range of the projected ellipse 
+            Y = ellipse_func_y(Z,X) #Resultant +Y
             Y = Y * np.random.choice([-1,1]) #Random choice between + and -
-            normal = normal_vec(X,Y,r) #Normal vector to the surface at x,y,z
+            normal = normal_vec(X,Y,Z) #Normal vector to the surface at x,y,z
             R = np.random.uniform(-hwidth, hwidth) #Random R from the surface
             surf_vec = R*normal 
-            res_vec = np.array([X,Y,r]) + surf_vec
+            res_vec = np.array([X,Y,Z]) + surf_vec
             x,y,z = res_vec
-            
-        else:
-            X = np.random.uniform(-r**0.5*a, r**0.5*a) #Random X from the segment 
-            Y = ellipse_func_y(r,X) #Resultant (maximum) +Y
+    
+            rr = np.sqrt(x**2 + y**2 + z**2)
+            ne = density(rr, abs(y)) #Electronic density at r
+            T = temp #temperature(r) #Temperature at r
+
+            coords.append([x,y,z])
+            props.append([ne,T,0,0,0,0,0]) #dens,temp,vx,vy,vz,abund,gtdratio
+
+    else: #i.e. if a full paraboloid is invoked
+        for i in range(Npoints):
+            Z = np.random.uniform(z_min, z_max) #Random z along the paraboloid's axis
+            X = np.random.uniform(-Z**0.5*a, Z**0.5*a) #Random X from the segment 
+            Y = ellipse_func_y(Z,X) #Resultant (maximum) +Y
             Y = np.random.uniform(0,Y)
             Y = Y * np.random.choice([-1,1]) #Random choice between + and -
-            x,y,z = X,Y,r
-            
-     #   xn,yn,zn = r_real_n
-            
-        rr = np.sqrt(x**2 + y**2 + z**2)
-        speed = 0#velocity(r)
-        (vx,vy,vz) = speed * r_seg_dir #Velocity of the given r_real
-        vz = vz + vsys
-        
-        ne = density(rr, abs(y)) #Electronic density of the given r
-        T = temp #temperature(r) #Temperature of the given r
+            x,y,z = X,Y,Z
 
-        vmean.append(speed)
-        nemean.append(ne)
-        Tmean.append(T)
+            rr = np.sqrt(x**2 + y**2 + z**2)
+            ne = density(rr, abs(y)) #Electronic density at r
+            T = temp #temperature(r) #Temperature at r
 
-        file.write('%d %e %e %e %e %e %e %e %e %e %e\n'%(i,x,y,z,ne,T,vx,vy,vz,0,0))
+            coords.append([x,y,z])
+            props.append([ne,T,0,0,0,0,0]) #dens,temp,vx,vy,vz,abund,gtdratio
+
         """
         xp,yp,zp = [x,xn],[y,yn],[z,zn]
         for j in range(2): 
@@ -370,16 +352,18 @@ def make_paraboloid(pos_c, pos_f, r_min, drBIGGRID, a, b, dens, temp, width = 0,
             #Equation of a plane with the normal unitary vector (a,b,c) in (x0,y0,z0): 
             # f = a*(x-x0) + b*(y-y0) + c*(z-z0) = 0 
         """
-    file.close()
-    vmean0 = np.sum( np.array(vmean) ) / len(vmean)
-    netot = np.sum( np.array(nemean) )
-    nemean0 = netot / len(nemean)
-    Tmean0 = np.sum(np.array(nemean) * np.array(Tmean)) / netot  
-    print ("Mean tangential velocity: %.2f km/s"%(vmean0 * 1e-3) )
-    print ("Mean density: %.2e e-/cm^3"%(nemean0 * 1e-6) )
-    print ("Mean temperature: %.1f K"%(Tmean0) )
+    #file.close()
+    coords = np.array(coords)
+    props = np.array(props).T
+    ne_tot = np.sum(props[0])
+    ne_mean = ne_tot / props.shape[1]
+    T_mean = np.sum(ne_mean * props[1]) / ne_tot  
+    print ("Mean density: %.2e e-/cm^3"%(ne_mean * 1e-6) )
+    print ("Mean temperature: %.1f K"%(T_mean) )
     #cross_sec = np.pi * width(0.5 * r_seg_mag)**2
     #inflow_rate = vmean0 * (rho * 2*Mu) * cross_sec / MSun_yr
     #print ("Mass inflow rate:", inflow_rate, "MSun/yr")
     
-    return r_seg_mag
+    GRID = Model.Struct( XYZ = coords.T)
+    GRID.NPoints = props.shape[1]
+    return GRID, props
