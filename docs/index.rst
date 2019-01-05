@@ -116,7 +116,7 @@ you should execute:
    $ lime -nS -p 4 model.c
 
 
-*Note* that if the ``-S`` option *is not set* you will get back the 'traditional' operation of LIME.
+**Note** that if the ``-S`` option *is not set* you will get back the 'traditional' operation of LIME.
 
 LIME Examples
 ^^^^^^^^^^^^^
@@ -160,5 +160,6 @@ Working on...
    
    tools/tools.rst
    grid/grid.rst
-
+   arepo/arepo.rst
+   
 .. warning:: This package, as well as its documentation, are currently under development.

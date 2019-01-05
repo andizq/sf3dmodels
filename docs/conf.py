@@ -78,6 +78,7 @@ rst_epilog += """
 .. _Li+2017: http://adsabs.harvard.edu/abs/2017ApJ...840...72L
 .. _RADMC-3D: http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/
 .. _LIME: https://lime.readthedocs.io/en/latest/
+.. _AREPO:  https://wwwmpa.mpa-garching.mpg.de/~volker/arepo/ 
 .. _Keto+2010: http://adsabs.harvard.edu/abs/2010MNRAS.406..102K
 .. _Keto+2008: http://adsabs.harvard.edu/abs/2008ApJ...672..423K
 .. _Pratap+1992: http://adsabs.harvard.edu/abs/1992ApJ...387..241P
