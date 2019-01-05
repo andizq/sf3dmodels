@@ -1,8 +1,8 @@
 """
-Fills the grid in with dummy (empty) points.
+Fills the input grid with empty points (dummy points).
 
-This is particularly useful for irregular grids that have large voids between its
-real cells and the border of the eventual radiative transfer domain.
+This is particularly useful for irregular grids that have large voids between the
+real cells and the border of an eventual radiative transfer domain.
 """
 import numpy as np
 from .transform import spherical2cartesian
