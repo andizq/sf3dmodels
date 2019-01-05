@@ -138,7 +138,7 @@ class ReadSnapshot(UniqueCells):
     """
 
     def __init__(self, 
-                 snap_path, 
+                 path, 
                  flags = {'mc_tracer': True,
                           'time_steps': True,
                           'sgchem': True,
@@ -153,7 +153,7 @@ class ReadSnapshot(UniqueCells):
                     in your machine and its path is defined in the $PYTHONPATH env variable")
 
         for key in flags.keys(): rsnap.io_flags[key] = flags[key]
-        data, header = rsnap.read_snapshot(snap_path)        
+        data, header = rsnap.read_snapshot(path)        
 
         super(ReadSnapshot, self).__init__(data, header)
         return data, header
