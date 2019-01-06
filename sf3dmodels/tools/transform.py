@@ -21,7 +21,7 @@ def spherical2cartesian(r = None, theta = None, phi = None):
        
     Returns
     -------
-    out: `numpy.ndarray`, shape (3,n) 
+    out : `numpy.ndarray`, shape (3,n) 
        Array-like object with the resulting x,y,z transformation.
 
     See Also

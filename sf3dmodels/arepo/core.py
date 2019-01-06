@@ -35,8 +35,8 @@ class UniqueCells(object):
         
         Returns
         -------
-        indices: 1-D `numpy.ndarray`, length: *number of non-repeated cells*
-           The indices of the computed non-repeated cells.
+        indices : 1-d `numpy.ndarray`, length: *number of non-repeated cells*
+           The indices of the non-repeated cells.
  
         Notes
         -----
@@ -52,7 +52,6 @@ class UniqueCells(object):
            >>> data_orig = deepcopy(data)
            >>> uni = UniqueCells(data, header) 
            >>> inds = uni.mergemass() 
-
 
         """
 
