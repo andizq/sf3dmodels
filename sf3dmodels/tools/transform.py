@@ -23,6 +23,10 @@ def spherical2cartesian(r = None, theta = None, phi = None):
     -------
     out: `numpy.ndarray`, shape (3,n) 
        Array-like object with the resulting x,y,z transformation.
+
+    See Also
+    --------
+    cartesian2spherical
     
     Notes
     -----
@@ -31,6 +35,7 @@ def spherical2cartesian(r = None, theta = None, phi = None):
     .. math:: x &= r\\sin(\\theta)\\cos(\\phi) \n 
               y &= r\\sin(\\theta)\\sin(\\phi) \n
               z &= r\\cos(\\theta)
+
     """
 
     r = np.asarray(r)
@@ -44,4 +49,7 @@ def spherical2cartesian(r = None, theta = None, phi = None):
             ])
 
 def cartesian2spherical(x=None, y=None, z=None):
+    """
+    Under development
+    """
     return 0

@@ -6,7 +6,6 @@ from . import Model
 from . import Utils as U
 import time
 
-#H
 #------------------------------
 #FUNCTION TO FIND NEAREST POINT
 #------------------------------

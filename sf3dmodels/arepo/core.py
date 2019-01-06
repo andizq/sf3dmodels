@@ -1,7 +1,9 @@
 from __future__ import print_function
 import numpy as np
 from copy import copy, deepcopy
+
 from ..Model import Struct
+
 
 class UniqueCells(object):
     """
@@ -15,9 +17,11 @@ class UniqueCells(object):
     header : dict
        Dictionary containing the header information of the AREPO snapshot.
 
+
     Notes
     -----
-    This tool computes the search over gas particles only.
+    This tool computes the search over the gas particles.
+
     """
 
     def __init__(self, data, header):
@@ -48,6 +52,8 @@ class UniqueCells(object):
            >>> data_orig = deepcopy(data)
            >>> uni = UniqueCells(data, header) 
            >>> inds = uni.mergemass() 
+
+
         """
 
         data_pos = self.data['pos']
@@ -131,10 +137,12 @@ class ReadSnapshot(UniqueCells):
 
     header: dict
        Dictionary containing the header information of the snapshot.    
-
+       
     Notes
     -----
     This tool uses the main functionalities of the AREPO standard python library **arepy**.
+
+
     """
 
     def __init__(self, 
