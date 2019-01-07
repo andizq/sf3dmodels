@@ -1,15 +1,16 @@
 from __future__ import print_function
 import numpy as np
 import pandas as pd
+import inspect
 import os
-from . import Model
-from . import Utils as U
 import time
 
-#------------------------------
-#FUNCTION TO FIND NEAREST POINT
-#------------------------------
+from . import Model
+from . import Utils as U
 
+#------------------------------
+#FINDING NEAREST NEIGHBOR 
+#------------------------------
 def mindistance(x,xma,Nx):
     distx = 0
     mindist = 1000000 * U.PC * U.AU 
@@ -25,12 +26,13 @@ def mindistance(x,xma,Nx):
     return j
 
 #------------------------------
+#OVERLAPING SUBMODELS INTO GRID
 #------------------------------
-
 def overlap(GRID, submodels = [''], folder = './Subgrids/', 
             T_min = 30., rho_min = 1.e9,
             all = False, radmc3d = False):
             
+    func_name = inspect.stack()[0][3]
 
     if folder[-1] != '/': folder = folder + '/'
     t0 = time.time()
@@ -48,8 +50,10 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
     
     detected = [tmp.split(folder)[1] for tmp in data]
     read = [tmp.split(folder)[1] for tmp in names]
-    print ('Number of files detected:', num, '\nFiles detected:', detected, 
-           '\nNumber of files to merge in grid:', len(files), '\nFiles to merge in grid:', read)
+
+    print ("Running function '%s'..."%func_name)
+    print ('Files detected (%d):'%num, detected, 
+           '\nFiles to merge in grid (%d):'%len(files), read)
 
     NTotal = GRID.NPoints
     Nx, Ny, Nz = GRID.Nodes
@@ -129,7 +133,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
 
         print ('Finished merging for: %s'%names[m])
 
-    print ('Calculating combined densities, temperatures, etc....')
+    print ('Computing combined densities, temperatures, etc....')
     for m in range(NFiles):
         for ind in IDList[m]:
         
@@ -181,11 +185,12 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
     
     TEMP = np.where(TEMP == 0., T_min, TEMP)
 
-    if radmc3d: Model.Datatab_RADMC3D_FreeFree(DENS,TEMP,GRID)
+    if radmc3d: pass #Model.Datatab_RADMC3D_FreeFree(DENS,TEMP,GRID)
     else: Model.DataTab_LIME(DENS,TEMP,VEL,ABUND,GTD,GRID)
 
     AllProp = Model.Struct( **{'GRID': GRID, 'density': DENS, 'temperature': TEMP, 'vel': VEL, 'abundance': ABUND, 'gtd': GTD}) 
-
+    print ('%s is done!'%func_name)
     print ('Ellapsed time: %.3fs' % (time.time() - t0))
+    print ('-------------------------------------------------\n-------------------------------------------------')
     
     return AllProp

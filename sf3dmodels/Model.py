@@ -1,12 +1,12 @@
 from __future__ import print_function
-from .Utils import *
-
 import numpy as np
 import random
 import inspect
 import time
 import sys
 import os
+
+from .Utils import *
 
 class Struct:
     def __init__(self, **entries):
@@ -24,8 +24,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     ----------
     
     Returns
-    -------
-    
+    -------    
     
     """
     """
@@ -46,21 +45,23 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     
     if include_zero:
         NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in xrange(3) ] 
-        print('Changing the number of grid points to force it to contain the midplane...' 
+        print('Setting the number of grid points to be {},'.format(NP_dum) +
+              '\n so that the planes x=0, y=0, z=0 are all present...' +
+              '\nTurn off this feature by setting the flag include_zero=False'
               if NP != NP_dum
               else '... ... ...'
               )
+        
         NP = NP_dum
     else: 
         for i in xrange(3): print('Coordinate zero NOT included for axis: %d'%i
                                   if NP[i]%2 == 0
-                                  else 'Coordinate zero included for axis: %d'%i
-                                  )
+                                  else 'Coordinate zero included for axis: %d'%i)
     
     #--------
     #XYZ GRID
     #--------
-    print ('Calculating Grid...')
+    print ('Computing Grid...')
     
     Xmax,Ymax,Zmax = XYZmax    
     step = 2. * XYZmax / NP
@@ -124,7 +125,6 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     print ('Number of grid nodes for x,y,z:', NP)
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
-
         
     return Struct( **{'XYZgrid': XYZgrid, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP, 'step': dx})
 
@@ -303,7 +303,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
     #DISC PROFILE
     #------------
     if discFlag:
-        print ('Calculating Keplerian flared-disc density...')
+        print ('Computing Keplerian flared-disc density...')
         
         if not rdisc_max: rdisc_max = Rd #Keto's value for the disc to stop
         rhoD0 = Arho * rhoE0 #Normalization factor based on the envelope
@@ -321,12 +321,12 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
     if ang_cavity: print ('Set cavity for density with half-aperture %.1f deg'%(ang_cavity * 180 / np.pi))
     
     if envFlag:
-        print ('Calculating stream lines for Ulrich envelope...')
+        print ('Computing stream lines for Ulrich envelope...')
         if not renv_max: renv_max = np.max(XYZgrid[0]) #A sphere inscribed in the coordinate X. ##CHANGE this by the smallest of the 3 maximum (1 for each axis)
 
         costheta = np.cos(thetaList)
         costheta0 = streamline(Rd,GRID)
-        print ('Calculating Envelope density...')
+        print ('Computing Envelope density...')
         rhoENV = np.where( (rList <= renv_max) & (thetaList >= ang_cavity), 
                            ((rhoE0 * (rList / Rd)**-1.5) *
                             ((1 + (costheta / costheta0))**-0.5) *
@@ -385,7 +385,7 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
     #DISC PROFILE
     #------------
     if discFlag:
-        print ('Calculating Burger-disc density...')
+        print ('Computing Burger-disc density...')
         if not rdisc_max: rdisc_max = Ro
         rhoD0 = Arho * rhoE0 
         H0 = shFactor * RStar
@@ -433,7 +433,7 @@ def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
     #------------------------
     #MODEL. Envelope powerlaw
     #------------------------
-    print ('Calculating Envelope density with power-law...')
+    print ('Computing Envelope density with power-law...')
     rqList = np.where(rList <= r_max , rList**q, 0.)
 
     #As rho_mean = 1/NTotal * np.sum(rho0 * r**q), the normalization rho0 is calculated as follows:  
@@ -477,7 +477,7 @@ def density_Powerlaw2(r_max, r_min, rho0, q, GRID, rho_min = 1.0e3):
     #------------------------
     #MODEL. Envelope powerlaw
     #------------------------
-    print ('Calculating Envelope density with power-law...')
+    print ('Computing Envelope density with power-law...')
     rqList = np.where((rList >= r_min) & (rList <= r_max) , rList**q, 0.)
     rhoENV = rho0 * rqList
     rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
@@ -526,7 +526,7 @@ def density_Keto_HII(MStar, r_min, r_max, rho_s, T, GRID, q = 1.5):
     #-------------------------------------------------
     #MODEL. HCH_II region, Keto 2003 (double gradient)
     #-------------------------------------------------
-    print ('Calculating H_II Envelope density with Keto2003 (double gradient)...')
+    print ('Computing H_II Envelope density with Keto2003 (double gradient)...')
     print ('Speed of sound (cs):', cs/1e3, 'km/s')
     print ('Sonic point (rs):', rs/AU, 'au')
     rhoENV = np.ones(GRID.NPoints)
@@ -571,7 +571,7 @@ def density_Powerlaw_HII(r_min, r_max, r_s, rho_s, q, GRID):
     #------------------------------
     #MODEL. HCH_II region, Powerlaw 
     #------------------------------
-    print ('Calculating H_II Envelope density with power-law...')
+    print ('Computing H_II Envelope density with power-law...')
     rhoENV = np.where((rList >= r_min) & (rList <= r_max), rho_s * (r_s / rList)**q, 1.)
     #------------------------
     #------------------------
@@ -703,7 +703,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
     #DISC Profile
     #------------
     if density.discFlag:
-        print ('Calculating Keplerian flared-disc temperature...')
+        print ('Computing Keplerian flared-disc temperature...')
         rdisc = density.r_disc
         if density.envFlag:
             renv = density.r_env
@@ -721,7 +721,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
     if ang_cavity: print ('Set cavity for temperature with half-aperture %.1f deg'%(ang_cavity * 180 / np.pi))
 
     if density.envFlag:
-        print ('Calculating Envelope temperature...')
+        print ('Computing Envelope temperature...')
         renv = density.r_env
         tempENV = np.where( (rList <= renv) & (thetaList >= ang_cavity), 
                             T10Env * 10**p * (rList / AU)**-p, 
@@ -775,7 +775,7 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, density, 
     #DISC Profile
     #------------
     if density.discFlag:
-        print ('Calculating Burger-disc temperature...')
+        print ('Computing Burger-disc temperature...')
         zList = XYZ[2]
         Rdisc = density.r_disc
         H = density.H
@@ -804,7 +804,7 @@ def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, density, 
     #ENVELOPE PROFILE
     #----------------
     if density.envFlag:
-        print ('Calculating Envelope temperature...')
+        print ('Computing Envelope temperature...')
         renv = density.r_env
         tempENV = np.where( rList <= renv, T10Env * 10**p * (rList / AU)**-p, Tmin_env)
         #tempENV = TStar * (RStar / (2.*rList))**(2. / (4+p))
@@ -901,7 +901,7 @@ def velocity(RStar,MStar,Rd,density,GRID):
     #DISC Profile
     #------------
     if density.discFlag:
-        print ('Calculating Disc velocity...')
+        print ('Computing Disc velocity...')
         rdisc = density.r_disc
         #Pure azimuthal component. It's assumed that the radial velocity in the rotationally supported disc is comparatively small (Keto 2010).
         vdisc = np.where( RList <= rdisc, (G * MStar / RList)**0.5, 0.)  
@@ -911,7 +911,7 @@ def velocity(RStar,MStar,Rd,density,GRID):
     #ENVELOPE PROFILE
     #----------------
     if density.envFlag:
-        print ('Calculating Envelope velocity...')
+        print ('Computing Envelope velocity...')
     
         #-------------------------
         #Useful THETA Calculations
@@ -960,7 +960,7 @@ def velocity(RStar,MStar,Rd,density,GRID):
 
 def velocity_random(v_disp,NPoints):
 
-    print ('Calculating random (uniform) velocities...')
+    print ('Computing random (uniform) velocities...')
     v_disp = v_disp/np.sqrt(3)    
 
     v_x = v_disp * (2 * np.random.random(NPoints) - 1)  
@@ -989,7 +989,7 @@ def MakeHole(T_min,T_max,dens_val,temp_val,abund_val,densList,tempList,abundList
 #densList: Density list to modify 
 #tempList: Temperature list to build the hole
     
-    print ('Calculating profiles for a hole...')
+    print ('Computing profiles for a hole...')
     
     densNew = np.where( (tempList >= T_min) & (tempList <= T_max), dens_val, densList)
     tempNew = np.where( (tempList >= T_min) & (tempList <= T_max), temp_val, tempList)
@@ -1086,7 +1086,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
     #---------------
 
     if rot_dict:
-        print ('Calculating Rotation matrix...')
+        print ('Computing Rotation matrix...')
         rot_angles , axis_order = rot_dict['angles'], rot_dict['axis']
 
         if len(rot_angles) == len(axis_order):
@@ -1109,7 +1109,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
         else: 
             print ('==========================================================') 
             print ('WARNING: No VELOCITY distribution was provided to be rotated!')
-            print ('Please provide it if you are interested in computing line emission.')
+            print ('You should provide it if interested in computing line emission.')
             print ('==========================================================')
 
     if center is not False:
@@ -1135,9 +1135,9 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
 #---------------
 #---------------
 
-#------------------------
-#WRITING DATA (LIME v1.6)
-#------------------------
+#**************************
+#WRITING DATA (LIME v1.9.5)
+#**************************
 
 class Make_Datatab(object):
    
@@ -1223,8 +1223,12 @@ class Lime(Make_Datatab):
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
 
-    
-class Radmc3d(object): #RADMC-3D uses the cgs units system
+
+#*****************************
+#WRITING DATA (RADMC-3D v0.41)
+#*****************************
+
+class Radmc3d(object): #RADMC-3D: cgs units system
     """
     """
     """
@@ -1234,7 +1238,7 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
     """
     
     def __init__(self, prop_dict, GRID, amr_grid = False, nphot = 1000000):
-        print ('Set RADMC-3D format')
+        print ('Setting files for RADMC-3D...')
         self.prop = prop_dict
         self.GRID = GRID
         self.amr_grid = amr_grid
@@ -1249,20 +1253,24 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
                        grid_info = 0, 
                        include_dim = [1,1,1]):
         
-        #------------------------
-        #Write the grid-info file
-        #------------------------
+        #-------------------------
+        #Writes the grid-info file
+        #-------------------------
+        nx,ny,nz = self.nx,self.ny,self.nz
+
         if not self.amr_grid:
             with open('amr_grid.inp','w+') as f:
-                f.write('%s\n'%iformat)                             # iformat
-                f.write('%s\n'%grid_style)                          # AMR grid style  (0=regular grid, no AMR)
-                f.write('%s\n'%coord_system)                        # Coordinate system
-                f.write('%s\n'%grid_info)                           # grid_info
-                f.write('%s %s %s\n'%tuple(include_dim))            # Include x,y,z coordinate
-                f.write('%d %d %d\n'%(self.nx,self.ny,self.nz))     # Size of grid
-                for value in self.xi: f.write('%13.6e\n'%(value))   # X coordinates (cell walls)
-                for value in self.yi: f.write('%13.6e\n'%(value))   # Y coordinates (cell walls)
-                for value in self.zi: f.write('%13.6e\n'%(value))   # Z coordinates (cell walls)
+                f.write('%d\n'%iformat)                   # iformat
+                f.write('%d\n'%grid_style)                # AMR grid style  (0=regular grid, no AMR)
+                f.write('%d\n'%coord_system)              # Coordinate system
+                f.write('%d\n'%grid_info)                 # grid_info
+                f.write('%d %d %d\n'%tuple(include_dim))  # Include x,y,z coordinate
+                f.write('%d %d %d\n'%(nx,ny,nz))          # Size of grid
+
+                tmp = ['%13.6e '*(n+1) for n in [nx,ny,nz]]
+                f.write((tmp[0]+'\n')%tuple(self.xi)) # X values (cell walls)
+                f.write((tmp[1]+'\n')%tuple(self.yi)) # Y values (cell walls)
+                f.write((tmp[2]+'\n')%tuple(self.zi)) # Z values (cell walls)
                 f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
@@ -1270,70 +1278,70 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         
     def write_electron_numdens(self, dens_elect, format = '%13.6e'):
 
-        #---------------------------------
-        #Write the electronic density file
-        #---------------------------------
+        #----------------------------------
+        #Writes the electronic density file
+        #----------------------------------
         with open('electron_numdens.inp','w+') as f:
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = dens_elect.ravel(order='F') # Create a 1-D view, fortran-style indexing
             dens_elect.tofile(f, sep='\n', format=format)
-            f.write('\n')
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
     def write_ion_numdens(self, dens_ion, format = '%13.6e'):
 
-        #--------------------------
-        #Write the ion density file
-        #--------------------------
+        #---------------------------
+        #Writes the ion density file
+        #---------------------------
         with open('ion_numdens.inp','w+') as f:
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = dens_ion.ravel(order='F') # Create a 1-D view, fortran-style indexing
             dens_ion.tofile(f, sep='\n', format=format)
-            f.write('\n')
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
     def write_gas_temperature(self, tgas, format = '%13.6e'):
         
-        #-------------------------
-        #Write the gas temperature
-        #-------------------------
+        #--------------------------
+        #Writes the gas temperature
+        #--------------------------
         with open('gas_temperature.inp','w+') as f:
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
             tgas.tofile(f, sep='\n', format=format)
-            f.write('\n')
-
+            f.close()
+            
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
     def write_microturbulence(self, microturbulence, format = '%13.6e'):
         
-        #-------------------------
-        #Write the gas temperature
-        #-------------------------
+        #--------------------------
+        #Writes the microturbulence
+        #--------------------------
         microturb = np.ones(self.nn) * microturbulence * cm
         with open('microturbulence.inp','w+') as f:
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
             microturb.tofile(f, sep='\n', format=format)
-            f.write('\n')
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
     def write_gas_velocity(self, vel, format = '%13.6e'):
         
-        #-------------------------
-        #Write the gas temperature
-        #-------------------------
+        #----------------------
+        #Write the gas velocity
+        #----------------------
         vel2wrt = np.array((vel.x,vel.y,vel.z)).T * cm
         tmp_write = []
         tmp = ((format+'\t')*3)[:-1] + '\n'
@@ -1345,34 +1353,29 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
             for i in xrange(self.nn): tmp_write.append(tmp % tuple(vel2wrt[i]))         
             f.writelines(tmp_write)
             #vel2wrt.tofile(f, sep='\n', format=format)
-            f.write('\n')
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
-    def write_radmc3d_control(self, scattering_mode_max = 1, 
-                              incl_freefree = 1,
-                              incl_dust = 1,
-                              tgas_eq_tdust = 1):
+    def write_radmc3d_control(self, **kwargs):
 
-        #----------------------------------
-        #Write the radmc3d.inp control file
-        #----------------------------------
+        #-----------------------------------
+        #Writes the radmc3d.inp control file
+        #-----------------------------------
         with open('radmc3d.inp','w+') as f:
             f.write('nphot = %d\n'%(self.nphot))
-            f.write('scattering_mode_max = %s\n'%scattering_mode_max)   # Put this to 1 for isotropic scattering
-            f.write('incl_freefree = %s\n'%incl_freefree)
-            f.write('incl_dust = %s\n'%incl_dust)
-            f.write('tgas_eq_tdust = %s'%tgas_eq_tdust)
+            for key in kwargs.keys(): f.write('{} = {}\n'.format(key, kwargs[key]))
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
     def write_wavelength_micron(self, lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], format = '%13.6e'):
 
-        #------------------------------------
-        #Write the wavelength_micron.inp file
-        #------------------------------------
+        #-------------------------------------
+        #Writes the wavelength_micron.inp file
+        #-------------------------------------
         len_lam = len(lam)
         if len_lam - 1 == len(nxx):
             lam_list = [np.logspace(np.log10(lam[i]),
@@ -1388,15 +1391,18 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
                 f.write('%d\n'%(nlam))
                 tmp = format+'\n'
                 for value in lam_list: f.write(tmp%(value))
+                f.close()
 
         else: sys.exit("ERROR: Wrong length(s) for input list(s): len(lam)-1 must be equal to len(nxx)")
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
         
-    def freefree(self, format = '%13.6e', folder = './'): #Create kwargs for each invoked function
+    def freefree(self, format = '%13.6e', folder = './', 
+                 kwargs_control = {},
+                 kwargs_wavelength = {}): 
 
-        prop = {} #Creating a new dict bcause dont want to modify the original self.prop for the moment
+        prop = {}
         prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
         prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
         prop['tgas'] = self.prop['tgas']
@@ -1405,17 +1411,20 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         self.write_electron_numdens(prop['dens_elect'], format=format)
         self.write_ion_numdens(prop['dens_ion'], format=format)
         self.write_gas_temperature(prop['tgas'])
-        self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
-        self.write_wavelength_micron()
+        self.write_radmc3d_control(scattering_mode_max = 1, 
+                                   incl_freefree = 1,
+                                   incl_dust = 0, 
+                                   **kwargs_control)
+        self.write_wavelength_micron(**kwargs_wavelength)
             
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
 
 
     ##UNDER DEVELOPMENT
-    def recomblines(self, format = '%13.6e', folder = './'): 
+    def recomblines(self, format = '%13.6e', folder = './', kwargs_control = {}): 
 
-        prop = {} #Creating a new dict bcause dont want to modify the self.prop variable at the minute
+        prop = {}
         prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
         prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
         prop['tgas'] = self.prop['tgas']
@@ -1435,7 +1444,7 @@ class Radmc3d(object): #RADMC-3D uses the cgs units system
         print ('-------------------------------------------------\n-------------------------------------------------')
 
 #-----------------------------
-#WRITING DATA (RADMC-3D v0.41)
+#WRITING DATA (RADMC-3D v0.41) [OLD Function]
 #-----------------------------
 
 def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
@@ -1446,7 +1455,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
     xi, yi, zi = np.array(GRID.XYZgrid) * 100 #to cm
     nphot = 1000000
 #
-# Write the grid file
+# Writing the grid file
 #
     with open('amr_grid.inp','w+') as f:
         f.write('1\n')                       # iformat
@@ -1459,7 +1468,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
         f.write((tmp[0]+'\n')%tuple(xi))
         f.write((tmp[1]+'\n')%tuple(yi))
         f.write((tmp[2]+'\n')%tuple(zi))
-
+        
         """
         for value in xi:
             f.write('%13.6e\n'%(value))      # X coordinates (cell walls)
@@ -1469,7 +1478,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
             f.write('%13.6e\n'%(value))      # Z coordinates (cell walls)
         """
 #
-# Write the electronic density file.
+# Writing the electronic density file.
 #
     with open('electron_numdens.inp','w+') as f:
         f.write('1\n')                       # Format number
@@ -1479,7 +1488,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
         f.write('\n')
 
 #
-# Write the ion density file.
+# Writing the ion density file.
 #
     with open('ion_numdens.inp','w+') as f:
         f.write('1\n')                       # Format number
@@ -1489,7 +1498,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
         f.write('\n')
     
 #
-# Write the gas temperature
+# Writing the gas temperature
 #
 
     with open('gas_temperature.inp','w+') as f:
@@ -1500,7 +1509,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
         f.write('\n')
 
 #
-# Write the wavelength_micron.inp file
+# Writing the wavelength_micron.inp file
 #
 
     lam1 = 0.5e3
@@ -1518,7 +1527,7 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
     nlam     = lam.size
 
 #
-# Write the wavelength file
+# Writing the wavelength file
 #
     with open('wavelength_micron.inp','w+') as f:
         f.write('%d\n'%(nlam))
@@ -1526,11 +1535,11 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
             f.write('%13.6e\n'%(value))
 
 #
-# Write the radmc3d.inp control file
+# Writing the radmc3d.inp control file
 #
     with open('radmc3d.inp','w+') as f:
         f.write('nphot = %d\n'%(nphot))
-        f.write('scattering_mode_max = 1\n')   # Put this to 1 for isotropic scattering
+        f.write('scattering_mode_max = 1\n')   #Set it to 1 for isotropic scattering
         f.write('incl_freefree = 1\n')
         f.write('incl_dust = 0\n')
         f.write('setthreads = 4\n')
