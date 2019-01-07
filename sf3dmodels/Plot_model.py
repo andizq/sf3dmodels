@@ -1,7 +1,4 @@
 from __future__ import print_function
-from . import BuildGlobalGrid as BGG
-from . import Model
-
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
@@ -10,11 +7,17 @@ import numpy as np
 import random
 import inspect
 import sys
+import time
 
+from . import BuildGlobalGrid as BGG
+from . import Model
 
 def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
-              colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True, **kwargs):
-
+              colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True, 
+              azim = None, elev = None,
+              **kwargs):
+    
+    t0 = time.time()
     print ('Plotting 3D model with %d random-weighted points...'%NRand)
 
     defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none')
@@ -78,6 +81,10 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     ax.set_ylabel('Y (AU)')
     ax.set_zlabel('Z (AU)')
 
+    ax.view_init(azim = azim, elev = elev)
+    print ('3D camera azimuth: %.1f deg'%ax.azim)
+    print ('3D camera elevation: %.1f deg'%ax.elev)
+
     cbar = plt.colorbar(sp)
     cbar.ax.set_ylabel('%s'%colorlabel)
 
@@ -91,6 +98,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
         print ('The show-image mode is off!')
         plt.close()
     
+    print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
     return prop2plot
