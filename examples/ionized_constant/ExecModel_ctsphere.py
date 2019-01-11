@@ -18,7 +18,7 @@ import time
 #General Parameters
 #------------------
 r_max = 2530 * U.AU #H II sphere size
-dens_e = 1.4e5 * 1e6 #Electronic numerical density, from cgs to SI
+dens_e = 1.4e5 * 1e6 #Electron number density, from cgs to SI
 t_e = 1.e4 #K
 
 #---------------
@@ -33,14 +33,18 @@ NPoints = GRID.NPoints #Final number of nodes in the grid
 #PHYSICAL PROPERTIES
 #-------------------
 density = Model.density_Constant(r_max, GRID, envDens = dens_e)
-temperature = Model.temperature_Constant(density, GRID, envTemp = t_e, backTemp=2.725)
+temperature = Model.temperature_Constant(density, GRID, envTemp = t_e, backTemp = 2.725)
 
 Model.PrintProperties(density, temperature, GRID) #Printing resultant properties (mass, mean temperature, etc)
 
-#---------------------------------
-#WRITING DATA with RADMC-3D FORMAT
-#---------------------------------
-Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
+#----------------------
+#WRITING RADMC-3D FILES
+#----------------------
+rad = Model.Radmc3dRT(GRID)
+prop = {'dens_elect': density.total,
+        'dens_ion': density.total,
+        'tgas': temperature.total}
+rad.freefree(prop)
 
 #------------------------------------
 #3D PLOTTING (weighting with density)
