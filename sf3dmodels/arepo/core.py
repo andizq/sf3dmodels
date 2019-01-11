@@ -50,8 +50,8 @@ class UniqueCells(object):
            ...
            >>> from copy import deepcopy
            >>> data_orig = deepcopy(data)
-           >>> uni = UniqueCells(data, header) 
-           >>> inds = uni.mergemass() 
+           >>> A = UniqueCells(data, header) 
+           >>> inds = A.mergemass() 
 
         """
 

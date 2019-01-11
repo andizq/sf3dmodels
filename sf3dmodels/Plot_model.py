@@ -90,14 +90,15 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
 
     if output == '': output = 'figure.png'
 
-    print ('Saving image in %s'%output)
-    plt.savefig(output, dpi = 1000)
-    
-    if show: plt.show()
+    plt.savefig(output, dpi = 1000)    
+    if show:
+        print ('Showing computed image...')
+        plt.show()
     else:
         print ('The show-image mode is off!')
         plt.close()
-    
+
+    print ('Image saved as %s'%output)
     print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
