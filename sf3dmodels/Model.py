@@ -1109,7 +1109,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
         else: 
             print ('==========================================================') 
             print ('WARNING: No VELOCITY distribution was provided to be rotated!')
-            print ('You should provide it if interested in computing line emission.')
+            print ('You should provide it if interested in computing line emission RT.')
             print ('==========================================================')
 
     if center is not False:
@@ -1134,314 +1134,6 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
 
 #---------------
 #---------------
-
-#**************************
-#WRITING DATA (LIME v1.9.5)
-#**************************
-
-class Make_Datatab(object):
-   
-    def __init__(self, prop, GRID):
-
-        if len(np.shape(prop)) == 1: 
-            self.prop = [prop]
-            self.n = 1
-        else: 
-            self.prop = prop
-            self.n = len(prop)
-        self.GRID = GRID
-        self.id = np.arange(GRID.NPoints)
-        super(Make_Datatab, self).__init__()
-    
-    def formatter(self, format, base = '%d'):
-
-        fmt, type_fmt = format, type(format) 
-        nvec = xrange(self.n)
-
-        if isinstance(fmt, str): #If a single format is provided
-            print ("Using format '%s' for all the properties"%fmt) 
-            for i in nvec: base += ' '+fmt #Same format for all properties
-        elif isinstance(fmt, list) or isinstance(fmt, np.ndarray): #If a list of formats
-            if len(fmt) != self.n: sys.exit('ERROR: The number of formats provided (%d) differs to the number of properties to be written (%d)'%(len(fmt),self.n))
-            print ('Using formats list:', fmt) 
-            for f in fmt: base += ' '+f
-        elif fmt is None: #If no input fmt
-            print ("Using default format '%e' for all the properties")
-            for i in nvec: base += ' %e' #Default format for all properties
-        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid format object as input (str, list or np.ndarray)"%type_fmt)
-        base += '\n'
-        return base
-
-    def submodel(self, tag = '0', format = None, folder = 'Subgrids'):        
-
-        os.system('mkdir %s'%folder)
-        file_path = './%s/%s'%(folder,tag)
-        x,y,z = self.GRID.XYZ
-        
-        tmp = self.formatter(format, base = '%d %.8e %.8e %.8e')
-        tmp_write = []
-        if isinstance(self.prop, np.ndarray): self.prop = self.prop.tolist()
-        list2write = iter(np.array([self.id,x,y,z] + self.prop).T)
-        print ('Writing Submodel data in %s'%file_path)
-        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
-        file_data = open(file_path, 'w')        
-        file_data.writelines(tmp_write)
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------\n-------------------------------------------------')
-                
-
-class Lime(Make_Datatab):
-    def __init__(self, prop, GRID):
-        print ('Set LIME format')
-        super(Lime, self).__init__(prop, GRID)
-
-    def globalgrid(self, format = False, folder = './'):
-        
-        tmp = self.formatter(format)
-        tmp_write = []
-        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
-        list2write = iter(np.array([self.id] + self.prop).T)
-        files = [folder + tag for tag in ['datatab.dat','x.dat','y.dat','z.dat']]
-        print ('Writing Global grid data in %s'%files[0])        
-        for _ in xrange(self.GRID.NPoints): tmp_write.append( tmp % tuple(next(list2write)) )
-        file_data = open(files[0],'w')
-        file_data.writelines(tmp_write)
-
-        Ns = self.GRID.Nodes
-        size_file = folder+'npoints.dat'
-        sfile = open(size_file,'w') 
-        print ('Writing grid size in %s'%size_file)
-        sfile.write("%d %d %d %d"%(Ns[0], Ns[1], Ns[2], self.GRID.NPoints))
-        sfile.close()
-
-        print ('Writing space domain in:')
-        for i in xrange(1,4):
-            print ('%s'%files[i])
-            np.savetxt(files[i], self.GRID.XYZgrid[i-1], fmt = '%.8e')
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------\n-------------------------------------------------')
-
-
-#*****************************
-#WRITING DATA (RADMC-3D v0.41)
-#*****************************
-
-class Radmc3d(object): #RADMC-3D: cgs units system
-    """
-    """
-    """
-    def __init__(self, prop, GRID):
-        print ('Set RADMC-3D format')
-        super(Radmc3d, self).__init__(prop, GRID)
-    """
-    
-    def __init__(self, prop_dict, GRID, amr_grid = False, nphot = 1000000):
-        print ('Setting files for RADMC-3D...')
-        self.prop = prop_dict
-        self.GRID = GRID
-        self.amr_grid = amr_grid
-        self.nphot = nphot
-        self.nx, self.ny, self.nz = GRID.Nodes
-        self.nn = self.nx * self.ny * self.nz
-        self.xi, self.yi, self.zi = np.array(GRID.XYZgrid) * cm #from m to cm
-        
-    def write_amr_grid(self, iformat = 1, 
-                       grid_style = 0, 
-                       coord_system = 0,
-                       grid_info = 0, 
-                       include_dim = [1,1,1]):
-        
-        #-------------------------
-        #Writes the grid-info file
-        #-------------------------
-        nx,ny,nz = self.nx,self.ny,self.nz
-
-        if not self.amr_grid:
-            with open('amr_grid.inp','w+') as f:
-                f.write('%d\n'%iformat)                   # iformat
-                f.write('%d\n'%grid_style)                # AMR grid style  (0=regular grid, no AMR)
-                f.write('%d\n'%coord_system)              # Coordinate system
-                f.write('%d\n'%grid_info)                 # grid_info
-                f.write('%d %d %d\n'%tuple(include_dim))  # Include x,y,z coordinate
-                f.write('%d %d %d\n'%(nx,ny,nz))          # Size of grid
-
-                tmp = ['%13.6e '*(n+1) for n in [nx,ny,nz]]
-                f.write((tmp[0]+'\n')%tuple(self.xi)) # X values (cell walls)
-                f.write((tmp[1]+'\n')%tuple(self.yi)) # Y values (cell walls)
-                f.write((tmp[2]+'\n')%tuple(self.zi)) # Z values (cell walls)
-                f.close()
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-        
-    def write_electron_numdens(self, dens_elect, format = '%13.6e'):
-
-        #----------------------------------
-        #Writes the electronic density file
-        #----------------------------------
-        with open('electron_numdens.inp','w+') as f:
-            f.write('1\n')                                          # Format number
-            f.write('%d\n'%self.nn)                                 # Nr of cells
-            #data = dens_elect.ravel(order='F') # Create a 1-D view, fortran-style indexing
-            dens_elect.tofile(f, sep='\n', format=format)
-            f.close()
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-
-    def write_ion_numdens(self, dens_ion, format = '%13.6e'):
-
-        #---------------------------
-        #Writes the ion density file
-        #---------------------------
-        with open('ion_numdens.inp','w+') as f:
-            f.write('1\n')                                          # Format number
-            f.write('%d\n'%self.nn)                                 # Nr of cells
-            #data = dens_ion.ravel(order='F') # Create a 1-D view, fortran-style indexing
-            dens_ion.tofile(f, sep='\n', format=format)
-            f.close()
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-
-    def write_gas_temperature(self, tgas, format = '%13.6e'):
-        
-        #--------------------------
-        #Writes the gas temperature
-        #--------------------------
-        with open('gas_temperature.inp','w+') as f:
-            f.write('1\n')                                          # Format number
-            f.write('%d\n'%self.nn)                                 # Nr of cells
-            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
-            tgas.tofile(f, sep='\n', format=format)
-            f.close()
-            
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-
-    def write_microturbulence(self, microturbulence, format = '%13.6e'):
-        
-        #--------------------------
-        #Writes the microturbulence
-        #--------------------------
-        microturb = np.ones(self.nn) * microturbulence * cm
-        with open('microturbulence.inp','w+') as f:
-            f.write('1\n')                                          # Format number
-            f.write('%d\n'%self.nn)                                 # Nr of cells
-            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
-            microturb.tofile(f, sep='\n', format=format)
-            f.close()
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-
-    def write_gas_velocity(self, vel, format = '%13.6e'):
-        
-        #----------------------
-        #Write the gas velocity
-        #----------------------
-        vel2wrt = np.array((vel.x,vel.y,vel.z)).T * cm
-        tmp_write = []
-        tmp = ((format+'\t')*3)[:-1] + '\n'
-        
-        with open('gas_velocity.inp','w+') as f: 
-            f.write('1\n')                                          # Format number
-            f.write('%d\n'%self.nn)                                 # Nr of cells
-            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
-            for i in xrange(self.nn): tmp_write.append(tmp % tuple(vel2wrt[i]))         
-            f.writelines(tmp_write)
-            #vel2wrt.tofile(f, sep='\n', format=format)
-            f.close()
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-
-    def write_radmc3d_control(self, **kwargs):
-
-        #-----------------------------------
-        #Writes the radmc3d.inp control file
-        #-----------------------------------
-        with open('radmc3d.inp','w+') as f:
-            f.write('nphot = %d\n'%(self.nphot))
-            for key in kwargs.keys(): f.write('{} = {}\n'.format(key, kwargs[key]))
-            f.close()
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-
-    def write_wavelength_micron(self, lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], format = '%13.6e'):
-
-        #-------------------------------------
-        #Writes the wavelength_micron.inp file
-        #-------------------------------------
-        len_lam = len(lam)
-        if len_lam - 1 == len(nxx):
-            lam_list = [np.logspace(np.log10(lam[i]),
-                                    np.log10(lam[i+1]),
-                                    nxx[i], endpoint=False) 
-                        for i in xrange(len_lam-2)]
-            lam_list.append(np.logspace(np.log10(lam[-2]),
-                                        np.log10(lam[-1]),
-                                        nxx[-1], endpoint=True))
-            lam_list = np.concatenate(lam_list)
-            nlam = lam_list.size
-            with open('wavelength_micron.inp','w+') as f:
-                f.write('%d\n'%(nlam))
-                tmp = format+'\n'
-                for value in lam_list: f.write(tmp%(value))
-                f.close()
-
-        else: sys.exit("ERROR: Wrong length(s) for input list(s): len(lam)-1 must be equal to len(nxx)")
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------')
-        
-    def freefree(self, format = '%13.6e', folder = './', 
-                 kwargs_control = {},
-                 kwargs_wavelength = {}): 
-
-        prop = {}
-        prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
-        prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
-        prop['tgas'] = self.prop['tgas']
-        
-        self.write_amr_grid()
-        self.write_electron_numdens(prop['dens_elect'], format=format)
-        self.write_ion_numdens(prop['dens_ion'], format=format)
-        self.write_gas_temperature(prop['tgas'])
-        self.write_radmc3d_control(scattering_mode_max = 1, 
-                                   incl_freefree = 1,
-                                   incl_dust = 0, 
-                                   **kwargs_control)
-        self.write_wavelength_micron(**kwargs_wavelength)
-            
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------\n-------------------------------------------------')
-
-
-    ##UNDER DEVELOPMENT
-    def recomblines(self, format = '%13.6e', folder = './', kwargs_control = {}): 
-
-        prop = {}
-        prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
-        prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
-        prop['tgas'] = self.prop['tgas']
-        prop['vel'] = self.prop['vel']
-        prop['microturb'] = self.prop['microturb']
-
-        self.write_amr_grid()
-        self.write_electron_numdens(prop['dens_elect'], format=format)
-        self.write_ion_numdens(prop['dens_ion'], format=format)
-        self.write_gas_temperature(prop['tgas'])
-        #self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
-        #self.write_wavelength_micron()
-        self.write_gas_velocity(prop['vel'], format=format) #--> Create this function
-        #self.write_microturbulence(prop['microturb'], format=format)
-
-        print ('%s is done!'%inspect.stack()[0][3])
-        print ('-------------------------------------------------\n-------------------------------------------------')
 
 #-----------------------------
 #WRITING DATA (RADMC-3D v0.41) [OLD Function]
@@ -1733,3 +1425,502 @@ def Make_Datatab1(prop_list, GRID, format_list = False,
             pass
 
     file.close()
+
+#**************************
+#WRITING DATA (LIME v1.9.5)
+#**************************
+
+class Make_Datatab(object):
+   
+    def __init__(self, prop, GRID):
+
+        if len(np.shape(prop)) == 1: 
+            self.prop = [prop]
+            self.n = 1
+        else: 
+            self.prop = prop
+            self.n = len(prop)
+        self.GRID = GRID
+        self.id = np.arange(GRID.NPoints)
+        super(Make_Datatab, self).__init__()
+    
+    def formatter(self, format, base = '%d'):
+
+        fmt, type_fmt = format, type(format) 
+        nvec = xrange(self.n)
+
+        if isinstance(fmt, str): #If a single format is provided
+            print ("Using format '%s' for all the properties"%fmt) 
+            for i in nvec: base += ' '+fmt #Same format for all properties
+        elif isinstance(fmt, list) or isinstance(fmt, np.ndarray): #If a list of formats
+            if len(fmt) != self.n: sys.exit('ERROR: The number of formats provided (%d) differs to the number of properties to be written (%d)'%(len(fmt),self.n))
+            print ('Using formats list:', fmt) 
+            for f in fmt: base += ' '+f
+        elif fmt is None: #If no input fmt
+            print ("Using default format '%e' for all the properties")
+            for i in nvec: base += ' %e' #Default format for all properties
+        else: sys.exit("ERROR: Wrong type: %s. \nPlease provide a valid format object as input (str, list or np.ndarray)"%type_fmt)
+        base += '\n'
+        return base
+
+    def submodel(self, tag = '0', format = None, folder = 'Subgrids'):        
+
+        os.system('mkdir %s'%folder)
+        file_path = './%s/%s'%(folder,tag)
+        x,y,z = self.GRID.XYZ
+        
+        tmp = self.formatter(format, base = '%d %.8e %.8e %.8e')
+        tmp_write = []
+        if isinstance(self.prop, np.ndarray): self.prop = self.prop.tolist()
+        list2write = iter(np.array([self.id,x,y,z] + self.prop).T)
+        print ('Writing Submodel data in %s'%file_path)
+        for i in self.id: tmp_write.append( tmp % tuple(next(list2write)) )
+        file_data = open(file_path, 'w')        
+        file_data.writelines(tmp_write)
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+                
+
+class Lime(Make_Datatab):
+    def __init__(self, prop, GRID):
+        print ('Set LIME format')
+        super(Lime, self).__init__(prop, GRID)
+
+    def globalgrid(self, format = False, folder = './'):
+        
+        tmp = self.formatter(format)
+        tmp_write = []
+        if type(self.prop) == np.ndarray: self.prop = self.prop.tolist()
+        list2write = iter(np.array([self.id] + self.prop).T)
+        files = [folder + tag for tag in ['datatab.dat','x.dat','y.dat','z.dat']]
+        print ('Writing Global grid data in %s'%files[0])        
+        for _ in xrange(self.GRID.NPoints): tmp_write.append( tmp % tuple(next(list2write)) )
+        file_data = open(files[0],'w')
+        file_data.writelines(tmp_write)
+
+        Ns = self.GRID.Nodes
+        size_file = folder+'npoints.dat'
+        sfile = open(size_file,'w') 
+        print ('Writing grid size in %s'%size_file)
+        sfile.write("%d %d %d %d"%(Ns[0], Ns[1], Ns[2], self.GRID.NPoints))
+        sfile.close()
+
+        print ('Writing space domain in:')
+        for i in xrange(1,4):
+            print ('%s'%files[i])
+            np.savetxt(files[i], self.GRID.XYZgrid[i-1], fmt = '%.8e')
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+
+#*****************************
+#WRITING DATA (RADMC-3D v0.41)
+#*****************************
+
+class Radmc3d(object): #RADMC-3D: cgs units system
+    """
+    Base class for radmc3d related objects. Contains basic writing functions to write formatted files for 
+    performing Radiative Transfer calculations with `RADMC-3D`_.
+    """    
+    def __init__(self, prop_dict, GRID, amr_grid = False, nphot = 1000000):
+        print ('Setting files for RADMC-3D...')
+        self.prop = prop_dict
+        self.GRID = GRID
+        self.amr_grid = amr_grid
+        self.nphot = nphot
+        self.nx, self.ny, self.nz = GRID.Nodes
+        self.nn = self.nx * self.ny * self.nz
+        self.xi, self.yi, self.zi = np.array(GRID.XYZgrid) * cm #from m to cm
+        
+    def write_amr_grid(self, iformat = 1, 
+                       grid_style = 0, 
+                       coord_system = 0,
+                       grid_info = 0, 
+                       include_dim = [1,1,1]):
+        
+        #-------------------------
+        #Writes the grid-info file
+        #-------------------------
+        nx,ny,nz = self.nx,self.ny,self.nz
+
+        if not self.amr_grid:
+            with open('amr_grid.inp','w+') as f:
+                f.write('%d\n'%iformat)                   # iformat
+                f.write('%d\n'%grid_style)                # AMR grid style  (0=regular grid, no AMR)
+                f.write('%d\n'%coord_system)              # Coordinate system
+                f.write('%d\n'%grid_info)                 # grid_info
+                f.write('%d %d %d\n'%tuple(include_dim))  # Include x,y,z coordinate
+                f.write('%d %d %d\n'%(nx,ny,nz))          # Size of grid
+
+                tmp = ['%13.6e '*(n+1) for n in [nx,ny,nz]]
+                f.write((tmp[0]+'\n')%tuple(self.xi)) # X values (cell walls)
+                f.write((tmp[1]+'\n')%tuple(self.yi)) # Y values (cell walls)
+                f.write((tmp[2]+'\n')%tuple(self.zi)) # Z values (cell walls)
+                f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+        
+    def write_electron_numdens(self, dens_elect, format = '%13.6e'):
+
+        #----------------------------------
+        #Writes the electronic density file
+        #----------------------------------
+        with open('electron_numdens.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = dens_elect.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            dens_elect.tofile(f, sep='\n', format=format)
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_ion_numdens(self, dens_ion, format = '%13.6e'):
+
+        #---------------------------
+        #Writes the ion density file
+        #---------------------------
+        with open('ion_numdens.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = dens_ion.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            dens_ion.tofile(f, sep='\n', format=format)
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_gas_temperature(self, tgas, format = '%13.6e'):
+        
+        #--------------------------
+        #Writes the gas temperature
+        #--------------------------
+        with open('gas_temperature.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            tgas.tofile(f, sep='\n', format=format)
+            f.close()
+            
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_microturbulence(self, microturbulence, format = '%13.6e'):
+        
+        #--------------------------
+        #Writes the microturbulence
+        #--------------------------
+        microturb = np.ones(self.nn) * microturbulence * cm
+        with open('microturbulence.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            microturb.tofile(f, sep='\n', format=format)
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_gas_velocity(self, vel, format = '%13.6e'):
+        
+        #----------------------
+        #Write the gas velocity
+        #----------------------
+        vel2wrt = np.array((vel.x,vel.y,vel.z)).T * cm
+        tmp_write = []
+        tmp = ((format+'\t')*3)[:-1] + '\n'
+        
+        with open('gas_velocity.inp','w+') as f: 
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            for i in xrange(self.nn): tmp_write.append(tmp % tuple(vel2wrt[i]))         
+            f.writelines(tmp_write)
+            #vel2wrt.tofile(f, sep='\n', format=format)
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_radmc3d_control(self, **kwargs):
+        """
+        Writes the control file radmc3d.inp.
+        
+        Parameters
+        ----------
+        **kwargs : control parameters for radmc3d. 
+           
+        Examples
+        --------
+        Some of the possible control parameters:
+        
+        Notes
+        -----
+        Have a look at the `RADMC-3D`_ manual, section A1, for a comprehensive list of the available control parameters and their default values.
+        """
+        with open('radmc3d.inp','w+') as f:
+            f.write('nphot = %d\n'%(self.nphot))
+            for key in kwargs.keys(): f.write('{} = {}\n'.format(key, kwargs[key]))
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_wavelength_micron(self, lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], format = '%13.6e'):
+        """
+        Writes the file wavelength_micron.inp for radmc3d.
+        
+        Parameters
+        ----------
+        lam : list or array_like,  
+           Wavelength intervals, in microns.
+        
+        nxx : list or array_like, length: len(lam)-1 
+           Num of partitions in each interval 
+
+        format : str
+           Format string for numbers in the output file.
+        """
+        len_lam = len(lam)
+        if len_lam - 1 == len(nxx):
+            lam_list = [np.logspace(np.log10(lam[i]),
+                                    np.log10(lam[i+1]),
+                                    nxx[i], endpoint=False) 
+                        for i in xrange(len_lam-2)]
+            lam_list.append(np.logspace(np.log10(lam[-2]),
+                                        np.log10(lam[-1]),
+                                        nxx[-1], endpoint=True))
+            lam_list = np.concatenate(lam_list)
+            nlam = lam_list.size
+            with open('wavelength_micron.inp','w+') as f:
+                f.write('%d\n'%(nlam))
+                tmp = format+'\n'
+                for value in lam_list: f.write(tmp%(value))
+                f.close()
+
+        else: sys.exit("ERROR: Wrong length(s) for input list(s): len(lam)-1 must be equal to len(nxx)")
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+        
+    def freefree(self, format = '%13.6e', folder = './', 
+                 kwargs_control = {},
+                 kwargs_wavelength = {}): 
+
+        prop = {}
+        prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
+        prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
+        prop['tgas'] = self.prop['tgas']
+        
+        self.write_amr_grid()
+        self.write_electron_numdens(prop['dens_elect'], format=format)
+        self.write_ion_numdens(prop['dens_ion'], format=format)
+        self.write_gas_temperature(prop['tgas'])
+        self.write_radmc3d_control(scattering_mode_max = 1, 
+                                   incl_freefree = 1,
+                                   incl_dust = 0, 
+                                   **kwargs_control)
+        self.write_wavelength_micron(**kwargs_wavelength)
+            
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+
+    ##UNDER DEVELOPMENT
+    def recomblines(self, format = '%13.6e', folder = './', kwargs_control = {}): 
+
+        prop = {}
+        prop['dens_elect'] = self.prop['dens_elect'] * cm**-3 
+        prop['dens_ion'] = self.prop['dens_ion'] * cm**-3
+        prop['tgas'] = self.prop['tgas']
+        prop['vel'] = self.prop['vel']
+        prop['microturb'] = self.prop['microturb']
+
+        self.write_amr_grid()
+        self.write_electron_numdens(prop['dens_elect'], format=format)
+        self.write_ion_numdens(prop['dens_ion'], format=format)
+        self.write_gas_temperature(prop['tgas'])
+        #self.write_radmc3d_control(incl_dust = 0, tgas_eq_tdust = 0)
+        #self.write_wavelength_micron()
+        self.write_gas_velocity(prop['vel'], format=format) #--> Create this function
+        if 'tdust' in prop.keys(): self.write_dust_temperature(prop['tdust'])
+        #self.write_microturbulence(prop['microturb'], format=format)
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+
+class Radmc3dRT(Radmc3d):
+    """
+    This class hosts the basic radiative transfer modes to be computed in `RADMC-3D`_.
+
+    RT stands for 'Radiative Transfer'.
+    
+    Parameters
+    ----------
+    GRID : `Struct`
+    """
+    def __init__(self, GRID, amr_grid = False, nphot = 1000000):
+        self.GRID = GRID
+        self.amr_grid = amr_grid
+        self.nphot = nphot
+        self.nx, self.ny, self.nz = GRID.Nodes
+        self.nn = self.nx * self.ny * self.nz
+        self.xi, self.yi, self.zi = np.array(GRID.XYZgrid) * cm #from m to cm
+
+    def _freefree_keys(rstr = False):
+        """
+        Mandatory and optional prop object keys for the method `freefree`.
+        """
+        mand = ['dens_elect', 'dens_ion', 'tgas']
+        mandstr = str(mand)[1:-1]
+        opt = ['tdust']
+        optstr = str(opt)[1:-1]
+        if rstr: return {'mand': mandstr, 'opt': optstr} 
+        else: return {'mand': mand, 'opt': opt} 
+
+    def freefree(self, prop, format = '%13.6e', folder = './', 
+                 kwargs_control = {'scattering_mode_max': 0,
+                                   'incl_dust': 0,
+                                   'camera_incl_stars': 0},
+                 kwargs_wavelength = {'nxx': [20,20,20],
+                                      'lam': [5e2,2e4,4e4,3e5]}
+                 ): 
+        """
+        This method writes the files required by `RADMC-3D`_ to compute the free-free emission from the input model.
+
+        Parameters
+        ----------
+        prop : dict
+           Dictionary containing the model physical properties.\n
+           Mandatory keys: 'dens_elect', 'dens_ion', 'tgas'.\n
+           Optional keys: 'tdust'.\n
+           Additional keys will not be taken into account.
+        
+        format : str, optional
+           Format string for numbers.
+
+        folder : str, optional
+           Sets the folder to write the files in.
+        
+        kwargs_control : dict, optional 
+           Optional dictionary containing additional keys to be written into the radmc3d control file 'radmc3d.inp'.\n
+           If you set 'incl_dust': 1, then prop['tdust'] must be provided. \n
+           Fixed keys for this method: 'incl_freefree': 1 \n
+           Have a look at the `RADMC-3D`_ docs for all the possible control commands.  
+
+        kwargs_wavelength : {'nxx': array_like, 'lam': array_like}, optional
+           Optional dictionary containing the desired range of wavelengths to be written into file.
+           For further information and default values take a look at the method `~sf3dmodels.Model.Radmc3d.write_wavelength_micron`.
+           
+        Returns
+        -------
+        data files:
+           amr_grid.inp, electron_numdens.inp, ion_numdens.inp, gas_temperature.inp [, dust_temperature.inp]
+        """ 
+        _keys = self._freefree_keys() 
+        
+        func_name = inspect.stack()[0][3]
+        print ('Setting %s mode for RADMC-3D...'%func_name)
+        
+        self.write_amr_grid()
+        self.write_electron_numdens(prop['dens_elect'] * cm**-3, format=format)
+        self.write_ion_numdens(prop['dens_ion'] * cm**-3, format=format)
+        self.write_gas_temperature(prop['tgas'], format=format)
+        if 'tdust' in prop.keys(): self.write_dust_temperature(prop['tdust'], format=format)
+
+        kwargs_control['incl_freefree'] = 1
+        self.write_radmc3d_control(**kwargs_control)
+        self.write_wavelength_micron(**kwargs_wavelength)
+            
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+
+    def _recomblines_keys(rstr = False):
+        """
+        Mandatory and optional prop object keys for the method `recomblines`.
+        """
+        mand = ['dens_elect', 'dens_ion', 'tgas']
+        mandstr = str(mand)[1:-1]
+        opt = ['tdust']
+        optstr = str(opt)[1:-1]
+        if rstr: return {'mand': mandstr, 'opt': optstr} 
+        else: return {'mand': mand, 'opt': opt} 
+
+    ##UNDER DEVELOPMENT
+    def recomblines(self, prop, transition, format = '%13.6e', folder = './', 
+                    kwargs_control = {'scattering_mode_max': 0,
+                                      'incl_dust': 0,
+                                      'camera_incl_stars': 0},
+                    kwargs_wavelength = {'nxx': [20,20,20,20],
+                                         'lam': [1e-1,5e2,2e4,4e4,3e5]}
+                    ):
+        """
+        UNDER DEVELOPMENT.\n
+        This method writes the files required by `RADMC-3D`_ to compute recombination lines emission from the input model.
+
+        Parameters
+        ----------
+        prop : dict
+           Dictionary containing the model physical properties.\n
+           Mandatory keys: 'dens_elect', 'dens_ion', 'tgas', 'vel'.\n
+           Optional keys: 'tdust', 'microturb'.\n
+           Additional keys will not be taken into account.
+        
+        transition : [level_up, level_down]
+           array_like object of scalar integers.\n
+           Upper and lower levels of the transition to be computed.
+
+        format : str, optional
+           Format string for numbers.
+
+        folder : str, optional
+           Sets the folder to write the files in.
+        
+        kwargs_control : dict, optional 
+           Optional dictionary containing additional keys to be written into the radmc3d control file 'radmc3d.inp'.\n
+           If you set 'incl_dust': 1, then prop['tdust'] must be provided. \n
+           Fixed keys for this method: 'incl_freefree': 1, 'incl_lines': 1, 'lines_profile': 1, 'lines_mode': -10, 'userdef_nonlte': 1 \n
+           Have a look at the `RADMC-3D`_ docs for all the possible control commands.  
+
+        kwargs_wavelength : {'nxx': array_like, 'lam': array_like}, optional
+           Optional dictionary containing the desired range of wavelengths to be written into file.
+           For further information and default values take a look at the method `~sf3dmodels.Model.Radmc3d.write_wavelength_micron`.
+           
+        Returns
+        -------
+        data files:
+           amr_grid.inp, radmc3d.inp, electron_numdens.inp, ion_numdens.inp, gas_temperature.inp, gas_velocity.inp [, dust_temperature.inp, microturbulence.inp]
+        """ 
+        _keys = self._recomblines_keys() 
+
+        func_name = inspect.stack()[0][3]
+        print ('Setting %s mode for RADMC-3D...'%func_name)
+
+        self.write_amr_grid()
+        self.write_electron_numdens(prop['dens_elect'] * cm**-3, format=format)
+        self.write_ion_numdens(prop['dens_ion'] * cm**-3, format=format)
+        self.write_gas_temperature(prop['tgas'])
+        self.write_gas_velocity(prop['vel'], format=format) #--> Create this function
+        if 'tdust' in prop.keys(): self.write_dust_temperature(prop['tdust'], format=format)
+        if 'microturbulence' in prop.keys(): self.write_microturbulence(prop['microturbulence'], format=format)
+
+        kwargs_control['incl_freefree'] = 1
+        kwargs_control['incl_lines'] = 1
+        kwargs_control['lines_profile'] = 1
+        kwargs_control['lines_mode'] = -10 #User-defined populations: see chapter 7 on the radmc3d manual.
+        kwargs_control['userdef_nonlte'] = 1 #User-defined non-lte mode.
+        kwargs_control['userdef_nup'] = transition[0]
+        kwargs_control['userdef_ndown'] = transition[1]
+        
+        self.write_radmc3d_control(**kwargs_control)
+        self.write_wavelength_micron(**kwargs_wavelength)
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+
+    
