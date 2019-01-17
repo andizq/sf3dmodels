@@ -9,7 +9,7 @@ F_nu = s[:,1] * distance**-2 * 1e23 #to Jy at the set distance
 nu = 3e8 * s[:,0]**-1 * 1e6 * 1e-9 #microns to GHz
 plt.plot(nu, F_nu)
 plt.title('%s - distance: %d pc'%(tag,distance))
-plt.xlabel('Frequency [GHz]'); plt.ylabel('Flux [Jy]')
+plt.xlabel('Frequency [GHz]'); plt.ylabel('Flux density [Jy]')
 plt.xscale('log'); plt.yscale('log')
 plt.savefig('sed_'+tag+'.png')
 plt.show()
