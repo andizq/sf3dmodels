@@ -1593,6 +1593,22 @@ class Radmc3d(object): #RADMC-3D: cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
+    def write_dust_density(self, dens_dust, nrspec = 1, format = '%13.6e'):
+    
+        #----------------------------------
+        #Writes the electronic density file
+        #----------------------------------
+        with open('dust_density.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            f.write('%d\n'%nrspec)                                          # Number of species
+            #data = dens_elect.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            dens_dust.tofile(f, sep='\n', format=format)
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
     def write_gas_temperature(self, tgas, format = '%13.6e'):
         
         #--------------------------
@@ -1659,7 +1675,7 @@ class Radmc3d(object): #RADMC-3D: cgs units system
         
         Notes
         -----
-        Have a look at the `RADMC-3D`_ manual, section A1, for a comprehensive list of the available control parameters and their default values.
+        Have a look at the `RADMC-3D`_ manual, section A.1, for a comprehensive list of the available control parameters and their default values.
         """
         with open('radmc3d.inp','w+') as f:
             f.write('nphot = %d\n'%(self.nphot))
@@ -1669,6 +1685,22 @@ class Radmc3d(object): #RADMC-3D: cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
+    def _write_lam(self, file, lam, nxx):
+        len_lam = len(lam)
+        if len_lam - 1 == len(nxx):
+            lam_list = [np.logspace(np.log10(lam[i]),
+                                    np.log10(lam[i+1]),
+                                    nxx[i], endpoint=False) 
+                        for i in xrange(len_lam-2)]
+            lam_list.append(np.logspace(np.log10(lam[-2]),
+                                        np.log10(lam[-1]),
+                                        nxx[-1], endpoint=True))
+            lam_list = np.concatenate(lam_list)
+            tmp = '%.6e'+'\n'
+            for value in lam_list: file.write(tmp%(value))
+
+        else: sys.exit("ERROR: Wrong length(s) for input list(s): len(lam)-1 must be equal to len(nxx)")
+        
     def write_wavelength_micron(self, lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], format = '%13.6e'):
         """
         Writes the file wavelength_micron.inp for radmc3d.
@@ -1679,10 +1711,16 @@ class Radmc3d(object): #RADMC-3D: cgs units system
            Wavelength intervals, in microns.
         
         nxx : list or array_like, length: len(lam)-1 
-           Num of partitions in each interval 
+           Number of wavelengths in each interval 
 
         format : str
            Format string for numbers in the output file.
+        """
+        nlam = np.sum(nxx)
+        with open('wavelength_micron.inp','w+') as f:
+            f.write('%d\n'%(nlam))
+            self._write_lam(f, lam, nxx)
+            f.close()
         """
         len_lam = len(lam)
         if len_lam - 1 == len(nxx):
@@ -1702,9 +1740,70 @@ class Radmc3d(object): #RADMC-3D: cgs units system
                 f.close()
 
         else: sys.exit("ERROR: Wrong length(s) for input list(s): len(lam)-1 must be equal to len(nxx)")
+        """
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
+    def write_stars(self, nstars = 1, pos = [[0.,0.,0.]], 
+                    rstars = [6.96e10], mstars = [1.99e33],
+                    lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], 
+                    flux = [[-5780]], format = '%.6e'):
+        """
+        Writes the file stars.inp for radmc3d. Defaults to Sun's properties.
+        
+        Parameters
+        ----------
+        nstars : scalar
+           Number of stars invoked.
+        
+        pos : list of lists or array_like, shape (`nstars`,3)
+           [x,y,z] position of each star in meters.
+        
+        rstars : list or array_like, length `nstars`
+           Radii of the stars in centimeters.
+        
+        mstars : list or array_like, length `nstars`
+           Mass of the stars in grams.
+
+        lam : list or array_like,  
+           Wavelength intervals, in microns.
+        
+        nxx : list or array_like, length: len(lam)-1 
+           Number of wavelenghts in each interval 
+
+        flux : list of lists or array_like, shape (`nstars`, number of wavelenghts)
+           Flux from the stars at each wavelength. 
+
+        format : str
+           Format string for the flux values.
+
+        Notes
+        -----
+        Have a look at the `RADMC-3D`_ manual, section A.7, for further information about the input parameters and scnearios.
+        """
+        nlam = np.sum(nxx)
+        rstars = np.array(rstars)
+        mstars = np.array(mstars)
+        with open('stars.inp','w+') as f:
+            f.write('2\n')
+            f.write('%d %d\n'%(nstars, nlam))
+            for i in range(nstars): f.write('%.2e %.2e %.2e %.2e %.2e\n'
+                                            %(rstars[i], mstars[i], 
+                                              pos[i][0], pos[i][1], pos[i][2]))
+            self._write_lam(f, lam, nxx)
+
+            for i in range(nstars): 
+                if flux[i][0] < 0:
+                    f.write((format%flux[i][0])+'\n')
+                else: 
+                    for j in range(nlam):
+                        f.write((format%flux[i][j])+'\n')
+
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
+
         
     def freefree(self, format = '%13.6e', folder = './', 
                  kwargs_control = {},
@@ -1835,7 +1934,7 @@ class Radmc3dRT(Radmc3d):
         kwargs_control['incl_freefree'] = 1
         self.write_radmc3d_control(**kwargs_control)
         self.write_wavelength_micron(**kwargs_wavelength)
-            
+
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
 
