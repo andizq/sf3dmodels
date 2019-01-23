@@ -32,7 +32,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../..')) #Included by AFIC the 17th Dec of 2018
 
 try:
-    from sphinx_astropy.conf.v1 import *  # noqa
+    from sphinx_astropy.conf import *  # noqa
 except ImportError:
     print('ERROR: the documentation requires the sphinx-astropy package to be installed')
     sys.exit(1)
