@@ -2,6 +2,7 @@ name: sf3dmodels
 
 channels:
     - astropy
+    - conda-forge
 
 dependencies:
     - astropy=2.0.9
