@@ -59,6 +59,12 @@ Get into the star-forming-regions cloned folder and run the ``setup.py`` script 
    $ cd /path/to/local/star-forming-regions/
    $ python setup.py install
 
+To uninstall sf3dmodels:
+
+.. code-block:: bash
+   
+   $ pip uninstall sf3dmodels
+
 
 LIME in *sf3dmodels* mode
 -------------------------
