@@ -47,7 +47,6 @@ class UniqueCells(object):
 
         .. code-block:: python
 
-           ...
            >>> from copy import deepcopy
            >>> data_orig = deepcopy(data)
            >>> A = UniqueCells(data, header) 
