@@ -81,7 +81,7 @@ Source code and figures on GitHub: `single_main <https://github.com/andizq/star-
    #--------
    #VELOCITY
    #--------
-   vel = Model.velocity_Ulrich(RStar, MStar, Rd, density, GRID)
+   vel = Model.velocity(RStar, MStar, Rd, density, GRID)
 
 
    #-------------------------------

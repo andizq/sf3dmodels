@@ -44,7 +44,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     #Each NP becomes odd if it's not. This is done to force the grid to contain the midplane too.
     
     if include_zero:
-        NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in xrange(3) ] 
+        NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in range(3) ] 
         print('Setting the number of grid points to be {},'.format(NP_dum) +
               '\n so that the planes x=0, y=0, z=0 are all present...' +
               '\nTurn off this feature by setting the flag include_zero=False'
@@ -54,7 +54,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
         
         NP = NP_dum
     else: 
-        for i in xrange(3): print('Coordinate zero NOT included for axis: %d'%i
+        for i in range(3): print('Coordinate zero NOT included for axis: %d'%i
                                   if NP[i]%2 == 0
                                   else 'Coordinate zero included for axis: %d'%i)
     
@@ -72,8 +72,8 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
     
     if radmc3d or artist: 
         step = 2. * XYZmax / (NP - np.ones(3))
-        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in xrange(3)]
-        #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in xrange(3)]
+        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in range(3)]
+        #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in range(3)]
         X, Y ,Z = XYZgrid #The grid must contain an extra node but...
         X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] ) #Moving the node from the corner to the center of the boxel. length = lengthofcorners - 1
         Y = 0.5 * ( Y[0:NP[1]] + Y[1:NP[1]+1] )  
@@ -81,7 +81,7 @@ def grid(XYZmax, NP, artist = False, radmc3d = False, include_zero = True):
   
         #X = X[:-1]; Y = Y[:-1]; Z = Z[:-1] #...the calculations must be done w/o that node 
     else: #lime
-        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in xrange(3)]
+        XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in range(3)]
         X, Y, Z = XYZgrid
     
     #--------------------------------------
@@ -1058,7 +1058,7 @@ def Rotation_Matrix(angle_dicts):
     tmp = Rot[0]
     Rot_iter = iter(Rot[1:]) #Iterator for Rot_list from 2nd value: (matrix for matrix in Rot_list[1:])
 
-    for i in xrange( len(Rot[1:]) ): 
+    for i in range( len(Rot[1:]) ): 
         tmp = np.dot( next(Rot_iter) , tmp )
         
     Rot_total = tmp
@@ -1098,13 +1098,13 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
         Rot_total = Rotation_Matrix(angle_dicts)     
         print ('Rotating Position vectors...')
         XYZ_it = iter(POS_vec)
-        POS_vec = np.array([ np.dot( Rot_total, next(XYZ_it) ) for i in xrange(NPoints) ])
+        POS_vec = np.array([ np.dot( Rot_total, next(XYZ_it) ) for i in range(NPoints) ])
         rotPos = True
         
         if vel:
             print ('Rotating Velocity vectors...')
             VEL_it = iter(VEL_vec)
-            VEL_vec = np.array([ np.dot( Rot_total, next(VEL_it) ) for i in xrange(NPoints) ])
+            VEL_vec = np.array([ np.dot( Rot_total, next(VEL_it) ) for i in range(NPoints) ])
             rotVel = True
         else: 
             print ('==========================================================') 
@@ -1255,7 +1255,7 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
         x,y,z = GRID.XYZ
         print ('Writing Submodel data on %s'%file0)
         tmp = []
-        for i in xrange(GRID.NPoints): 
+        for i in range(GRID.NPoints): 
             #file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
              #          (i,x[i],y[i],z[i],dens[i],temp[i],vel['x'][i],vel['y'][i],vel['z'][i],abund[i],gtd[i]))
             tmp.append( "%d %e %e %e %e %e %e %e %e %e %e\n"% (i,x[i],y[i],z[i],dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
@@ -1271,13 +1271,13 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
         print ('Writing data on %s'%files[0])
         file = open(files[0],'w')
 
-        for i in xrange(GRID.NPoints): 
+        for i in range(GRID.NPoints): 
             file.write("%d %e %e %e %e %e %e %e\n"%
                        (i,dens[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
 
         df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
     
-        for i in xrange(1,4):
+        for i in range(1,4):
             print ('Writing data on %s'%files[i])
             df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
         
@@ -1333,11 +1333,11 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
                     id+=1
         else:
             if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
-                for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                for i in range(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
                                                            (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
                                                             tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
             else: 
-                for i in xrange(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                for i in range(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
                                                            (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
                                                             vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
         
@@ -1354,17 +1354,17 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
         file = open(files[0],'w')
 
         if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
-            for i in xrange(GRID.NPoints): 
+            for i in range(GRID.NPoints): 
                 file.write("%d %e %e %e %e %e %e %e %e %e %e\n"%
                            (i,dens_H2[i],dens_H[i],dens_Hp[i],temp[i],tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
         else:
-            for i in xrange(GRID.NPoints): 
+            for i in range(GRID.NPoints): 
                 file.write("%d %e %e %e %e %e %e %e %e %e\n"%
                            (i,dens_H2[i],dens_H[i],dens_Hp[i],temp[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
 
         df = [pandas.DataFrame(GRID.XYZgrid[i]) for i in range(3)]
     
-        for i in xrange(1,4):
+        for i in range(1,4):
             print ('Writing data on %s'%files[i])
             df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
         
@@ -1447,7 +1447,7 @@ class Make_Datatab(object):
     def formatter(self, format, base = '%d'):
 
         fmt, type_fmt = format, type(format) 
-        nvec = xrange(self.n)
+        nvec = range(self.n)
 
         if isinstance(fmt, str): #If a single format is provided
             print ("Using format '%s' for all the properties"%fmt) 
@@ -1495,7 +1495,7 @@ class Lime(Make_Datatab):
         list2write = iter(np.array([self.id] + self.prop).T)
         files = [folder + tag for tag in ['datatab.dat','x.dat','y.dat','z.dat']]
         print ('Writing Global grid data in %s'%files[0])        
-        for _ in xrange(self.GRID.NPoints): tmp_write.append( tmp % tuple(next(list2write)) )
+        for _ in range(self.GRID.NPoints): tmp_write.append( tmp % tuple(next(list2write)) )
         file_data = open(files[0],'w')
         file_data.writelines(tmp_write)
 
@@ -1507,7 +1507,7 @@ class Lime(Make_Datatab):
         sfile.close()
 
         print ('Writing space domain in:')
-        for i in xrange(1,4):
+        for i in range(1,4):
             print ('%s'%files[i])
             np.savetxt(files[i], self.GRID.XYZgrid[i-1], fmt = '%.8e')
 
@@ -1653,7 +1653,7 @@ class Radmc3d(object): #RADMC-3D: cgs units system
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = tgas.ravel(order='F') # Create a 1-D view, fortran-style indexing
-            for i in xrange(self.nn): tmp_write.append(tmp % tuple(vel2wrt[i]))         
+            for i in range(self.nn): tmp_write.append(tmp % tuple(vel2wrt[i]))         
             f.writelines(tmp_write)
             #vel2wrt.tofile(f, sep='\n', format=format)
             f.close()
@@ -1691,7 +1691,7 @@ class Radmc3d(object): #RADMC-3D: cgs units system
             lam_list = [np.logspace(np.log10(lam[i]),
                                     np.log10(lam[i+1]),
                                     nxx[i], endpoint=False) 
-                        for i in xrange(len_lam-2)]
+                        for i in range(len_lam-2)]
             lam_list.append(np.logspace(np.log10(lam[-2]),
                                         np.log10(lam[-1]),
                                         nxx[-1], endpoint=True))
@@ -1727,7 +1727,7 @@ class Radmc3d(object): #RADMC-3D: cgs units system
             lam_list = [np.logspace(np.log10(lam[i]),
                                     np.log10(lam[i+1]),
                                     nxx[i], endpoint=False) 
-                        for i in xrange(len_lam-2)]
+                        for i in range(len_lam-2)]
             lam_list.append(np.logspace(np.log10(lam[-2]),
                                         np.log10(lam[-1]),
                                         nxx[-1], endpoint=True))
@@ -1920,7 +1920,7 @@ class Radmc3dRT(Radmc3d):
         data files:
            amr_grid.inp, electron_numdens.inp, ion_numdens.inp, gas_temperature.inp [, dust_temperature.inp]
         """ 
-        _keys = self._freefree_keys() 
+        _keys = list(self._freefree_keys())
         
         func_name = inspect.stack()[0][3]
         print ('Setting %s mode for RADMC-3D...'%func_name)
@@ -1995,7 +1995,7 @@ class Radmc3dRT(Radmc3d):
         data files:
            amr_grid.inp, radmc3d.inp, electron_numdens.inp, ion_numdens.inp, gas_temperature.inp, gas_velocity.inp [, dust_temperature.inp, microturbulence.inp]
         """ 
-        _keys = self._recomblines_keys() 
+        _keys = list(self._recomblines_keys())
 
         func_name = inspect.stack()[0][3]
         print ('Setting %s mode for RADMC-3D...'%func_name)

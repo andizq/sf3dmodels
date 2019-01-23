@@ -190,7 +190,8 @@ class Random(Build_r):
             if enc_mass > min_mass: 
                 r_min = r
                 break
-        print r_min    
+        print("Inner radius:", r_min)
+        print("Outer radius:", r_max)
         comp_fraction = enc_mass / total_mass
         rand_spher = self.spherical(r_min=r_min, r_max=r_max, n_dummy=n_dummy)
         return {"r_rand": rand_spher["r_rand"], "r_min": r_min, "r_max": r_max, 

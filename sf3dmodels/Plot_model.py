@@ -110,7 +110,7 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
     unit = axisunit
     i,j,k = 0,0,0
 
-    key = plane.keys()
+    key = list(plane.keys())
     if len(key) > 1: sys.exit('ERROR: Please define a single plane to plot')
     key = key[0]
     if key == 'x': ind = 0

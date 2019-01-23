@@ -6,7 +6,7 @@ SF3dmodels : Star-Forming regions 3d modelling package
 # should keep this content at the top.
 # ----------------------------------------------------------------------------
 from ._astropy_init import *
-import version_error
+# import version_error
 # ----------------------------------------------------------------------------
 
 if not _ASTROPY_SETUP_:
