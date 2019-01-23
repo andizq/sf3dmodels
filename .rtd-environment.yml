@@ -4,10 +4,10 @@ channels:
     - astropy
 
 dependencies:
-    - astropy
-    - Cython
-    - matplotlib
-    - numpy
+#    - astropy
+#    - Cython
+#    - matplotlib
+#    - numpy
     - sphinx-astropy
 #    - pandas
 #    - pip:
