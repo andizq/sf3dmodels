@@ -103,10 +103,10 @@ Source codes and figures on GitHub: `ionized_constant <https://github.com/andizq
 			output = '3Dtemp_%s.png'%tag, show = True)
 
 
-.. image:: ../../examples/ionized_constant/3Ddens_ctsphere_HII.png
+.. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/ionized_constant/3Ddens_ctsphere_HII.png?raw=true
    :width: 49.5%
 
-.. image:: ../../examples/ionized_constant/3Dtemp_ctsphere_HII.png
+.. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/ionized_constant/3Dtemp_ctsphere_HII.png?raw=true
    :width: 49.5%
 
 
