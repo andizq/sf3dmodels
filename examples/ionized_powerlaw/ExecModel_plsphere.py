@@ -2,7 +2,7 @@
 Powerlaw Sphere Example
 =======================
 
-This is an exmaple of a powerlaw density profile spherical HII region
+This is an example of a powerlaw-density  spherical HII region
 """
 #------------------
 #Import the package
@@ -52,11 +52,14 @@ Model.PrintProperties(density, temperature, GRID)
 print ('Ellapsed time: %.3fs' % (time.time() - t0))
 print ('-------------------------------------------------\n-------------------------------------------------\n')
 
-#---------------------------------
-#WRITING DATA with RADMC-3D FORMAT
-#---------------------------------
-
-Model.Datatab_RADMC3D_FreeFree(density.total, temperature.total, GRID)
+#----------------------
+#WRITING RADMC-3D FILES
+#----------------------
+Rad = Model.Radmc3dRT(GRID)
+prop = {'dens_elect': density.total,
+        'dens_ion': density.total,
+        'tgas': temperature.total}
+Rad.freefree(prop)
 
 #------------------------------------
 #3D PLOTTING (weighting with density)

@@ -40,11 +40,11 @@ Model.PrintProperties(density, temperature, GRID) #Printing resultant properties
 #----------------------
 #WRITING RADMC-3D FILES
 #----------------------
-rad = Model.Radmc3dRT(GRID)
+Rad = Model.Radmc3dRT(GRID)
 prop = {'dens_elect': density.total,
         'dens_ion': density.total,
         'tgas': temperature.total}
-rad.freefree(prop)
+Rad.freefree(prop)
 
 #------------------------------------
 #3D PLOTTING (weighting with density)
