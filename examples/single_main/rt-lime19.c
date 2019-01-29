@@ -19,8 +19,8 @@ input(inputPars *par, image *img){
    */
   par->radius                   = 500*AU;
   par->minScale                 = 2.5*AU; // 2 * sizex / Nx / 2
-  par->pIntensity               = 10000; 
-  par->sinkPoints               = 2000; 
+  par->pIntensity               = 20000; 
+  par->sinkPoints               = 5000; 
   par->dust                     = "opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "ch3cn.dat";
   //par->antialias                = 1;
