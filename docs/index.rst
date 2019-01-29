@@ -129,22 +129,6 @@ LIME Examples
 Take a look at the folder ``lime/example_sf3dmodels/`` included in the package repository on `GitHub`_.
 
 
-License
-=======
-
-This project is Copyright (c) Andres Izquierdo and licensed under
-the terms of the BSD 3-Clause license. This package is based upon
-the `Astropy package template <https://github.com/astropy/package-template>`_
-which is licensed under the BSD 3-clause licence. See the licenses folder for
-more information.
-
-
-Citing sf3dmodels
-=================
-
-If you find the ``sf3dmodels`` package useful for your research please cite the work of `Izquierdo et al. 2018`_.
-
-
 Reference/API
 =============
 
@@ -166,5 +150,21 @@ Working on...
    tools/tools.rst
    grid/grid.rst
    arepo/arepo.rst
+
+
+License
+=======
+
+This project is Copyright (c) Andres Izquierdo and licensed under
+the terms of the BSD 3-Clause license. This package is based upon
+the `Astropy package template <https://github.com/astropy/package-template>`_
+which is licensed under the BSD 3-clause licence. See the licenses folder for
+more information.
+
+
+Citing sf3dmodels
+=================
+
+If you find the ``sf3dmodels`` package useful for your research please cite the work of `Izquierdo et al. 2018`_.
    
-.. warning:: This package, as well as its documentation, are currently under development.
+.. warning:: This package, as well as its documentation, are currently under development and may often undergo modifications.

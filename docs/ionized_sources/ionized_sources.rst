@@ -181,7 +181,7 @@ Source codes and figures on GitHub: `ionized_powerlaw <https://github.com/andizq
 
    `Radiative transfer`: free-free emission
    
-   `Useful references`: `Pratap+1992`_, `Keto+2008`_
+   `Useful references`: `Keto+2008`_, `Galvan-Madrid+2009`_
 
 
 The only difference with respect to the Example 1 is the density model (`~sf3dmodels.Model.density_Powerlaw_HII()`):

@@ -83,6 +83,7 @@ rst_epilog += """
 .. _Keto+2008: http://adsabs.harvard.edu/abs/2008ApJ...672..423K
 .. _Pratap+1992: http://adsabs.harvard.edu/abs/1992ApJ...387..241P
 .. _Peters+2010: http://adsabs.harvard.edu/abs/2010ApJ...719..831P
+.. _Galvan-Madrid+2009: http://adsabs.harvard.edu/abs/2009ApJ...706.1036G
 """
 
 # -- Project information ------------------------------------------------------
