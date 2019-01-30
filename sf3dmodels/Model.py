@@ -1267,7 +1267,7 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
         print ('Writing grid size on %s'%sizefile)
         sfile = open(sizefile,'w') 
         Ns = GRID.Nodes
-        sfile.write("%d %d %d %d"%(Ns[0],Ns[1],Ns[2],GRID.NPoints))
+        sfile.write("%d %d %d %d %d"%(8,Ns[0],Ns[1],Ns[2],GRID.NPoints))
         print ('Writing data on %s'%files[0])
         file = open(files[0],'w')
 
@@ -1349,7 +1349,7 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
         print ('Writing grid size on %s'%sizefile)
         sfile = open(sizefile,'w') 
         Ns = GRID.Nodes
-        sfile.write("%d %d %d %d"%(Ns[0],Ns[1],Ns[2],GRID.NPoints))
+        sfile.write("%d %d %d %d %d"%(11,Ns[0],Ns[1],Ns[2],GRID.NPoints))
         print ('Writing data on %s'%files[0])
         file = open(files[0],'w')
 
