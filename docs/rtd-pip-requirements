@@ -1,4 +1,5 @@
 astropy<3.0
+sphinx-astropy
 matplotlib
 numpy
 cython
