@@ -3,3 +3,4 @@ sphinx-astropy
 matplotlib
 numpy
 cython
+pandas
