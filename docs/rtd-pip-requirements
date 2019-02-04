@@ -1,4 +1,4 @@
-#pandas
+astropy<3.0
 matplotlib
 numpy
 cython
