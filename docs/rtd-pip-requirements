@@ -1,4 +1,4 @@
-astropy
+astropy=2.0.9
 pandas
 matplotlib
 numpy
