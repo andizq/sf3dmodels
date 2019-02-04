@@ -5,11 +5,11 @@ channels:
     - conda-forge
 
 dependencies:
-    - astropy=2.0.9
-    - cython
-    - matplotlib
-    - numpy
+#    - astropy=2.0.9
+#    - cython
+#    - matplotlib
+#    - numpy
     - sphinx-astropy
-    - pandas
+#    - pandas
 #    - pip:
 #       - dependency_from_pip
