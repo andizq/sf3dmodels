@@ -1068,7 +1068,6 @@ def Rotation_Matrix(angle_dicts):
     return Rot_total
 
 
-
 def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = False):
 
 #order: indicates the order of the axes along which the rotations will be performed
@@ -1109,7 +1108,7 @@ def ChangeGeometry(GRID, center = False ,rot_dict = False, vel = False, vsys = F
         else: 
             print ('==========================================================') 
             print ('WARNING: No VELOCITY distribution was provided to be rotated!')
-            print ('You should provide it if interested in computing line emission RT.')
+            print ('You should provide it if interested in computing line emission.')
             print ('==========================================================')
 
     if center is not False:
@@ -1243,6 +1242,40 @@ def Datatab_RADMC3D_FreeFree(dens,temp,GRID):
 
 #-------------
 #-------------
+def col_ids_LIME(props):
+    
+    CP_H2 = 1
+    CP_p_H2 = 2
+    CP_o_H2 = 3
+    CP_e = 4
+    CP_H = 5
+    CP_He = 6
+    CP_Hplus = 7
+    base = dict(SF3D_id =            0,
+                SF3D_x=              1,
+                SF3D_y =             2,
+                SF3D_z =             3,
+                SF3D_dens_H2 =       CP_H2 + 3,     
+                SF3D_dens_p_H2 =     CP_p_H2 + 3,
+                SF3D_dens_o_H2 =     CP_o_H2 + 3,
+                SF3D_dens_e =        CP_e + 3,
+                SF3D_dens_H =        CP_H + 3,
+                SF3D_dens_He =       CP_He + 3,
+                SF3D_dens_Hplus =    CP_Hplus + 3,
+                SF3D_temp_gas =      11,
+                SF3D_temp_dust =     12,
+                SF3D_vel_x =         13,
+                SF3D_vel_y =         14,
+                SF3D_vel_z =         15,
+                SF3D_abundance =     16,
+                SF3D_gtdratio =      17,
+                SF3D_max_cols =      18)
+    written_props = [] 
+    for col in props:
+        if col in base.keys(): written_props.append(base[col])
+    written_props.append(4242)
+    return written_props
+
 
 def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False):
     
@@ -1282,6 +1315,14 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
             df[i-1].to_csv(files[i],index=False,header=False,float_format='%e') 
         
         sfile.close()
+        
+        colsfile = './npoints_test.dat'
+        props = ['SF3D_id', 'SF3D_dens_H2', 'SF3D_temp_gas', 
+                 'SF3D_vel_x', 'SF3D_vel_y', 'SF3D_vel_z',
+                 'SF3D_abundance', 'SF3D_gtdratio']
+        cols2write = np.array([col_ids_LIME(props)]).T
+        print ('Writing column ids on %s'%colsfile)
+        np.savetxt(colsfile, cols2write, fmt='%d')
         
     file.close()
     
@@ -1463,7 +1504,7 @@ class Make_Datatab(object):
         base += '\n'
         return base
 
-    def submodel(self, tag = '0', format = None, folder = 'Subgrids'):        
+    def submodel(self, tag = '0.dat', format = None, folder = 'Subgrids'):        
 
         os.system('mkdir %s'%folder)
         file_path = './%s/%s'%(folder,tag)
