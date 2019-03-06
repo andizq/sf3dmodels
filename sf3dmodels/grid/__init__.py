@@ -27,7 +27,7 @@ class GridSet(object):
     def _set_flag(self, a): 
         try: 
             self.GRID.flag[a] = True
-        except AttributeError: #Call flag setter class
+        except AttributeError: #To do: Call flag setter class
             self.GRID.flag = {}
             self.GRID.flag[a] = True
 
@@ -35,8 +35,11 @@ if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
 
-    from .core import Build_r, Build_theta, Build_phi
+    from . import fillgrid
+    from .core import Overlap, Build_r, Build_theta, Build_phi
     
-__all__ = ['Build_r', 'Build_theta', 'Build_phi',
+__all__ = ['Overlap',
+           'fillgrid',
+           'Build_r', 'Build_theta', 'Build_phi',
            'GridSet'] 
 

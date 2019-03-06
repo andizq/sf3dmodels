@@ -5,8 +5,8 @@ This is particularly useful for irregular grids that have large voids between th
 real cells and the border of an eventual radiative transfer domain.
 """
 import numpy as np
-from .transform import spherical2cartesian
-from ..grid import Build_r
+from ..tools.transform import spherical2cartesian
+from .core import Build_r
 
 __all__ = ['Random']
 #******************
