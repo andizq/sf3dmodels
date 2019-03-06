@@ -125,22 +125,20 @@ class ReadSnapshot(UniqueCells):
 
     Parameters
     ----------
-    snap_path: str
+    snap_path : str
        Path to the snapshot file to read in.
 
     Returns
     -------
-    data: dict
+    data : dict
        Dictionary containing the physical data of the snapshot.
 
-    header: dict
+    header : dict
        Dictionary containing the header information of the snapshot.    
        
     Notes
     -----
-    This tool uses the main functionalities of the AREPO standard python library **arepy**.
-
-
+    This tool uses the main features of the AREPO's standard python library **arepy**.
     """
 
     def __init__(self, 

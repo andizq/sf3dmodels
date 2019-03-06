@@ -12,7 +12,7 @@ if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
 
-    from . import fillgrid
     from . import transform
+    from .core import formatter
 
-__all__ = ['fillgrid', 'transform']
+__all__ = ['transform', 'formatter']

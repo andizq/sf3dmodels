@@ -111,12 +111,12 @@ def make_cylinder(M_pair,DiskSizes,R_l,r_seg,drBIGGRID,width, function_R_rho, fu
     return r_seg_mag
     
 
-def make_outflow(pos_c, pos_f, r_min, drBIGGRID, w, temp, dens, ionfrac, v0, r_max = 0, vsys=0, name = 'outflow0.dat'):
+def make_outflow(pos_c, pos_f, r_min, dx, w, temp, dens, ionfrac, v0, r_max = 0, vsys=0, name = 'outflow.dat'):
     
     """
     pos_c: Position of the outflow center
     pos_f: Final position of the outflow 
-    drBIGGRID: Maximum separation between nodes of the Global Grid
+    dx: Maximum separation between nodes of the Global Grid
 
     Note: If r_max is set, pos_f could just store the vectorial direction of the outflow: pos_f = pos_i + dir. 
     For example: pos_i = np.array([100*AU, 0, 0]), r_max = 2000 * AU, then an outflow pointing towards the Y direction should have
@@ -142,7 +142,6 @@ def make_outflow(pos_c, pos_f, r_min, drBIGGRID, w, temp, dens, ionfrac, v0, r_m
         return ct * r**temp[1]
 
     qv = -2 * w[1] - dens[1]
-    print(qv)
     cv = v0 * r0**-qv
     def velocity(r): #Jet velocity
         return cv * r**qv
@@ -165,17 +164,17 @@ def make_outflow(pos_c, pos_f, r_min, drBIGGRID, w, temp, dens, ionfrac, v0, r_m
     r_seg_mag = np.linalg.norm(r_seg) #Magnitude of the segment between low mass and high mass
     r_seg_dir = r_seg/r_seg_mag #Direction of the segment
 
-    #Guess of the number of points to generate: (approximation to a rectangular region)
+    #Guess the number of random grid points to generate: (approximation to a rectangular region)
     # Number of divisions along the main segment, 
-    #  times the number of divisions perpendicular to the segment,
-    #   times the number of divisions in the perpendicular to both segments above
+    #  times the number of divisions along an axis perpendicular to the segment,
+    #   times the number of divisions along an axis perpendicular to both of the segments above.
     
-    drmax = drBIGGRID
+    drmax = dx
     dr = drmax/4.
 
     mean_w = width(0.5 * r_seg_mag)
     Npoints = int(r_seg_mag/dr * (mean_w/dr)**2 ) 
-    print ('Number of points generated:', Npoints)
+    print ('Number of grid points:', Npoints)
     
     flag = True
         
@@ -205,14 +204,14 @@ def make_outflow(pos_c, pos_f, r_min, drBIGGRID, w, temp, dens, ionfrac, v0, r_m
         rand_vec_plane =  R * np.cross(r_seg_dir, rand_vec) #Perpendicular (random) vector to the segment
         
         r_c = r_vec + rand_vec_plane #Vector from the outflow center to the generated point in the outflow 
-        r_real = pos_c + r_c  #Real position from the origin of coordinates 
+        r_real = pos_c + r_c  #Real position from the coordinates origin
         
 
         r_c_n = -r_vec + rand_vec_plane
         r_real_n = pos_c + r_c_n
 
         x,y,z = r_real
-        xn,yn,zn = r_real_n
+        xn,yn,zn = r_real_n #negative
 
         speed = velocity(r)
         (vx,vy,vz) = speed * r_seg_dir #Velocity of the given r_real
@@ -233,7 +232,7 @@ def make_outflow(pos_c, pos_f, r_min, drBIGGRID, w, temp, dens, ionfrac, v0, r_m
         """
         while flag:
             x,y,z = np.random.uniform(0,500,3)
-            #Equation of a plane with the normal unitary vector (a,b,c) in (x0,y0,z0): 
+            #Equation of a plane with normal unitary vector (a,b,c) in (x0,y0,z0): 
             # f = a*(x-x0) + b*(y-y0) + c*(z-z0) = 0 
         """
     file.close()
@@ -247,16 +246,6 @@ def make_outflow(pos_c, pos_f, r_min, drBIGGRID, w, temp, dens, ionfrac, v0, r_m
     cross_sec = np.pi * width(0.5 * r_seg_mag)**2
     inflow_rate = vmean0 * (rho * 2*Mu) * cross_sec / MSun_yr
     print ("Mass inflow rate:", inflow_rate, "MSun/yr")
-    
+    print (vmean0, rho, cross_sec)
+        
     return r_seg_mag
-
-
-
-
-
-
-
-
-
-
-

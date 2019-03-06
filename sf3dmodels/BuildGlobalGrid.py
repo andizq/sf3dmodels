@@ -60,9 +60,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
 
     cm3_to_m3 = 1e6
     gamma = 7./5 #Gamma for diatomic molecules
-    kb = 1.38064852e-23 #Boltzmann constant
-    H_mass = 1.6733e-27 #kg
-
+    
     DENS = -1*np.ones(NTotal) #, dtype='float64') * 0.5 # * dens_back
     TEMP = np.zeros(NTotal) # * temp_back * dens_back
 
@@ -72,7 +70,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
     gtd0 = 100.
     GTD = np.zeros(NTotal) #np.ones(NTotal) * gtd0
 
-    VEL = [np.zeros(NTotal),np.zeros(NTotal),np.ones(NTotal)*1*70000] 
+    VEL = [np.zeros(NTotal),np.zeros(NTotal),np.ones(NTotal)*7e8] 
 
 #----------------------
 #----------------------
@@ -95,7 +93,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
 
     Xgrid, Ygrid, Zgrid = GRID.XYZgrid 
 
-    for m in range(len(files)):
+    for m in range(NFiles):
         for n in files[m]:
         
             x,y,z = n[1], n[2], n[3]
@@ -185,7 +183,7 @@ def overlap(GRID, submodels = [''], folder = './Subgrids/',
     
     TEMP = np.where(TEMP == 0., T_min, TEMP)
 
-    if radmc3d: pass #Model.Datatab_RADMC3D_FreeFree(DENS,TEMP,GRID)
+    if radmc3d: Model.Datatab_RADMC3D_FreeFree(DENS,TEMP,GRID)
     else: Model.DataTab_LIME(DENS,TEMP,VEL,ABUND,GTD,GRID)
 
     AllProp = Model.Struct( **{'GRID': GRID, 'density': DENS, 'temperature': TEMP, 'vel': VEL, 'abundance': ABUND, 'gtd': GTD}) 
