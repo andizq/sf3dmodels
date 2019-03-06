@@ -319,7 +319,7 @@ class Lime(MakeDatatab):
         Examples
         --------
         Have a look at the following folders on the GitHub repository: 
-           `examples/single_source/ <https://github.com/andizq/star-forming-regions/tree/master/examples/single_source>`_ \n
+           `examples/single_main/ <https://github.com/andizq/star-forming-regions/tree/master/examples/single_main>`_ \n
            `examples/hamburger_tapering/ <https://github.com/andizq/star-forming-regions/tree/master/examples/hamburger_tapering>`_ \n
            `examples/two_sources/ <https://github.com/andizq/star-forming-regions/tree/master/examples/two_sources>`_ \n
                       
