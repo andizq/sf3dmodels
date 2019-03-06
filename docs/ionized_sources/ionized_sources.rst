@@ -26,7 +26,9 @@ Source codes and figures on GitHub: `ionized_constant <https://github.com/andizq
    #------------------
    #Import the package
    #------------------
-   from sf3dmodels import *
+   from sf3dmodels import Model, Plot_model
+   import sf3dmodels.utils.units as u
+   import sf3dmodels.rt as rt
    #-----------------
    #Extra libraries
    #-----------------
@@ -43,16 +45,16 @@ Source codes and figures on GitHub: `ionized_constant <https://github.com/andizq
    #------------------
    #General Parameters
    #------------------
-   r_max = 2530 * U.AU #HII sphere size
+   r_max = 2530 * u.au #HII sphere size
    dens_e = 1.4e5 * 1e6 #Electronic numerical density, from cgs to SI
    t_e = 1.e4 #K
 
    #---------------
    #GRID Definition
    #---------------
-   sizex = sizey = sizez = 2600 * U.AU 
+   sizex = sizey = sizez = 2600 * u.au 
    Nx = Ny = Nz = 63 #Number of divisions for each axis
-   GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], radmc3d = True)
+   GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], rt_code = 'radmc3d')
    NPoints = GRID.NPoints #Final number of nodes in the grid
 
 
@@ -74,14 +76,15 @@ Source codes and figures on GitHub: `ionized_constant <https://github.com/andizq
    #----------------------
    #WRITING RADMC-3D FILES
    #----------------------
-   Rad = Model.Radmc3dRT(GRID)
-   prop = {'dens_elect': density.total,
+   prop = {'dens_e': density.total,
            'dens_ion': density.total,
-	   'tgas': temperature.total}
+           'temp_gas': temperature.total}
+
+   Rad = rt.Radmc3dDefaults(GRID)
    Rad.freefree(prop)
 
 
-**d.** Plot the 3D spatial points distribution:
+**d.** Plot the 3D points distribution:
 
 .. code-block:: python
 
@@ -91,13 +94,13 @@ Source codes and figures on GitHub: `ionized_constant <https://github.com/andizq
    tag = 'HII'
    weight = dens_e
    Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, 
-   			colordim = density.total / 1e6 / 1e5, axisunit = U.AU, 
+   			colordim = density.total / 1e6 / 1e5, axisunit = u.au, 
 			cmap = 'winter', marker = 'o', 
 			colorlabel = r'$n_{\rm e}$ [cm$^{-3}$]', 
 			output = '3Ddens_%s.png'%tag, show = True)
 
    Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, 
-   			colordim = temperature.total, axisunit = U.AU, 
+   			colordim = temperature.total, axisunit = u.au, 
 			cmap = 'winter', marker = 'o', 
 			colorlabel = r'$T_{\rm e}$ [Kelvin]', 
 			output = '3Dtemp_%s.png'%tag, show = True)
@@ -193,8 +196,8 @@ The only difference with respect to the Example 1 is the density model (`~sf3dmo
    #------------------
    #from Galvan-Madrid et al. 2009, Table 3:
 
-   MStar = 34 * U.MSun
-   r_max = 2530 * U.AU #H II sphere size
+   MStar = 34 * u.MSun
+   r_max = 2530 * u.au #H II sphere size
    r_min = r_max / 200 #Minimum distance (!= 0 to avoid indeterminations).
    r_s = r_max #Normalization distance
    rho_s = 1.4e5 * 1e6 #from cgs to SI. Density at r_s

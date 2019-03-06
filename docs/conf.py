@@ -84,6 +84,8 @@ rst_epilog += """
 .. _Pratap+1992: http://adsabs.harvard.edu/abs/1992ApJ...387..241P
 .. _Peters+2010: http://adsabs.harvard.edu/abs/2010ApJ...719..831P
 .. _Galvan-Madrid+2009: http://adsabs.harvard.edu/abs/2009ApJ...706.1036G
+.. _Reynolds+1986: http://adsabs.harvard.edu/abs/1986ApJ...304..713R
+.. _Peters+2012: http://adsabs.harvard.edu/abs/2012MNRAS.425.2352P
 """
 
 # -- Project information ------------------------------------------------------
