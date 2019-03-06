@@ -5,7 +5,10 @@ from __future__ import print_function
 #------------------
 #Import the package
 #------------------
-from sf3dmodels import *
+from sf3dmodels import Model, Plot_model
+from sf3dmodels import Resolution as Res
+import sf3dmodels.utils.units as u            
+import sf3dmodels.rt as rt                   
 #-----------------
 #Extra libraries
 #-----------------
@@ -19,22 +22,22 @@ t0 = time.time()
 #------------------
 #General Parameters
 #------------------
-MStar = 0.86 * U.MSun 
-MRate = 5.e-6 * U.MSun_yr 
-RStar = U.RSun * ( MStar/U.MSun )**0.8 
-LStar = U.LSun * ( MStar/U.MSun )**4 
-TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25 
-Rd = 264. * U.AU
+MStar = 0.86 * u.MSun 
+MRate = 5.e-6 * u.MSun_yr 
+RStar = u.RSun * ( MStar/u.MSun )**0.8 
+LStar = u.LSun * ( MStar/u.MSun )**4 
+TStar = u.TSun * ( (LStar/u.LSun) / (RStar/u.RSun)**2 )**0.25 
+Rd = 264. * u.au
 
-print ('RStar:', RStar/U.RSun, ', LStar:', LStar/U.LSun, ', TStar:', TStar)
+print ('RStar:', RStar/u.RSun, ', LStar:', LStar/u.LSun, ', TStar:', TStar)
 
 #---------------
 #GRID Definition
 #---------------
-#Cubic grid, each edge ranges [-500, 500] AU.
+#Cubic grid, each edge ranges [-500, 500] au.
 
-sizex = sizey = sizez = 500 * U.AU
-Nx = Ny = Nz = 50 #Number of divisions for each axis
+sizex = sizey = sizez = 500 * u.au
+Nx = Ny = Nz = 100 #Number of divisions for each axis
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
 
@@ -75,7 +78,7 @@ density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
 #-----------
 #TEMPERATURE
 #-----------
-T10Env = 250. #Envelope temperature at 10 AU
+T10Env = 250. #Envelope temperature at 10 au
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
 temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, 
@@ -98,7 +101,7 @@ gtdratio = Model.gastodust(gtd0, NPoints)
 #-------------------------
 #ROTATION, VSYS, CENTERING
 #-------------------------
-xc, yc, zc = [350*U.AU, -150*U.AU, -200*U.AU]
+xc, yc, zc = [350*u.au, -150*u.au, -200*u.au]
 CENTER = [xc, yc, zc] #Center of the region in the global grid
 v_sys = -2000. #Systemic velocity (vz) of the region (in m/s)
 newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
@@ -113,10 +116,19 @@ GRID.XYZ = newProperties.newXYZ
 vel.x, vel.y, vel.z = newProperties.newVEL 
 
 #-----------------------------
-#WRITING DATA with LIME format
+#WRITING DATA for LIME
 #-----------------------------
-tag = '_Burger' #A tag to identify the final files from others
-Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, is_submodel = True, tag = tag)
+tag = 'Burger.dat'
+prop = {'dens_H2': density.total,
+        'temp_gas': temperature.total,
+        'vel_x': vel.x,
+        'vel_y': vel.y,
+        'vel_z': vel.z,
+        'abundance': abundance,
+        'gtdratio': gtdratio}
+lime = rt.Lime(GRID)
+lime.submodel(prop, output=tag)
+print('Output columns', lime.columns)
 
 #-----------------------------
 #PRINTING resultant PROPERTIES
@@ -138,7 +150,7 @@ weight = 10*T10Env
 vmin, vmax = np.array([5e11, 5e15]) / 1e6
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = U.AU, cmap = 'hot', 
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = density.total / 1e6 , axisunit = u.au, cmap = 'hot', 
                      norm = norm, colorlabel = r'$\rho$ $[cm^{-3}]$', output = '3Dpoints%s.png'%tag, show = True)
 
 

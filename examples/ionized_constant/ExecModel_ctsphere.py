@@ -7,7 +7,9 @@ This is an exmaple of a uniform-density (constant-density) spherical HII region
 #------------------
 #Import the package
 #------------------
-from sf3dmodels import *
+from sf3dmodels import Model, Plot_model
+import sf3dmodels.utils.units as u
+import sf3dmodels.rt as rt
 #-----------------
 #Extra libraries
 #-----------------
@@ -17,16 +19,16 @@ import time
 #------------------
 #General Parameters
 #------------------
-r_max = 2530 * U.AU #H II sphere size
+r_max = 2530 * u.au #H II sphere size
 dens_e = 1.4e5 * 1e6 #Electron number density, from cgs to SI
 t_e = 1.e4 #K
 
 #---------------
 #GRID Definition
 #---------------
-sizex = sizey = sizez = 2600 * U.AU 
+sizex = sizey = sizez = 2600 * u.au 
 Nx = Ny = Nz = 63 #Number of divisions for each axis
-GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], radmc3d = True)
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], rt_code='radmc3d')
 NPoints = GRID.NPoints #Final number of nodes in the grid
 
 #-------------------
@@ -40,10 +42,11 @@ Model.PrintProperties(density, temperature, GRID) #Printing resultant properties
 #----------------------
 #WRITING RADMC-3D FILES
 #----------------------
-Rad = Model.Radmc3dRT(GRID)
-prop = {'dens_elect': density.total,
+prop = {'dens_e': density.total,
         'dens_ion': density.total,
-        'tgas': temperature.total}
+        'temp_gas': temperature.total}
+
+Rad = rt.Radmc3dDefaults(GRID)
 Rad.freefree(prop)
 
 #------------------------------------
@@ -52,8 +55,8 @@ Rad.freefree(prop)
 tag = 'ctsphere_HII'
 weight = dens_e
 
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6 / 1e5, axisunit = U.AU, cmap = 'winter', 
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6 / 1e5, axisunit = u.au, cmap = 'winter', 
                      marker = 'o', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$] x $10^5$', output = '3Ddens_%s.png'%tag, show = True)
 
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = U.AU, cmap = 'winter', 
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = u.au, cmap = 'winter', 
                      marker = 'o', colorlabel = r'$T_{\rm e}$ [Kelvin]', output = '3Dtemp_%s.png'%tag, show = True)

@@ -5,7 +5,10 @@ from __future__ import print_function
 #------------------
 #Import the package
 #------------------
-from sf3dmodels import *
+from sf3dmodels import Model, Plot_model
+from sf3dmodels import Resolution as Res
+import sf3dmodels.utils.units as u            
+import sf3dmodels.rt as rt                   
 #-----------------
 #Extra libraries
 #-----------------
@@ -19,22 +22,22 @@ t0 = time.time()
 #------------------
 #General Parameters
 #------------------
-MStar = 7.0 * U.MSun 
-MRate = 4e-4 * U.MSun_yr 
-RStar = 26 * U.RSun * ( MStar/U.MSun )**0.27 * ( MRate / (1e-3*U.MSun_yr) )**0.41 
-LStar = 3.2e4 * U.LSun  
-TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25
-Rd = 152. * U.AU
+MStar = 7.0 * u.MSun 
+MRate = 4e-4 * u.MSun_yr 
+RStar = 26 * u.RSun * ( MStar/u.MSun )**0.27 * ( MRate / (1e-3*u.MSun_yr) )**0.41 
+LStar = 3.2e4 * u.LSun  
+TStar = u.TSun * ( (LStar/u.LSun) / (RStar/u.RSun)**2 )**0.25
+Rd = 152. * u.au
 
-print ('RStar:', RStar/U.RSun,', LStar:', LStar/U.LSun, ', TStar:', TStar)
+print ('RStar:', RStar/u.RSun,', LStar:', LStar/u.LSun, ', TStar:', TStar)
 
 #---------------
 #GRID Definition
 #---------------
-#Cubic grid, each edge ranges [-500, 500] AU.
+#Cubic grid, each edge ranges [-500, 500] au.
 
-sizex = sizey = sizez = 500 * U.AU
-Nx = Ny = Nz = 50 #Number of divisions for each axis
+sizex = sizey = sizez = 500 * u.au
+Nx = Ny = Nz = 100 #Number of divisions for each axis
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
 
@@ -43,7 +46,7 @@ NPoints = GRID.NPoints #Number of nodes in the grid
 #--------
 Rho0 = Res.Rho0(MRate, Rd, MStar)
 Arho = 24.1 #Disc-envelope density factor
-Renv = 500 * U.AU #Envelope radius
+Renv = 500 * u.au #Envelope radius
 Cavity = 40 * np.pi/180 #Cavity opening angle 
 density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, envFlag = True, 
                                  renv_max = Renv, ang_cavity = Cavity)
@@ -51,7 +54,7 @@ density = Model.density_Env_Disc(RStar, Rd, Rho0, Arho, GRID, discFlag = True, e
 #-----------
 #TEMPERATURE
 #-----------
-T10Env = 375. #Envelope temperature at 10 AU
+T10Env = 375. #Envelope temperature at 10 au
 BT = 5. #Adjustable factor for disc temperature. Extra, or less, disc heating.
 temperature = Model.temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
                                 ang_cavity = Cavity)
@@ -73,7 +76,7 @@ gtdratio = Model.gastodust(gtd0, NPoints)
 #-------------------------
 #ROTATION, VSYS, CENTERING
 #-------------------------
-xc, yc, zc = [-250*U.AU, 350*U.AU, 300*U.AU]
+xc, yc, zc = [-250*u.au, 350*u.au, 300*u.au]
 CENTER = [xc, yc, zc] #New center of the region in the global grid
 v_sys = 3320. #Systemic velocity (vz) of the region (in m/s)
 newProperties = Model.ChangeGeometry(GRID, center = CENTER, vsys = v_sys,  vel = vel,
@@ -88,11 +91,19 @@ GRID.XYZ = newProperties.newXYZ #Redefinition of the XYZ grid
 vel.x, vel.y, vel.z = newProperties.newVEL 
 
 #-----------------------------
-#WRITING DATA with LIME format
+#WRITING DATA for LIME
 #-----------------------------
-tag = '_Main' #A tag to identify the final files from those of other sub-models
-Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID, 
-                   is_submodel = True, tag = tag)
+tag = 'Main.dat' 
+prop = {'dens_H2': density.total,
+        'temp_gas': temperature.total,
+        'vel_x': vel.x,
+        'vel_y': vel.y,
+        'vel_z': vel.z,
+        'abundance': abundance,
+        'gtdratio': gtdratio}
+lime = rt.Lime(GRID)
+lime.submodel(prop, output=tag)
+print('Output columns', lime.columns)
 
 #-----------------------------
 #PRINTING resultant PROPERTIES
@@ -110,6 +121,6 @@ print ('-------------------------------------------------\n---------------------
 #------------------------------------
 tag = 'Main'
 weight = 10*Rho0
-r = GRID.rRTP[0] / U.AU #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = U.AU, cmap = 'jet', 
+r = GRID.rRTP[0] / u.au #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = r, axisunit = u.au, cmap = 'jet', 
                      colorscale = 'log', colorlabel = r'${\rm log}_{10}(r$ $[au])$', output = '3Dpoints%s.png'%tag, show = True)

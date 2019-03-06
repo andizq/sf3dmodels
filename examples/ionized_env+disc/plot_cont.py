@@ -5,18 +5,24 @@ from matplotlib import ticker
 import numpy as np
 from astropy.io import fits
 from copy import copy
-import sys
+from argparse import ArgumentParser
 
-id = "CONV_noise"
-tag = "img_HII_env+disc_"+id
+parser = ArgumentParser(prog='Plot continuum', description='Free free emission from HII regions')
+parser.add_argument('-i', '--id', help='id of fits file to be plotted')
+args = parser.parse_args()
+
+if args.id is None: id = ''
+else: id = args.id
+
+tag = 'img_HII_env+disc_'+id
 
 #------------------
 #LOADING DATA
 #------------------
-if id: image_cont_349 = "img_HII_env+disc-"+id+".fits"
-else: image_cont_349 = "img_HII_env+disc.fits"
+if id: image_cont_349 = 'img_HII_env+disc-'+id+'.fits'
+else: image_cont_349 = 'img_HII_env+disc.fits'
 data_349, header_349 = fits.getdata(image_cont_349, header=True)
-if id == "CONV_noise": pass
+if id == 'CONV_noise': pass
 else: data_349 = data_349[0]
 
 #-------------------------
@@ -45,8 +51,8 @@ flag_beam = False
 try:
     if header['BMAJ']: pass
     a, b = np.array([header['BMAJ'] , header['BMIN']]) * 3600 * distance
-    if id == "CONV": f_c, e_c = 'gray', 'white'
-    elif id == "CONV_noise": f_c, e_c = 'black', 'white'
+    if id == 'CONV': f_c, e_c = 'gray', 'white'
+    elif id == 'CONV_noise': f_c, e_c = 'black', 'white'
     ellipse = patch.Ellipse(xy = (-3500,-3500), angle = 90 + header['BPA'], 
                             width = a, height = b, linewidth = 1, 
                             fill = True, facecolor = f_c,  edgecolor = e_c)
@@ -63,7 +69,7 @@ except KeyError: pass
 colormm = plt.cm.hot
 palette_hot = copy(colormm)
 palette_hot.set_over('red', 0.8)#colormm(255), 0.8)
-if id == "CONV_noise": palette_hot.set_under('gray', 0.9)#colormm(0), 0.8)
+if id == 'CONV_noise': palette_hot.set_under('gray', 0.9)#colormm(0), 0.8)
 else: palette_hot.set_under('black', 1.0)#colormm(0), 0.8)
 
 colormm = plt.cm.cubehelix_r
@@ -79,7 +85,7 @@ palette_helix.set_under('white', 1)#colormm(0), 0.8)
 images = data_349
 
 fig, ax = plt.subplots(nrows=1, ncols=1) #, figsize=(8, 4.5))
-if id == "CONV_noise": ax.set_facecolor('darkgray')
+if id == 'CONV_noise': ax.set_facecolor('darkgray')
 else: ax.set_facecolor('black')
 
 im = np.ones((3,3))
@@ -105,11 +111,11 @@ else: cbar_label = r'log$_{10}$($I_\nu$ [Jy pixel$^{-1}$])'
 cbar_extend = 'min'
 
 ax_title = r'$\nu$ = 33 GHz, $S_\nu$ = 103 $\rm{mJy}$'            
-if id == "CONV_noise": ax_title += r', $\sigma$ = 6 $\rm{\mu Jy}/bm$'
+if id == 'CONV_noise': ax_title += r', $\sigma$ = 6 $\rm{\mu Jy}/bm$'
 
         
 cbar = fig.colorbar(im, extend = cbar_extend, ax = ax, aspect = 15,
-                    orientation = "vertical", pad = 0.02, shrink = 1.0)
+                    orientation = 'vertical', pad = 0.02, shrink = 1.0)
     
 cbar.set_label(cbar_label, labelpad = 2, fontsize = 8)
 cbar.ax.tick_params(labelsize = 8)
@@ -122,7 +128,7 @@ ax.tick_params(axis='both', labelsize = 7)
 
 #-----------------
 #-----------------
-plt.savefig("%s.png"%tag, facecolor = "white", dpi = 500)
+plt.savefig('%s.png'%tag, facecolor = 'white', dpi = 500)
 plt.show()
 #---------
 #---------

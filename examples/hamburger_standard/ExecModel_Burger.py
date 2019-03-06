@@ -5,7 +5,10 @@ from __future__ import print_function
 #------------------
 #Import the package
 #------------------
-from sf3dmodels import *
+from sf3dmodels import Model, Plot_model
+from sf3dmodels import Resolution as Res
+import sf3dmodels.utils.units as u            
+import sf3dmodels.rt as rt                   
 #-----------------
 #Extra libraries
 #-----------------
@@ -19,21 +22,21 @@ t0 = time.time()
 #------------------
 #General Parameters
 #------------------
-MStar = 0.86 * U.MSun 
-MRate = 5.e-6 * U.MSun_yr 
-RStar = U.RSun * ( MStar/U.MSun )**0.8 
-LStar = U.LSun * ( MStar/U.MSun )**4 
-TStar = U.TSun * ( (LStar/U.LSun) / (RStar/U.RSun)**2 )**0.25 
-Rd = 264. * U.AU
+MStar = 0.86 * u.MSun 
+MRate = 5.e-6 * u.MSun_yr 
+RStar = u.RSun * ( MStar/u.MSun )**0.8 
+LStar = u.LSun * ( MStar/u.MSun )**4 
+TStar = u.TSun * ( (LStar/u.LSun) / (RStar/u.RSun)**2 )**0.25 
+Rd = 264. * u.au
 
-print ('RStar:', RStar/U.RSun, ', LStar:', LStar/U.LSun, ', TStar:', TStar)
+print ('RStar:', RStar/u.RSun, ', LStar:', LStar/u.LSun, ', TStar:', TStar)
 
 #---------------
 #GRID Definition
 #---------------
-#Cubic grid, each edge ranges [-500, 500] AU.
+#Cubic grid, each edge ranges [-500, 500] au.
 
-sizex = sizey = sizez = 500 * U.AU
+sizex = sizey = sizez = 500 * u.au
 Nx = Ny = Nz = 200 #Number of divisions for each axis
 GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 NPoints = GRID.NPoints #Number of nodes in the grid
@@ -75,7 +78,7 @@ density = Model.Struct( **{ 'total': densEnv.total + densDisc.total,
 #-----------
 #TEMPERATURE
 #-----------
-T10Env = 250. #Envelope temperature at 10 AU
+T10Env = 250. #Envelope temperature at 10 au
 Tmin = 10. #Minimum possible temperature. Every node with T<Tmin will inherit Tmin. 
 BT = 60. #Adjustable factor for disc temperature. Extra, or less, disc heating.
 temperature = Model.temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, 
@@ -96,9 +99,18 @@ gtd0 = 100. #Gas to dust ratio (H2 vs Dust)
 gtdratio = Model.gastodust(gtd0, NPoints)
 
 #-----------------------------
-#WRITING DATA with LIME format
+#WRITING DATA for LIME
 #-----------------------------
-Model.DataTab_LIME(density.total, temperature.total, vel, abundance, gtdratio, GRID) 
+prop = {'dens_H2': density.total,
+        'temp_gas': temperature.total,
+        'vel_x': vel.x,
+        'vel_y': vel.y,
+        'vel_z': vel.z,
+        'abundance': abundance,
+        'gtdratio': gtdratio
+        }
+lime = rt.Lime(GRID)
+lime.finalmodel(prop)
 
 #-----------------------------
 #PRINTING resultant PROPERTIES
@@ -112,7 +124,7 @@ print ('Ellapsed time: %.3fs' % (time.time() - t0))
 print ('-------------------------------------------------\n-------------------------------------------------\n')
 
 #----------------------------------------
-#3D PLOTTING (weighting with temperature)
+#3D PLOTTING (weighting by temperature)
 #----------------------------------------
 tag = 'Burger'
 dens_plot = density.total / 1e6
@@ -121,7 +133,7 @@ vmin, vmax = np.array([5e11, 5e15]) / 1e6
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
 weight = 10*T10Env
-Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = dens_plot , axisunit = U.AU, cmap = 'hot', 
+Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = dens_plot , axisunit = u.au, cmap = 'hot', 
                      norm = norm, colorlabel = r'$\rho$ $[cm^{-3}]$', output = '3Dpoints%s.png'%tag, show = False)
 
 #----------------------------------------
@@ -131,30 +143,30 @@ Plot_model.scatter3D(GRID, temperature.total, weight, NRand = 4000, colordim = d
 vmin, vmax = np.array([1e12, 1e17]) / 1e6
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'z': 0*U.AU},
+Plot_model.plane2D(GRID, dens_plot, axisunit = u.au, cmap = 'ocean_r', plane = {'z': 0*u.au},
                    norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensMidplane_%s.png'%tag, show = False)
 
 vmin, vmax = np.array([1e11, 5e15]) / 1e6
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-Plot_model.plane2D(GRID, dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
+Plot_model.plane2D(GRID, dens_plot, axisunit = u.au, cmap = 'ocean_r', plane = {'y': 0*u.au},
                    norm = norm, colorlabel = r'$[\rm cm^{-3}]$', output = 'DensVertical_%s.png'%tag, show = False)
 
 vmin, vmax = np.array([5e1, 3e3])
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-Plot_model.plane2D(GRID, temperature.total, axisunit = U.AU, cmap = 'ocean_r', plane = {'z': 0*U.AU},
+Plot_model.plane2D(GRID, temperature.total, axisunit = u.au, cmap = 'ocean_r', plane = {'z': 0*u.au},
                    norm = norm, colorlabel = r'[Kelvin]', output = 'TempMidplane_%s.png'%tag, show = False)
 
 vmin, vmax = np.array([5e1, 2e3])
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-Plot_model.plane2D(GRID, temperature.total, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
+Plot_model.plane2D(GRID, temperature.total, axisunit = u.au, cmap = 'ocean_r', plane = {'y': 0*u.au},
                    norm = norm, colorlabel = r'[Kelvin]', output = 'TempVertical_%s.png'%tag, show = False)
 
 
 vmin, vmax = np.array([3e7, 5e12])
 norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 
-Plot_model.plane2D(GRID, temperature.total * dens_plot, axisunit = U.AU, cmap = 'ocean_r', plane = {'y': 0*U.AU},
+Plot_model.plane2D(GRID, temperature.total * dens_plot, axisunit = u.au, cmap = 'ocean_r', plane = {'y': 0*u.au},
                    norm = norm, colorlabel = r'[$\rho$ T]', output = 'Emissivity_%s.png'%tag, show = False)

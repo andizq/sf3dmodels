@@ -7,7 +7,9 @@ This is an example of a powerlaw-density  spherical HII region
 #------------------
 #Import the package
 #------------------
-from sf3dmodels import *
+from sf3dmodels import Model, Plot_model
+import sf3dmodels.utils.units as u
+import sf3dmodels.rt as rt
 #-----------------
 #Extra libraries
 #-----------------
@@ -21,8 +23,8 @@ t0 = time.time()
 #------------------
 #from Galvan-Madrid et al. 2009, Table 3:
 
-MStar = 34 * U.MSun
-r_max = 2530 * U.AU #H II sphere size
+MStar = 34 * u.MSun
+r_max = 2530 * u.au #H II sphere size
 r_min = r_max / 200 #Minimum distance (!= 0 to avoid indeterminations)
 r_s = r_max #Normalization distance
 rho_s = 1.4e5 * 1e6 #from cgs to SI. Density at r_s
@@ -33,9 +35,9 @@ t_e = 1.e4 #K
 #GRID Definition
 #---------------
 
-sizex = sizey = sizez = 2600 * U.AU 
+sizex = sizey = sizez = 2600 * u.au 
 Nx = Ny = Nz = 63 #Number of divisions for each axis
-GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], radmc3d = True)
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], rt_code = 'radmc3d')
 NPoints = GRID.NPoints #Final number of nodes in the grid
 
 #-------------------
@@ -55,10 +57,11 @@ print ('-------------------------------------------------\n---------------------
 #----------------------
 #WRITING RADMC-3D FILES
 #----------------------
-Rad = Model.Radmc3dRT(GRID)
-prop = {'dens_elect': density.total,
+prop = {'dens_e': density.total,
         'dens_ion': density.total,
-        'tgas': temperature.total}
+        'temp_gas': temperature.total}
+
+Rad = rt.Radmc3dDefaults(GRID)
 Rad.freefree(prop)
 
 #------------------------------------
@@ -67,8 +70,8 @@ Rad.freefree(prop)
 tag = 'plsphere_HII'
 weight = 10*rho_s
 
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = U.AU, cmap = 'jet', 
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6, axisunit = u.au, cmap = 'jet', 
                      colorscale = 'log', colorlabel = r'${\rm log}_{10}$($n_{\rm e}$ [cm$^{-3}$])', output = '3Ddens_%s.png'%tag, show = True)
 
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = U.AU, cmap = 'binary', marker = 'o', s = 4,
+Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = u.au, cmap = 'binary', marker = 'o', s = 4,
                      colorscale = 'uniform', colorlabel = r'$T_{\rm e}$ [Kelvin]', output = '3Dtemp_%s.png'%tag, show = True)
