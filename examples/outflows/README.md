@@ -1,7 +1,7 @@
 # Free-free emission and SED from outflows
 
-Outflow 1: Pressure confined
-Outflow 2: Adiabatic collimated
+- Outflow 1: Pressure confined
+- Outflow 2: Adiabatic collimated
 
 Type the following commands:
 
