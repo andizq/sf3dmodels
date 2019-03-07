@@ -70,7 +70,10 @@ examples/*.inp
 *.vtk
 *.fits
 *.png
+*.tab
 
 # Specific files
 rt-lime.c
 test_examples/
+readthedocs.yml
+lime_outflows/

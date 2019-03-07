@@ -82,7 +82,7 @@ prop = {'dens_H2': density.total,
         'vel_x': vel.x,
         'vel_y': vel.y,
         'vel_z': vel.z,
-        'abundance': abundance,
+        'abundance_0': abundance,
         'gtdratio': gtdratio}
 lime = rt.Lime(GRID)
 lime.finalmodel(prop)

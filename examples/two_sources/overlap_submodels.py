@@ -26,7 +26,7 @@ GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
 #**********
 #OVERLAPING
 #**********
-columns = ['id', 'x', 'y', 'z', 'dens_H2', 'temp_gas', 'vel_x', 'vel_y', 'vel_z', 'abundance', 'gtdratio']
+columns = ['id', 'x', 'y', 'z', 'dens_H2', 'temp_gas', 'vel_x', 'vel_y', 'vel_z', 'abundance_0', 'gtdratio']
 data2merge = ['Main.dat', 'Burger.dat']
 overlap = Overlap(GRID)
 finalprop = overlap.fromfiles(columns, submodels = data2merge)
