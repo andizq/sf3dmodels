@@ -81,7 +81,7 @@ class Overlap(object):
            Defaults to 'all'.
         
         weighting_dens : str, optional
-           Density for weighting the non-density properties. See equations in the **Notes** section.\n
+           Density column name for weighting the non-density properties. See equations in the **Notes** section.\n
            If None: The algorithm takes the 4th column to weight the non-density properties.
            Defaults to None.
         
