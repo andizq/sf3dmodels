@@ -194,7 +194,7 @@ class Lime(MakeDatatab):
     Base class for lime related objects.
     Contains base functions to write formatted files to perform Radiative Transfer calculations with `LIME`_. 
     
-    Input and output units: SI (metres, kilograms, seconds).
+    - Input and output units: SI (metres, kilograms, seconds).
 
     Parameters
     ----------
@@ -401,8 +401,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
     Base class for radmc3d related objects. Contains base functions to write formatted files to 
     perform Radiative Transfer calculations with `RADMC-3D`_.
 
-    Input units: SI (metres, kilograms, seconds).\n
-    Output units: cgs (centimetres, grams, seconds).
+    - Input units: SI (metres, kilograms, seconds).\n
+    - Output units: cgs (centimetres, grams, seconds).
 
     Parameters
     ----------
@@ -569,7 +569,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         Parameters
         ----------
         dens_dust : list or array_like, shape(n,)  
-           The model dust density (in g/cm3).
+           The model dust density (in :math:`kg/m^3`).
         
         fmt : str
            Format string for numbers in the output file.
