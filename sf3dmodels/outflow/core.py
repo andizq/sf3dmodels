@@ -47,14 +47,15 @@ class RandomGrid(object):
         print ('Number of grid points:', self.NPoints)
         
         self.grid = np.zeros((self.NPoints, 4)) #x,y,z,r
-        r_vec = np.zeros((self.NPoints/2, 3))
-        rand_vec_plane = np.zeros((self.NPoints/2, 3))
+        half_points = int(self.NPoints/2)
+        r_vec = np.zeros((half_points, 3))
+        rand_vec_plane = np.zeros((half_points, 3))
         
         vmean, nemean, Tmean = [], [], []
                 
-        r = np.random.uniform(self.z_min, self.z_min+self.r_seg_mag, size = self.NPoints/2) #Random r from low_mass disk border until high_mass disk border
+        r = np.random.uniform(self.z_min, self.z_min+self.r_seg_mag, size = half_points) #Random r from low_mass disk border until high_mass disk border
         width = func_width(r)
-        for i in range(self.NPoints/2):
+        for i in range(half_points):
             r_vec[i] = r[i] * self.r_seg_dir #Random vector along the outflow axis
             R = np.random.uniform(0, width[i]) #Random R from the outflow axis
 
@@ -69,13 +70,13 @@ class RandomGrid(object):
         r_real_n = self.pos_c - r_c #Mirror point to real position from the origin of coordinates
 
         r = np.expand_dims(r, axis=0) # or r[np.newaxis]
-        self.grid[0:self.NPoints/2] = np.append(r_real, r.T, axis=1)
-        self.grid[self.NPoints/2:] = np.append(r_real_n, r.T, axis=1)
+        self.grid[0:half_points] = np.append(r_real, r.T, axis=1)
+        self.grid[half_points:] = np.append(r_real_n, r.T, axis=1)
         r_c_dir = r_c / np.linalg.norm(r_c, axis = 1)[np.newaxis].T
         self.r_c_dir = np.append(r_c_dir, -1*r_c_dir, axis = 0) 
         
-        self.r_c_dir = np.append(np.repeat([self.r_seg_dir], self.NPoints/2, axis=0),
-                                 np.repeat([-1*self.r_seg_dir], self.NPoints/2, axis=0),
+        self.r_c_dir = np.append(np.repeat([self.r_seg_dir], half_points, axis=0),
+                                 np.repeat([-1*self.r_seg_dir], half_points, axis=0),
                                  axis = 0)
 
         self.width = np.append(width, width)
