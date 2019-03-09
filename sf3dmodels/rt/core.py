@@ -857,7 +857,7 @@ class Radmc3dDefaults(Radmc3d):
         
         kwargs_control : dict, optional 
            Optional dictionary containing additional keys to be written into the radmc3d control file 'radmc3d.inp'.\n
-           If you set 'incl_dust': 1, then prop['temp_dust'] must be provided. \n
+           If you set 'incl_dust': 1, then prop['dens_dust'] and prop['temp_dust'] must be provided. \n
            Fixed keys for this method: 'incl_freefree': 1 \n
            Have a look at the `RADMC-3D`_ docs for all the available control commands.  
 
