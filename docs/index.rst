@@ -158,7 +158,7 @@ Reference/API
    
    Model.rst
    Plot_model.rst
-
+   utils/utils.rst
 
 New on sf3dmodels
 =================
