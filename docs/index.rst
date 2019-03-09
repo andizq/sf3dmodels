@@ -45,8 +45,11 @@ Requirements
 * `Matplotlib <https://matplotlib.org/users/installing.html>`_
 * `IPython <https://ipython.org/install.html>`_ (optional, but recommended)
 
-Installation (from source)
-==========================
+Installation
+============
+
+From source
+-----------
 
 Clone the star-forming-regions repository from `GitHub`_:
 
@@ -69,10 +72,10 @@ Get into the star-forming-regions cloned folder and run the **setup.py** script 
    $ cd /path/to/local/star-forming-regions/
    $ python setup.py install
 
-You can test whether the installation was successful by running the examples in **star-forming-regions/examples**.
+You can test whether the installation was successful by running a example from **star-forming-regions/examples**.
 
-Upgrade sf3dmodels and Lime
----------------------------
+Upgrade the package
+-------------------
    
 .. code-block:: bash
    
@@ -82,8 +85,8 @@ Upgrade sf3dmodels and Lime
    $ git submodule update --force --remote -- lime
    $ python setup.py install
 
-Uninstall sf3dmodels
---------------------
+Uninstall
+---------
 
 .. code-block:: bash
    
