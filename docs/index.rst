@@ -1,5 +1,5 @@
 **********
-SF3dmodels
+sf3dmodels
 **********
   
 This is the documentation for the Star-Forming regions 3D Modelling package.
@@ -18,22 +18,22 @@ The output data can be read with `LIME`_ or `RADMC-3D`_
 to carry out radiative transfer calculations of the model.
 
 .. image:: ../images/burger_face.png
-   :width: 112
+   :width: 112.5
 
 .. image:: ../images/burger_edge.png
-   :width: 112
+   :width: 112.5
 
 .. image:: ../images/burger_tapering.png
-   :width: 112
+   :width: 112.5
 
 .. image:: ../images/global_objects.png
-   :width: 112
+   :width: 112.5
 
 .. image:: ../images/compact_sources.png
-   :width: 112
+   :width: 112.5
 
 .. image:: ../images/pIntensitypoints.png
-   :width: 112
+   :width: 112.5
 
 
 Requirements
@@ -69,7 +69,21 @@ Get into the star-forming-regions cloned folder and run the **setup.py** script 
    $ cd /path/to/local/star-forming-regions/
    $ python setup.py install
 
-To uninstall sf3dmodels:
+You can test whether the installation was successful by running the examples in **star-forming-regions/examples**.
+
+Upgrade sf3dmodels and Lime
+---------------------------
+   
+.. code-block:: bash
+   
+   $ cd /path/to/local/star-forming-regions/
+   $ git fetch --all
+   $ git reset --hard origin/master
+   $ git submodule update --force --remote -- lime
+   $ python setup.py install
+
+Uninstall sf3dmodels
+--------------------
 
 .. code-block:: bash
    
@@ -127,7 +141,7 @@ you should execute:
 LIME Examples
 ^^^^^^^^^^^^^
 
-Take a look at the folder **lime/example_sf3dmodels/** included in the package repository.
+Take a look at the folders **lime/example** and **lime/example_sf3dmodels/** included in the package repository.
 
 
 Reference/API
