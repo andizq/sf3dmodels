@@ -63,8 +63,8 @@ Outf1.reynolds86(w, dens, ionfrac, temp, v0, abund, gtd) #Invoking the outflow m
 #WRITING FOR RADMC3D
 #---------------------
 #Using the Radmc3d class
-prop1 = {'dens_e': Outf1.density,
-         'dens_ion': Outf1.density,
+prop1 = {'dens_e': Outf1.density_ion,
+         'dens_ion': Outf1.density_ion,
          'temp_gas': Outf1.temperature}
 radmc1 = rt.Radmc3d(Outf1.GRID)
 radmc1.submodel(prop1, output='datatab'+tag+'.dat')
@@ -115,8 +115,8 @@ Outf2.reynolds86(w, dens, ionfrac, temp, v0, abund, gtd) #Invoking the outflow m
 #WRITING FOR RADMC3D
 #---------------------
 #Using the Radmc3d class
-prop2 = {'dens_e': Outf2.density,
-         'dens_ion': Outf2.density,
+prop2 = {'dens_e': Outf2.density_ion,
+         'dens_ion': Outf2.density_ion,
          'temp_gas': Outf2.temperature}
 radmc2 = rt.Radmc3d(Outf2.GRID)
 radmc2.submodel(prop2, output='datatab'+tag+'.dat')
