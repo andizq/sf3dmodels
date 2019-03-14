@@ -106,7 +106,7 @@ class OutflowModel(RandomGrid,WriteProp):
        Maximum half-length of the outflow. Then, the outflow extent would be [-z_max, z_max].
     
     dx : scalar
-       Maximum separation between two contiguous grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = dx.       
+       Maximum separation between two adjacent grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = dx.       
     """
 
     def __init__(self, pos_c, axis, z_min, z_max, dx, 
