@@ -20,6 +20,8 @@ pc = 206264.806247*au
 cm = 100. 
 
 rad2arcs = 206264.806247
+
+amu = 1.66053904e-27 #kg ->atomic mass unit
 """
 #***********
 #units in SI
@@ -34,3 +36,4 @@ au = 1.495978707e11 #m
 pc = 206264.806247*au #pc to m
 cm = 100. #m
 rad2arcs = 206264.806247 #radians->arcsecs
+amu = 1.66053904e-27 #kg ->atomic mass unit

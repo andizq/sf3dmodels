@@ -3,7 +3,7 @@ import os
 import inspect
 import itertools
 import numpy as np
-from ..utils.units import cm
+from ..utils.units import cm, amu
 from ..tools import formatter
 
 #******************************************
@@ -38,13 +38,29 @@ class PropTags(object):
                       'abundance': 'abundance',
                       'gtdratio': 'gtdratio',
                       'dens_ion': 'density', 
-                      'microturbulence': 'velocity'
+                      'microturbulence': 'velocity',
+                      'dens_mass': 'density'
                       }
         
         if 'abundance' in prop_name and prop_name[-1].isdigit(): 
             prop_kinds[prop_name] = prop_kinds['abundance']
         
         return prop_kinds[prop_name]
+
+    def get_dens_mass(self,prop_name):
+        
+        prop_mass = {'dens_H2': 2.0159*amu,
+                     'dens_p_H2': 2.0159*amu,
+                     'dens_o_H2': 2.0159*amu,
+                     'dens_e': 5.486e-4*amu,
+                     'dens_H': 1.00794*amu,
+                     'dens_He': 4.0026*amu,
+                     'dens_Hplus': 1.00739*amu,
+                     'dens_ion': 1.00739*amu,
+                     'dens_dust': 1 # 1 as it should already be in kg/m3
+                     }
+        
+        return prop_mass[prop_name]
     
 class MakeDatatab(object):
     """

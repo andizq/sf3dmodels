@@ -7,7 +7,7 @@ import itertools
 import numpy as np
 from . import GridInit
 from . import GridSet
-from ..utils.units import pc
+from ..utils.units import pc, amu
 from ..utils.constants import temp_cmb
 from ..rt import propTags
 from ..tools import formatter
@@ -54,9 +54,10 @@ class Overlap(object):
 
     def fromfiles(self, columns, 
                   submodels = 'all',
-                  weighting_dens = None, 
+                  weighting_dens = 'all', 
                   min_values = {'dens_H': 1e6,
                                 'dens_H2': 1e6,
+                                'dens_Hplus': 1e3,
                                 'dens_ion': 1e3,
                                 'dens_e': 1e3,
                                 'temp_gas': temp_cmb,
@@ -82,8 +83,8 @@ class Overlap(object):
         
         weighting_dens : str, optional
            Density column name for weighting the non-density properties. See equations in the **Notes** section.\n
-           If None: The algorithm takes the 4th column to weight the non-density properties.
-           Defaults to None.
+           If 'all': The algorithm takes the sum of all the density columns multiplied by their respective atomic mass.\n
+           Defaults to 'all'.
         
         min_values : dict, optional
            Dictionary containing the base minimum values for the final-overlaped physical properties.
@@ -117,9 +118,6 @@ class Overlap(object):
         func_name = inspect.stack()[0][3]
         print ("Running function '%s'..."%func_name)
 
-        if weighting_dens is None: weighting_dens = columns[4] #First column after the grid columns
-        elif weighting_dens not in columns: raise ValueError("The weighting column '%s' is not amongst the written columns"%weighting_dens, columns)  
-
         if folder[-1] != '/': folder += '/'
         allfiles = self._get_files_in_folder(folder)
         if submodels == 'all': files = allfiles
@@ -134,11 +132,18 @@ class Overlap(object):
         nfiles = len(files)
         print ('Files detected (%d):'%len(allfiles), detected, 
                '\nFiles to merge in grid (%d):'%nfiles, read)
-    
+
+        data_dicts = [{columns[i]: data[j][:,i] for i in range(len(columns))} for j in range(nfiles)]
+
+        if weighting_dens == 'all': 
+            weighting_dens = 'dens_mass'
+            columns = np.append(columns,weighting_dens)
+        elif weighting_dens not in columns: raise ValueError("The weighting column '%s' is not amongst the written columns"%weighting_dens[i], columns)  
+                
         #***************************
         #DEFINING DICTS 
         #***************************
-
+        
         GRID = self.GRID
         ntotal = GRID.NPoints
         nrows = [len(data[nf]) for nf in range(nfiles)]
@@ -146,23 +151,32 @@ class Overlap(object):
         xgrid, ygrid, zgrid = GRID.XYZcentres 
         cm3_to_m3 = 1e6
         
-        data_dicts = [{columns[i]: data[j][:,i] for i in range(len(columns))} for j in range(nfiles)]
         coords, densities, others = [], [], []
         for col in columns: 
             kind = propTags.get_prop_kind(col)
             if kind == 'grid': coords.append(col) 
             elif kind == 'density': densities.append(col)
             else: others.append(col)
-            
+
         tmp_dict = {}
         val0_dict = {}
         
         for col in densities+others:
             tmp_dict[col] = np.zeros(ntotal)
             val0_dict[col] = 0
+    
+        if weighting_dens == 'dens_mass': 
+            for nf in range(nfiles):
+                data_dicts[nf][weighting_dens] = np.zeros(nrows[nf])
+                for col in densities:
+                    if col != weighting_dens: data_dicts[nf][weighting_dens] += data_dicts[nf][col] * propTags.get_dens_mass(col)
+    
+            tmp_dict[weighting_dens] += -1*amu
+            val0_dict[weighting_dens] += -1*amu
         
-        tmp_dict[weighting_dens] += -1
-        val0_dict[weighting_dens] += -1
+        else:
+            tmp_dict[weighting_dens] += -1
+            val0_dict[weighting_dens] += -1
         
         partial_dicts = [copy.deepcopy(tmp_dict) for _ in range(nfiles)]
 
@@ -228,6 +242,8 @@ class Overlap(object):
                 #final_dict[col] = np.where(final_dict[col] < 0., 0., final_dict[col])
                 print ("Using constant minimum value 0.0 for column '%s'."%col)
 
+        if weighting_dens == 'dens_mass': _ = final_dict.pop(weighting_dens)
+ 
         return final_dict
 
     def fromprops(self, props):
