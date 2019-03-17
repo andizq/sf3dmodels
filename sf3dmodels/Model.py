@@ -1262,7 +1262,8 @@ def col_ids_LIME(props):
                 SF3D_vel_z =         15,
                 SF3D_abundance =     16,
                 SF3D_gtdratio =      17,
-                SF3D_max_cols =      18)
+                SF3D_doppler =       18,
+                SF3D_max_cols =      19)
     written_props = [] 
     for col in props:
         if col in base.keys(): written_props.append(base[col])
@@ -1325,7 +1326,7 @@ def DataTab_LIME(dens,temp,vel,abund,gtd,GRID, is_submodel = False, tag = False)
 #--------------
 #--------------    
 
-def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, is_submodel = False, tag = False, fixed_grid = False):
+def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None,doppler=None, is_submodel = False, tag = False, fixed_grid = False):
     
     import pandas
 
@@ -1337,7 +1338,8 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
     
         print ('Writing Submodel data on %s'%file0)
         tmp = []
-    
+        colsfile = './Subgrids/header.dat'
+        props = 0
         if fixed_grid:
             
             """
@@ -1353,12 +1355,20 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
             ind_rr = iter(np.argsort(rr)[::-1])
 
             id = 0       
+            
             if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
                 for i in ind_rr: 
                     tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
                                 (id,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
                                  tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
                     id+=1
+        
+                props = ['SF3D_id', 'SF3D_x', 'SF3D_y', 'SF3D_z',
+                         'SF3D_dens_H2', 'SF3D_dens_H', 'SF3D_dens_Hplus',
+                         'SF3D_temp_gas', 'SF3D_temp_dust',
+                         'SF3D_vel_x', 'SF3D_vel_y', 'SF3D_vel_z',
+                         'SF3D_abundance', 'SF3D_gtdratio']
+        
             else: 
                 for i in ind_rr: 
                     tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
@@ -1366,16 +1376,48 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None, i
                                  vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
                     id+=1
         else:
-            if isinstance(tdust,list) or isinstance(tdust,np.ndarray):
-                for i in range(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
-                                                           (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
-                                                            tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+
+            if ((isinstance(doppler,list) or isinstance(doppler,np.ndarray)) and 
+                (isinstance(tdust,list) or isinstance(tdust,np.ndarray))):
+                for i in range(GRID.NPoints):
+                    tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                 tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i],doppler[i]))
+                
+                props = ['SF3D_id', 'SF3D_x', 'SF3D_y', 'SF3D_z',
+                         'SF3D_dens_H2', 'SF3D_dens_H', 'SF3D_dens_Hplus',
+                         'SF3D_temp_gas', 'SF3D_temp_dust',
+                         'SF3D_vel_x', 'SF3D_vel_y', 'SF3D_vel_z',
+                         'SF3D_abundance', 'SF3D_gtdratio', 'SF3D_doppler']
+           
+            elif isinstance(tdust,list) or isinstance(tdust,np.ndarray):
+                for i in range(GRID.NPoints): 
+                    tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
+                                (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
+                                 tdust[i],vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
+                props = ['SF3D_id', 'SF3D_x', 'SF3D_y', 'SF3D_z',
+                         'SF3D_dens_H2', 'SF3D_dens_H', 'SF3D_dens_Hplus',
+                         'SF3D_temp_gas', 'SF3D_temp_dust',
+                         'SF3D_vel_x', 'SF3D_vel_y', 'SF3D_vel_z',
+                         'SF3D_abundance', 'SF3D_gtdratio']
+
             else: 
                 for i in range(GRID.NPoints): tmp.append( "%d %e %e %e %e %e %e %e %e %e %e %e %e\n"% 
                                                            (i,x[i],y[i],z[i],dens_H2[i],dens_H[i],dens_Hp[i],temp[i],
                                                             vel.x[i],vel.y[i],vel.z[i],abund[i],gtd[i]))
         
         file.writelines(tmp)
+        print (props)
+        cols2write = np.array([col_ids_LIME(props)]).T
+        print ('Writing column ids on %s'%colsfile)
+        np.savetxt(colsfile, cols2write, fmt='%d')
+
+        sizefile='./Subgrids/npoints.dat'
+        print ('Writing grid size on %s'%sizefile)
+        sfile = open(sizefile,'w') 
+        Ns = [int(GRID.NPoints**(1/3.))]*3
+        sfile.write("%d %d %d %d %d"%(len(props),Ns[0],Ns[1],Ns[2],GRID.NPoints))
+
         
     else:
         files=['datatab.dat','x.dat','y.dat','z.dat']

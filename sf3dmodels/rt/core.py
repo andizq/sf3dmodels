@@ -39,6 +39,7 @@ class PropTags(object):
                       'gtdratio': 'gtdratio',
                       'dens_ion': 'density', 
                       'microturbulence': 'velocity',
+                      'doppler': 'velocity',
                       'dens_mass': 'density'
                       }
         
@@ -84,7 +85,8 @@ class MakeDatatab(object):
                         'temp_gas', 'temp_dust',
                         'vel_x', 'vel_y', 'vel_z',
                         'abundance',
-                        'gtdratio'
+                        'gtdratio',
+                        'doppler'
                         ]   
             #cls._col_ids(self)
             #self._propnames = np.array(list(self.sf3d_header))[np.argsort(list(self.sf3d_header.values()))]
@@ -221,53 +223,55 @@ class Lime(MakeDatatab):
     -----
     Available grid [0,1,2,3] and physical properties for Lime, their id and description:
 
-    +-----------+----------+--------------------------+
-    | prop key  |    id    |Description               |
-    +===========+==========+==========================+
-    | id        | 0        | cell id                  |
-    +-----------+----------+--------------------------+
-    | x         | 1        | x coordinate             |
-    +-----------+----------+--------------------------+
-    | y         | 2        | y coordinate             |
-    +-----------+----------+--------------------------+
-    | z         | 3        | z coordinate             |
-    +-----------+----------+--------------------------+
-    | dens_H2   | 4        |Molecular Hydrogen density|
-    +-----------+----------+--------------------------+
-    | dens_p_H2 | 5        |ParaHydrogen density      |
-    +-----------+----------+--------------------------+
-    | dens_o_H2 | 6        |OrthoHydrogen density     |
-    +-----------+----------+--------------------------+
-    | dens_e    | 7        |Electronic density        |
-    +-----------+----------+--------------------------+
-    | dens_H    | 8        |Atomic Hydrogen density   |
-    +-----------+----------+--------------------------+
-    | dens_He   | 9        |Helium density            |
-    +-----------+----------+--------------------------+
-    |dens_Hplus | 10       |Ionized Hydrogen density  |
-    +-----------+----------+--------------------------+
-    |temp_gas   | 11       |Gas temperature           |
-    +-----------+----------+--------------------------+
-    |temp_dust  | 12       |Dust temperature          |
-    +-----------+----------+--------------------------+
-    |vel_x      | 13       |Velocity along x-axis     |
-    +-----------+----------+--------------------------+
-    |vel_y      | 14       |Velocity along y-axis     |
-    +-----------+----------+--------------------------+
-    |vel_z      | 15       |Velocity along z-axis     |
-    +-----------+----------+--------------------------+
-    |abundance_0|   16     |                          |
-    +-----------+          |                          |
-    |abundance_1|          |                          |
-    +-----------+          |                          |
-    |    ...    |          |Molecular abundance       |
-    +-----------+          |                          |
-    |abundance_n|          |                          |
-    +-----------+----------+--------------------------+
-    |gtdratio   | 17       |Gas-to-dust (mass) ratio  |
-    +-----------+----------+--------------------------+
-    |           | 4242     |End of file in header.dat |
-    +-----------+----------+--------------------------+
+    +-----------+----------+---------------------------------+
+    | prop key  |    id    |Description                      |
+    +===========+==========+=================================+
+    | id        | 0        | cell id                         |
+    +-----------+----------+---------------------------------+
+    | x         | 1        | x coordinate                    |
+    +-----------+----------+---------------------------------+
+    | y         | 2        | y coordinate                    |
+    +-----------+----------+---------------------------------+
+    | z         | 3        | z coordinate                    |
+    +-----------+----------+---------------------------------+
+    | dens_H2   | 4        |Molecular Hydrogen density       |
+    +-----------+----------+---------------------------------+
+    | dens_p_H2 | 5        |ParaHydrogen density             |
+    +-----------+----------+---------------------------------+
+    | dens_o_H2 | 6        |OrthoHydrogen density            |
+    +-----------+----------+---------------------------------+
+    | dens_e    | 7        |Electronic density               |
+    +-----------+----------+---------------------------------+
+    | dens_H    | 8        |Atomic Hydrogen density          |
+    +-----------+----------+---------------------------------+
+    | dens_He   | 9        |Helium density                   |
+    +-----------+----------+---------------------------------+
+    |dens_Hplus | 10       |Ionized Hydrogen density         |
+    +-----------+----------+---------------------------------+
+    |temp_gas   | 11       |Gas temperature                  |
+    +-----------+----------+---------------------------------+
+    |temp_dust  | 12       |Dust temperature                 |
+    +-----------+----------+---------------------------------+
+    |vel_x      | 13       |Velocity along x-axis            |
+    +-----------+----------+---------------------------------+
+    |vel_y      | 14       |Velocity along y-axis            |
+    +-----------+----------+---------------------------------+
+    |vel_z      | 15       |Velocity along z-axis            |
+    +-----------+----------+---------------------------------+
+    |abundance_0|   16     |                                 |
+    +-----------+          |                                 |
+    |abundance_1|          |                                 |
+    +-----------+          |                                 |
+    |    ...    |          |Molecular abundance(s)           |
+    +-----------+          |                                 |
+    |abundance_n|          |                                 |
+    +-----------+----------+---------------------------------+
+    |gtdratio   | 17       |Gas-to-dust (mass) ratio         |
+    +-----------+----------+---------------------------------+
+    |doppler    | 18       |Doppler broadening via turbulence|
+    +-----------+----------+---------------------------------+
+    |           | 4242     |End of file in header.dat        |
+    +-----------+----------+---------------------------------+
     """
 
     def __init__(self, GRID):
@@ -303,7 +307,8 @@ class Lime(MakeDatatab):
                     SF3D_vel_z =         15,
                     SF3D_abundance =     16,
                     SF3D_gtdratio =      17,
-                    SF3D_max_cols =      18)
+                    SF3D_doppler =       18,
+                    SF3D_max_cols =      19)
 
         self.sf3d_header = {key.split('_',1)[1]: base[key] for key in base}
         
