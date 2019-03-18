@@ -151,8 +151,7 @@ z=MU.grid_FIXED(lambda x: x, lambda x: x,8.*1900,15)
 #x=MU.grid_FIXED(0,0,0,0,"x.dat")                                 
 #y=MU.grid_FIXED(0,0,0,0,"y.dat")                                 
 #z=MU.grid_FIXED(0,0,0,0,"z.dat")                                 
-                                                                  
-                                                                  
+                                                                                                                                    
 GRID=[x,y,z]                                                      
 
 def grid_FIXED(Fx=False,xF=False,Fmax=False,NP=False,File=False):
@@ -161,17 +160,14 @@ def grid_FIXED(Fx=False,xF=False,Fmax=False,NP=False,File=False):
 #xF->x(F) -> Inverse function
 #Fmax -> Real maximum in the domain
 
-    
     xList=[]
     fList=[]
     xmax=0
 
-    if Fx:
-        
+    if Fx:        
         xmax = xF(Fmax) #Finding the virtual maximum of x, 
                         # such that the domain remains between
                         #  [-Fmax,Fmax] after calculating F(x)
-        
         
         xList=np.arange(-xmax,xmax+2*xmax/NP+2./NP,2*xmax/NP)
         fList=Fx(xList)
@@ -182,8 +178,6 @@ def grid_FIXED(Fx=False,xF=False,Fmax=False,NP=False,File=False):
             fList[0]=Fmax
             fList[-1]=Fmax
     '''
-        
-        
     return fList
 """
 
@@ -199,7 +193,7 @@ def sphe_cart(V_sphe, theta, phi):
    
     if hasattr(theta, '__iter__') and hasattr(phi, '__iter__'): #A list of vectors
     #np.multiply and operator * are esentially the same even in terms of time
-        vx = np.multiply( V_sphe, np.array([np.sin(theta) * np.cos(phi), np.cos(theta) * np.cos(phi), -np.sin(phi)]).T ).sum(1) 
+        vx = np.multiply( V_sphe, np.array([np.sin(theta) * np.cos(phi), np.cos(theta) * np.cos(phi), -np.sin(phi)]).T ).sum(1) #along axis 1
         vy = np.multiply( V_sphe, np.array([np.sin(theta) * np.sin(phi), np.cos(theta) * np.sin(phi), np.cos(phi)]).T ).sum(1) 
         vz = np.multiply( V_sphe, np.array([np.cos(theta) , -np.sin(theta), np.zeros(len(theta))]).T ).sum(1)
      
@@ -425,6 +419,7 @@ def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
 #rho_mean: Mean density of the Envelope 
 #q: power-law for density
 #GRID: Grid to work in
+#rho_min: Minimum density
 
     #------------
     #LISTS TO USE
@@ -434,7 +429,7 @@ def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
     #------------------------
     #MODEL. Envelope powerlaw
     #------------------------
-    print ('Computing Envelope density with power-law...')
+    print ('Computing Envelope density using power-law...')
     rqList = np.where(rList <= r_max , rList**q, 0.)
 
     #As rho_mean = 1/NTotal * np.sum(rho0 * r**q), the normalization rho0 is calculated as follows:  
@@ -466,9 +461,11 @@ def density_Powerlaw(r_max, rho_mean, q, GRID, rho_min = 1.0e3):
 def density_Powerlaw2(r_max, r_min, rho0, q, GRID, rho_min = 1.0e3):
 
 #r_max: Maximum radius of the envelope 
-#rho_mean: Mean density of the Envelope 
+#r_min: Minimum radius of the envelope 
+#rho0: Density at r_min
 #q: power-law for density
 #GRID: Grid to work in
+#rho_min: Minimum density
 
     #------------
     #LISTS TO USE
@@ -478,9 +475,9 @@ def density_Powerlaw2(r_max, r_min, rho0, q, GRID, rho_min = 1.0e3):
     #------------------------
     #MODEL. Envelope powerlaw
     #------------------------
-    print ('Computing Envelope density with power-law...')
+    print ('Computing Envelope density using power-law...')
     rqList = np.where((rList >= r_min) & (rList <= r_max) , rList**q, 0.)
-    rhoENV = rho0 * rqList
+    rhoENV = rho0 * rqList #r_min**-q * rqList
     rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
 
     #------------------------
@@ -494,6 +491,53 @@ def density_Powerlaw2(r_max, r_min, rho0, q, GRID, rho_min = 1.0e3):
     return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 
                       'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_max,
                       'nonzero_ids': nonzero_ids} ) 
+
+#---------------------------
+#---------------------------
+
+#------------------------------------
+#DENSITY (PowerLaw-Shells) FUNCTION
+#------------------------------------
+
+def density_PowerlawShells(r_list, q_list, rho0, GRID, rho_min = 1.0e3):
+
+#r_list: List of shells' limits, length (n,)
+#q_list: List of powerlaws in r_list intervals, length (n-1,)
+#rho0: Density at r_list[0]
+#GRID: Grid to work in
+#rho_min: Minimum density
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #-------------------------
+    #MODEL. Envelope powerlaws
+    #-------------------------
+    print ('Computing Envelope density using power-laws:', q_list)
+    
+    rhoENV = np.zeros(NPoints)
+    rho0_list = [rho0]
+    for i,r in enumerate(r_list[1:-1],1):
+        r_tmp = np.max(rList[rList<=r])
+        rho0_list.append(rho0_list[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+    
+    for i,q in enumerate(q_list):
+        ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
+        rhoENV[ind] += rho0_list[i]*(rList[ind]/r_list[i])**q  
+
+    rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
+
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': rhoENV, 'disc': np.zeros(NPoints), 'env': rhoENV, 
+                      'discFlag': False, 'envFlag': True, 'r_disc': False, 'r_env': r_list[-1]
+                      } ) 
 
 #---------------------------
 #---------------------------
@@ -874,6 +918,135 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
 
 #-------------------------------
 #-------------------------------
+
+#-----------------------------------
+#TEMPERATURE (PowerLaw-mean_rho) FUNCTION
+#-----------------------------------
+
+def temperature_Powerlaw(r_max, T_mean, q, GRID, T_min = 2.725):
+
+#r_max: Maximum radius of the envelope 
+#T_mean: Mean temperature of the Envelope 
+#q: power-law for temperature
+#GRID: Grid to work in
+#T_min: Minimum temperature
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #------------------------
+    #MODEL. Envelope powerlaw
+    #------------------------
+    print ('Computing Envelope temperature using power-law...')
+    rqList = np.where(rList <= r_max , rList**q, 0.)
+
+    #As T_mean = 1/NTotal * np.sum(T0 * r**q), the normalization T0 is calculated as follows:  
+    T0 = NPoints * T_mean / np.sum(rqList)
+    TENV = T0 * rqList
+    TENV = np.where(TENV < T_min, T_min, TENV)
+
+    #TENV = np.where( T0 * rqList < 1.0, T_min, T0 * rqList )
+    
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': TENV, 'disc': np.zeros(NPoints), 'env': TENV, 
+                      'discFlag': False, 'envFlag': True
+                      } ) 
+
+#---------------------------
+#---------------------------
+
+#----------------------------------------
+#TEMPERATURE (PowerLaw-standard) FUNCTION
+#-----------------------------------------
+
+def temperature_Powerlaw2(r_max, r_min, T0, q, GRID, T_min = 2.725):
+
+#r_max: Maximum radius of the envelope 
+#r_min: Minimum radius of the envelope 
+#T0: Temperature at r_min
+#q: power-law for temperature
+#GRID: Grid to work in
+#T_min: Minimum temperature
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #------------------------
+    #MODEL. Envelope powerlaw
+    #------------------------
+    print ('Computing Envelope temperature using power-law...')
+    rqList = np.where((rList >= r_min) & (rList <= r_max) , rList**q, 0.)
+    TENV = T0 * rqList #r_min**-q * rqList
+    TENV = np.where(TENV < T_min, T_min, TENV)
+
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': TENV, 'disc': np.zeros(NPoints), 'env': TENV, 
+                      'discFlag': False, 'envFlag': True
+                      } ) 
+
+#---------------------------
+#---------------------------
+
+#------------------------------------
+#TEMPERATURE (PowerLaw-Shells) FUNCTION
+#------------------------------------
+
+def temperature_PowerlawShells(r_list, q_list, T0, GRID, T_min = 1.0e3):
+
+#r_list: List of shells' limits, length (n,)
+#q_list: List of powerlaws in r_list intervals, length (n-1,)
+#T0: Temperature at r_list[0]
+#GRID: Grid to work in
+#T_min: Minimum temperature
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #-------------------------
+    #MODEL. Envelope powerlaws
+    #-------------------------
+    print ('Computing Envelope temperature using power-laws:', q_list)
+
+    TENV = np.zeros(NPoints)
+    T0_list = [T0]
+    for i,r in enumerate(r_list[1:-1],1):
+        r_tmp = np.max(rList[rList<=r])
+        T0_list.append(T0_list[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+
+    for i,q in enumerate(q_list):
+        ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
+        TENV[ind] += T0_list[i]*(rList[ind]/r_list[i])**q  
+
+    TENV = np.where(TENV < T_min, T_min, TENV)
+
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': TENV, 'disc': np.zeros(NPoints), 'env': TENV, 
+                      'discFlag': False, 'envFlag': True
+                      } ) 
+
+#---------------------------
+#---------------------------
 
 #----------------------
 #VELOCITY FUNCTION
