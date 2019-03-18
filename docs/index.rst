@@ -69,7 +69,7 @@ Get into the star-forming-regions cloned folder and run the **setup.py** script 
 
 .. code-block:: bash
 
-   $ cd /path/to/local/star-forming-regions/
+   $ cd star-forming-regions
    $ python setup.py install
 
 You can test whether the installation was successful by running a example from **star-forming-regions/examples**.
@@ -79,7 +79,7 @@ Upgrade the package
    
 .. code-block:: bash
    
-   $ cd /path/to/local/star-forming-regions/
+   $ cd star-forming-regions
    $ git fetch --all
    $ git reset --hard origin/master
    $ git submodule update --force --remote -- lime
