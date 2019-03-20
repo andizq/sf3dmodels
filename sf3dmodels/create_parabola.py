@@ -135,7 +135,7 @@ def make_parabola(p,Mass,xlims,width,drBIGGRID,angles,order,traslation,function_
 
 
     #-------------------------------------
-    #POPULATING THE PARABOLA
+    #FILLING THE PARABOLA
     #-------------------------------------
 
     drmax = drBIGGRID
@@ -174,7 +174,7 @@ def make_parabola(p,Mass,xlims,width,drBIGGRID,angles,order,traslation,function_
     vmean = []
     
     for i in range(Npoints):
-        #break
+
         xrand = np.random.uniform(xlims[0] , xlims[1]) #Random x points between the given limits.
         yrand = xrand ** 2 / (4*p)
         curve_vec = np.array([xrand,yrand,0])
@@ -226,11 +226,18 @@ def make_parabola(p,Mass,xlims,width,drBIGGRID,angles,order,traslation,function_
     return np.array(xList),np.array(yList)
 
 
-def make_paraboloid(z_min, z_max, drBIGGRID, a, b, dens, temp, 
+def make_paraboloid(z_min, z_max, dx, a, b, dens, temp, 
                     width = None, vsys=0):
     
     """
-    drBIGGRID: Maximum separation between nodes in the Global Grid
+    z_min : scalar
+       Minimum distance from the paraboloid centre to compute physical properties. Must be different to 0 (zero) to avoid indeterminate values. 
+
+    z_max : scalar
+       Maximum length of the paraboloid. Then, the paraboloid extent would be [0, z_max].
+    
+    dx : scalar
+       Maximum separation between two adjacent grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = dx.       
     """
 
     """
@@ -288,8 +295,7 @@ def make_paraboloid(z_min, z_max, drBIGGRID, a, b, dens, temp,
     #  times the number of divisions perpendicular to the segment,
     #   times the number of divisions in a perpendicular line to both of the segments above.
     
-    drmax = drBIGGRID
-    dr = drmax/4.
+    dr = dx * 2.**-1
 
     mean_w = 0.5 * r_seg_mag
     Npoints = int(r_seg_mag/dr * (mean_w/dr)**2 ) 
