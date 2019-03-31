@@ -32,8 +32,8 @@ class Random(Build_r):
         
         Parameters
         ----------
-        density: array_like
-           `list` or `numpy.ndarray` hosting the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
+        density : array_like
+           `list` or `numpy.ndarray` with the density of each cell, where the i-th density corresponds to the i-th cell of the GRID.
         
         mass_fraction : float
            The mass fraction to be enclosed by the inner radius of the spherical section.
@@ -121,19 +121,21 @@ class Random(Build_r):
 
     def by_mass(self, mass, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
         r"""
-        Fills the grid with uniformly-distributed random dummy points in a spherical section according to a mass criterion.
+        Fills the grid with uniformly-distributed random dummy points in a spherical section based on a mass threshold.
         
-        The inner radius of the spherical section will be equal to the radius of a sphere which encloses the input ``mass_fraction``.
-        The function iterates over the radial coordinate until the enclosed mass fraction exceeds the input ``mass_fraction``.
+        The inner radius of the spherical section will be equal to the radius of a sphere enclosing the input ``mass_fraction``.
+
+        The function iterates over the radial coordinate until it finds an r=r0 where the enclosed mass fraction exceeds the input ``mass_fraction``. 
+        Afterwards, it invokes spherical(r_min = r0, r_max = r_max, n_dummy = n_dummy), see `spherical`.
         
         Parameters
         ----------
-        mass: array_like
-           `list` or `numpy.ndarray` hosting the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
+        mass : array_like
+           `list` or `numpy.ndarray` with the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
         
         mass_fraction : float
-           The mass fraction to be enclosed by the inner radius of the spherical section.
-           Sets the inner radius r_min at `spherical`.
+           The mass fraction enclosed by the inner radius of the spherical section.
+           Sets the inner radius ``r_min`` at `spherical`.
 
            Defaults to 0.5, i.e, by default the computed inner radius will enclose (approx.) the 50% of the total mass.
         
@@ -162,13 +164,13 @@ class Random(Build_r):
            Radial coordinate of the computed random points.
         
         r_min : float
-           Computed inner radius of the spherical section which encloses (approximately) the input mass fraction and above which the random points are generated.
+           Computed inner radius of the spherical section which encloses (approximately) the input ``mass fraction`` and above which the random`dummy points are generated.
 
         r_max : float
            Outer radius of the spherical section enclosing the random dummy points.
 
         comp_fraction : float
-           Computed mass fraction enclosed by r_min. The higher r_steps the closer this value to the wished mass fraction. 
+           Computed mass fraction enclosed by r_min. The higher r_steps the closer this value will be to the input ``mass fraction``. 
            
         n_dummy : int
            Number of dummy points generated.

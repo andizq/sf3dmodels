@@ -267,7 +267,7 @@ class Build_r(GridSet):
     Attributes
     ----------
     r : `numpy.ndarray`, shape ``(GRID.NPoints,)``
-       Array of :math:`r` in `input units`.
+       Array of :math:`r` coordinate values in `input units`.
     """
     __doc__ = _base + _pars + _returns
 

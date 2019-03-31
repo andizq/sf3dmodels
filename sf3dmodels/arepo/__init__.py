@@ -11,7 +11,7 @@ from .._astropy_init import *
 
 if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
-    from .core import UniqueCells, ReadSnapshot
+    from .core import UniqueCells, ReadSnapshot, ArepoTags
 
-__all__ = ['UniqueCells', 'ReadSnapshot']
+__all__ = ['UniqueCells', 'ReadSnapshot', 'ArepoTags']
 

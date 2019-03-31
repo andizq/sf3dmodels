@@ -4,7 +4,12 @@ from copy import copy, deepcopy
 
 from ..Model import Struct
 
-
+class ArepoTags(object):
+    arepotest = True
+    @classmethod
+    def test(cls):
+        return arepotest
+    
 class UniqueCells(object):
     """
     Finds non-repeated cells on the input AREPO dataset.
@@ -17,7 +22,6 @@ class UniqueCells(object):
     header : dict
        Dictionary containing the header information of the AREPO snapshot.
 
-
     Notes
     -----
     This tool computes the search over the gas particles.
@@ -29,6 +33,21 @@ class UniqueCells(object):
         self.data = data
         self.header = header
         
+    def _col_ids(self):
+        
+        base = dict(id =                   0,
+                    pos =                  1,
+                    mass =                 2,
+                    rho  =                 3,
+                    chem =                 4,
+                    tgas =                 5,
+                    tdust =                6,
+                    u_therm =              7,                    
+                    vel =                  8,
+                    max_cols =             9)
+                
+        self.sf3d_header = base
+
     def mergemass(self):
         """
         Merges the mass of replicated cells into the survivor twin cell.

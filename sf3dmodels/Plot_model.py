@@ -108,6 +108,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
 def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False, 
             colorlabel = '', output = 'figplane.png', show = True, auto = True, **kwargs):
 
+    
     unit = axisunit
     i,j,k = 0,0,0
 
@@ -125,14 +126,14 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
     indices, = np.where(coord == value)
     title = '%s = %d'%(key,value)
 
-    lims = np.array([np.array( [min(GRID.XYZgrid[dd]), max(GRID.XYZgrid[dd])] ) / unit for dd in dim2plot]).flatten()
+    lims = np.array([np.array( [min(GRID.XYZcentres[dd]), max(GRID.XYZcentres[dd])] ) / unit for dd in dim2plot]).flatten()
     defaults = dict(cmap = 'hot', extent = lims)
     for key_def in defaults.keys():
         if key_def in kwargs.keys(): continue
         else: kwargs[key_def] = defaults[key_def]
 
     if len(indices) == 0:
-        domain_sorted = np.sort(GRID.XYZgrid[ind])        
+        domain_sorted = np.sort(GRID.XYZcentres[ind])        
         tmp, = np.where(domain_sorted < value)
         ind2 = tmp[-1] #closest below
         ind1 = ind2 + 1 #closest above
@@ -148,7 +149,7 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
         newProperties = Model.ChangeGeometry(GRID_rot, rot_dict = rot_dict)
         GRID_rot.XYZ = newProperties.newXYZ
         X, Y, Z = GRID_rot.XYZ #Rotated plane
-        Xgrid, Ygrid, Zgrid = GRID.XYZgrid #Original grid
+        Xgrid, Ygrid, Zgrid = GRID.XYZcentres #Original grid
         Nx, Ny, Nz = GRID.Nodes
         Num = []
         for x,y,z in zip(X,Y,Z):
@@ -156,6 +157,7 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
             j = BGG.mindistance(y,Ygrid,Ny)
             k = BGG.mindistance(z,Zgrid,Nz)
             Num.append(i*(Ny)*(Nz)+j*(Nz)+k) #ID for the Global Grid
+            
         Num = sorted(set(Num), key=lambda x: Num.index(x)) #Keep the order and delete duplicates
         Num = np.array(Num)
         prop_rot = prop[Num]
@@ -196,7 +198,8 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
         kwargs['extent'] = np.array([perpdim0[0], perpdim0[-1], perpdim1[0], perpdim1[-1]]) / unit
     
     else:
-        perpdim0, perpdim1 = np.array(GRID.XYZgrid)[dim2plot]
+        
+        perpdim0, perpdim1 = np.array(GRID.XYZcentres)[dim2plot]
         prop_2d = np.zeros([len(perpdim1), len(perpdim0)])
         grid_2d = [[0 for i in range(len(perpdim0))] for i in range(len(perpdim1))]
         i,j,k = 0,0,0
