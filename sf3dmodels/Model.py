@@ -274,7 +274,7 @@ def streamline(Rd, GRID):
 def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, 
                      discFlag = True, envFlag = False, 
                      rdisc_max = False, renv_max = False, 
-                     ang_cavity = False):
+                     ang_cavity = False, rho_min_env = 1.0e9):
 
 #RStar: Star radius
 #Rd: Centrifugal radius
@@ -326,7 +326,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
                            ((rhoE0 * (rList / Rd)**-1.5) *
                             ((1 + (costheta / costheta0))**-0.5) *
                             (1 + (Rd / rList) * (3. * costheta0**2 - 1))**-1), 
-                           1.0e9 )
+                           rho_min_env )
         rhoENV = np.where( rhoENV < 1.0, 1.0, rhoENV)
     else:
         print ('No Envelope was invoked!')
