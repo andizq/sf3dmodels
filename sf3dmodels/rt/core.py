@@ -881,8 +881,8 @@ class Radmc3dDefaults(Radmc3d):
         
         kwargs_control : dict, optional 
            Optional dictionary containing additional keys to be written into the radmc3d control file 'radmc3d.inp'.\n
-           If you set 'incl_dust': 1, then prop['dens_dust'] and prop['temp_dust'] must be provided. \n
-           Fixed keys for this method: 'incl_freefree': 1 \n
+           - If you set 'incl_dust': 1, then prop['dens_dust'] and prop['temp_dust'] must be provided. \n
+           - Fixed keys for this method: 'incl_freefree': 1 \n
            Have a look at the `RADMC-3D`_ docs for all the available control commands.  
 
         kwargs_wavelength : {'nxx': array_like, 'lam': array_like}, optional
@@ -977,7 +977,7 @@ class Radmc3dDefaults(Radmc3d):
         kwargs_control : dict, optional 
            Dictionary containing additional keys to be written into the radmc3d control file 'radmc3d.inp'.\n
            - If you set 'incl_dust': 1, then prop['temp_dust'] and prop['dens_dust'] must be provided, and you need to have a dustopac.inp file as well. \n
-           - Dagault keys for this method: 'scattering_mode_max': 0, 'camera_incl_stars': 0, 'incl_dust': 0, 'incl_freefree': 1, 'incl_lines': 1, 'lines_profile': 1,'userdef_nonlte': 1 \n
+           - Default keys for this method: 'scattering_mode_max': 0, 'camera_incl_stars': 0, 'incl_dust': 0, 'incl_freefree': 1, 'incl_lines': 1, 'lines_profile': 1,'userdef_nonlte': 1 \n
            Have a look at the `RADMC-3D`_ docs for all the available control commands.  
 
         kwargs_wavelength : {'nxx': array_like, 'lam': array_like}, optional
