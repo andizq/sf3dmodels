@@ -989,14 +989,12 @@ class Radmc3dDefaults(Radmc3d):
         Have a look at the `examples/recomblines/ <https://github.com/andizq/star-forming-regions/tree/master/examples/recomblines>`_ folder on the GitHub repository. 
 
         .. image:: ../../examples/recomblines/img_channel.png
-           :width: 320px
-           :height: 270px
-           :align: center
+           :width: 335px
+           :height: 260px
 
         .. image:: ../../examples/recomblines/img_spectrum.png
-           :width: 320px
-           :height: 270px
-           :align: center
+           :width: 335px
+           :height: 260px
         
         Returns
         -------
@@ -1005,8 +1003,8 @@ class Radmc3dDefaults(Radmc3d):
 
         Warnings
         --------
-        The free version of radmc3d does not include the recombination lines module. If you want to get the radmc3d package
-        with the module extension you will have to request it to the developer: `Peters+2012`_.   
+        The free version of radmc3d does not include the recombination lines module. 
+        If you want to get this extension you will need to request it directly to the developer: `Peters+2012`_.   
         """ 
         _keys = list(self._recomblines_keys())
 
