@@ -42,4 +42,4 @@ prop = {'vel_x' : vel.x, 'vel_y' : vel.y, 'vel_z' : vel.z,
         'dens_e' : density.total, 'dens_ion' : density.total, 
         'temp_gas' : temperature.total}
 A = rt.Radmc3dDefaults(GRID)
-A.recomblines(prop, [110,109])
+A.recomblines(prop, [110,109], kwargs_control = {'userdef_nonlte': 1})
