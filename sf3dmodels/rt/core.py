@@ -988,6 +988,11 @@ class Radmc3dDefaults(Radmc3d):
         --------
         Have a look at the `examples/recomblines/ <https://github.com/andizq/star-forming-regions/tree/master/examples/recomblines>`_ folder on the GitHub repository. 
 
+        .. image:: ../../examples/recomblines/img_channel.png
+           :width: 320px
+           :height: 270px
+           :align: center
+
         .. image:: ../../examples/recomblines/img_spectrum.png
            :width: 320px
            :height: 270px
