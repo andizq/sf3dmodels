@@ -949,9 +949,7 @@ class Radmc3dDefaults(Radmc3d):
         else: return {'mand': mand, 'opt': opt} 
 
     def recomblines(self, prop, transition, fmt = '%13.6e', folder = './', 
-                    kwargs_control = {'scattering_mode_max': 0,
-                                      'incl_dust': 0,
-                                      'camera_incl_stars': 0},
+                    kwargs_control = {},
                     kwargs_wavelength = {'nxx': [20,20,20,20],
                                          'lam': [1e-1,5e2,2e4,4e4,3e5]}
                     ):
@@ -978,8 +976,8 @@ class Radmc3dDefaults(Radmc3d):
         
         kwargs_control : dict, optional 
            Dictionary containing additional keys to be written into the radmc3d control file 'radmc3d.inp'.\n
-           If you set 'incl_dust': 1, then prop['temp_dust'] and prop['dens_dust'] must be provided, and you need to have a dustopac.inp file as well. \n
-           Fixed keys for this method: 'incl_freefree': 1, 'incl_lines': 1, 'lines_profile': 1, 'lines_mode': -10, 'userdef_nonlte': 1 \n
+           - If you set 'incl_dust': 1, then prop['temp_dust'] and prop['dens_dust'] must be provided, and you need to have a dustopac.inp file as well. \n
+           - Dagault keys for this method: 'scattering_mode_max': 0, 'camera_incl_stars': 0, 'incl_dust': 0, 'incl_freefree': 1, 'incl_lines': 1, 'lines_profile': 1,'userdef_nonlte': 1 \n
            Have a look at the `RADMC-3D`_ docs for all the available control commands.  
 
         kwargs_wavelength : {'nxx': array_like, 'lam': array_like}, optional
@@ -1019,15 +1017,20 @@ class Radmc3dDefaults(Radmc3d):
         if 'dens_dust' in prop: self.write_dust_density(prop['dens_dust'], fmt=fmt)
         if 'microturbulence' in prop: self.write_microturbulence(prop['microturbulence'], fmt=fmt)
 
-        kwargs_control['incl_freefree'] = 1
-        kwargs_control['incl_lines'] = 1
-        kwargs_control['lines_profile'] = 1
-        kwargs_control['lines_mode'] = -10 #User-defined populations: see chapter 7 on the radmc3d manual.
-        kwargs_control['userdef_nonlte'] = 1 #User-defined non-lte mode.
-        kwargs_control['userdef_nup'] = transition[0]
-        kwargs_control['userdef_ndown'] = transition[1]
-        
-        self.write_radmc3d_control(**kwargs_control)
+        kwargs_tmp = {}
+        kwargs_tmp['scattering_mode_max'] = 0
+        kwargs_tmp['incl_dust'] = 0
+        kwargs_tmp['camera_incl_stars'] = 0
+        kwargs_tmp['incl_freefree'] = 1
+        kwargs_tmp['incl_lines'] = 1
+        kwargs_tmp['lines_profile'] = 1
+        kwargs_tmp['userdef_nonlte'] = 1 #User-defined non-lte mode.
+        kwargs_tmp['userdef_nup'] = transition[0]
+        kwargs_tmp['userdef_ndown'] = transition[1]        
+        kwargs_tmp.update(kwargs_control)
+        kwargs_tmp['lines_mode'] = -10 #User-defined populations: see chapter 7 on the radmc3d manual.
+
+        self.write_radmc3d_control(**kwargs_tmp)
         self.write_wavelength_micron(**kwargs_wavelength)
 
         print ('%s is done!'%inspect.stack()[0][3])

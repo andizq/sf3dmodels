@@ -40,7 +40,10 @@ class Overlap(object):
         """
         Returns index of the nearest value in array xma to scalar x. 
         """
-        j = np.where(xma < x)[0][-1]
+        
+        j = np.where(xma < x)[0]
+        if len(j) == 0: j = 0
+        else: j = j[-1]
         if j+1 == Nx: return j
         else: return j if (x-xma[j]) < (xma[j+1]-x) else j+1
 
