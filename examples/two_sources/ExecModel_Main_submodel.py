@@ -116,9 +116,9 @@ Model.PrintProperties(density, temperature, GRID)
 print ('Ellapsed time: %.3fs' % (time.time() - t0))
 print ('-------------------------------------------------\n-------------------------------------------------\n')
 
-#------------------------------------
-#3D PLOTTING (weighting with density)
-#------------------------------------
+#----------------------------------
+#3D PLOTTING (weighting by density)
+#----------------------------------
 tag = 'Main'
 weight = 10*Rho0
 r = GRID.rRTP[0] / u.au #GRID.rRTP hosts [r, R, Theta, Phi] --> Polar GRID

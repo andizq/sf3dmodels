@@ -141,9 +141,9 @@ Model.PrintProperties(density, temperature, GRID)
 print ('Ellapsed time: %.3fs' % (time.time() - t0))
 print ('-------------------------------------------------\n-------------------------------------------------\n')
 
-#----------------------------------------
-#3D PLOTTING (weighting with temperature)
-#----------------------------------------
+#--------------------------------------
+#3D PLOTTING (weighting by temperature)
+#--------------------------------------
 tag = 'Burger'
 weight = 10*T10Env
 
