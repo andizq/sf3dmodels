@@ -1,5 +1,5 @@
 """
-Fills the input grid with empty points (dummy points).
+Fills up the input grid with empty points (dummy points).
 
 This is particularly useful for irregular grids that have large voids between the
 real cells and the border of an eventual radiative transfer domain.
@@ -23,7 +23,7 @@ class Random(Build_r):
         r"""
         Under development.
 
-        Fills the grid with uniformly-distributed random points according to a mass criterion, given a density field.
+        Fills up the grid with uniformly-distributed random points according to a mass criterion, given a density field.
 
         Useful when the model does provide the density but not the mass. However the aim is identical to the method `by_mass`.
 
@@ -67,27 +67,35 @@ class Random(Build_r):
         t = 4+4
         return t
 
-    def spherical(self, r_min = 0., r_max = None, n_dummy = None):
+    def spherical(self, prop, prop_fill = {}, r_min = 0., r_max = None, n_dummy = None):
         r"""
-        Fills the grid with uniformly-distributed random dummy points in a spherical section.
+        Fills up the grid with uniformly-distributed random dummy points in a spherical section.
         
         Parameters
         ----------
-        r_min : float
+        prop : dict
+           Dictionary of arrays of physical properties to be filled up by dummy values. 
+
+        prop_fill : dict, optional
+           Dictionary specifying the dummy value (scalar) with which each physical property will be filled up.
+           
+           Defaults to {}. In that case, the filling dummy value is zero for all the properties. 
+
+        r_min : float, optional
            Inner radius of the spherical section enclosing the random dummy points.
 
            Defaults to zero.
 
-        r_max : float
+        r_max : float, optional
            Outer radius of the spherical section enclosing the random dummy points.
 
-           Defaults to `None`. In that case the maximum radius takes the distance of the farthest point in the grid.
+           Defaults to `None`. In that case, the maximum radius takes the distance of the farthest point in the grid from the coordinates centre.
 
-        n_dummy : int
+        n_dummy : int, optional
            Number of dummy points to be generated.
 
-           Defaults to `None`. In that case n_dummy = GRID.NPoints / 100
-        
+           Defaults to `None`. In that case, n_dummy = GRID.NPoints / 100
+
         Returns
         -------
         out : dict
@@ -116,12 +124,19 @@ class Random(Build_r):
         self.GRID.XYZ = np.hstack((self.GRID.XYZ,[x_rand,y_rand,z_rand]))
         self.GRID.NPoints = self.GRID.NPoints + n_dummy
         print("New number of grid points:", self.GRID.NPoints)
+
+        dummies = np.zeros(n_dummy)
+        fill = {}
+        for p in prop: fill[p] = 0.0
+        fill.update(prop_fill)
+        for p in prop: prop[p] = np.append(prop[p], dummies+fill[p]) 
+
         return {"r_rand": r_rand, "n_dummy": n_dummy}
 
 
-    def by_mass(self, mass, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
+    def by_mass(self, mass, prop, prop_fill = {}, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
         r"""
-        Fills the grid with uniformly-distributed random dummy points in a spherical section based on a mass threshold.
+        Fills up the grid with uniformly-distributed random dummy points in a spherical section based on a mass threshold.
         
         The inner radius of the spherical section will be equal to the radius of a sphere enclosing the input ``mass_fraction``.
 
@@ -132,24 +147,32 @@ class Random(Build_r):
         ----------
         mass : array_like
            `list` or `numpy.ndarray` with the mass of each cell, where the i-th mass corresponds to the i-th cell of the GRID.
+
+        prop : dict
+           Dictionary of arrays of physical properties to be filled up by dummy values. 
+
+        prop_fill : dict, optional
+           Dictionary specifying the dummy value (scalar) with which each physical property will be filled up.
+           
+           Defaults to {}. In that case, the filling dummy value is zero for all the properties. 
         
-        mass_fraction : float
-           The mass fraction enclosed by the inner radius of the spherical section.
-           Sets the inner radius ``r_min`` at `spherical`.
+        mass_fraction : float, optional
+           The mass fraction enclosed by the inner radius of the spherical section. \n
+           - Note that this sets the inner radius ``r_min`` at `spherical`.
 
            Defaults to 0.5, i.e, by default the computed inner radius will enclose (approx.) the 50% of the total mass.
         
-        r_max : float
+        r_max : float, optional
            Outer radius of the spherical section enclosing the random dummy points.
 
            Defaults to `None`. In that case it takes the distance of the farthest point in the grid.
 
-        n_dummy : int
+        n_dummy : int, optional
            Number of dummy points to be generated.
 
            Defaults to `None`. In that case n_dummy = GRID.NPoints / 100
 
-        r_steps : int
+        r_steps : int, optional
            Number of divisions along the radial coordinate to compute the enclosed mass.
            
            Defaults to 100.
@@ -195,6 +218,6 @@ class Random(Build_r):
         print("Inner radius:", r_min)
         print("Outer radius:", r_max)
         comp_fraction = enc_mass / total_mass
-        rand_spher = self.spherical(r_min=r_min, r_max=r_max, n_dummy=n_dummy)
+        rand_spher = self.spherical(prop, prop_fill=prop_fill, r_min=r_min, r_max=r_max, n_dummy=n_dummy)
         return {"r_rand": rand_spher["r_rand"], "r_min": r_min, "r_max": r_max, 
                 "comp_fraction": comp_fraction, "n_dummy": rand_spher["n_dummy"]}
