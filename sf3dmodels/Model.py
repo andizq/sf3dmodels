@@ -1146,8 +1146,58 @@ def velocity_random(v_disp,NPoints):
 
     return Struct( **{'x': v_x, 'y': v_y, 'z': v_z} )
 
-#--------------------------
-#--------------------------
+#-------------------------------
+#VELOCITY-INFALL D.W.Murray+2016
+#See eq. (4)
+#-------------------------------
+
+def velocity_infall(dens_dict, ff_factor, MStar, r_stellar, GRID, v0 = [0.,0.,0.]):
+
+#dens_dict: dictionary containing the density distributions to compute the enclosed mass from
+#ff_factor: free-fall normalization factor
+#MStar: mass of the star
+#r_stellar: stellar sphere of influence
+#GRID
+#v0: systemic velocity, optional
+
+    from .rt import propTags
+
+    rList = GRID.rRTP[0]
+    dx,dy,dz = [GRID.XYZgrid[i][1] - GRID.XYZgrid[i][0] for i in range(3)]
+
+    print ('Computing infall velocities (D.W.Murray+2016)...')
+    rUnique = np.unique(rList) #sorted unique values of r
+
+    mass_unit = np.array([propTags.get_dens_mass(dens_name) for dens_name in dens_dict])
+    mass = np.sum([dens * mass_unit[i] for i,dens in enumerate(dens_dict.values())], axis=0) * dx*dy*dz
+    
+    speed = np.zeros(GRID.NPoints)
+
+    r_at_stellar = rUnique[rUnique < r_stellar][-1] #Closest r to r_stellar from the left
+    speed_r_stellar = np.sqrt(G*MStar/r_at_stellar)
+    speed_menc_stellar = np.sqrt(G*np.sum(mass[rList < r_stellar])/r_at_stellar)
+    norm_factor = speed_r_stellar / speed_menc_stellar #Normalization factor to connect both profiles
+    
+    for r in rUnique: 
+        ind_enc = rList <= r
+        ind_r = rList == r
+        if r < r_stellar: 
+            speed_r = np.sqrt(G*MStar/r)
+        else:
+            mass_enc = np.sum(mass[ind_enc])
+            speed_r = norm_factor * np.sqrt(G*mass_enc/r)
+        speed[ind_r] = speed_r
+
+    foo = -ff_factor*speed / GRID.rRTP[0]
+    v_x = foo*GRID.XYZ[0]
+    v_y = foo*GRID.XYZ[1]
+    v_z = foo*GRID.XYZ[2]
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'x': v_x, 'y': v_y, 'z': v_z} )
+
 
 #--------------------------------
 #CENTRAL HOLE FUNCTION (Optional)
