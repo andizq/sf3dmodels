@@ -104,6 +104,28 @@ class MakeDatatab(object):
         #if cls == Polaris or (parents == Polaris).any(): pass
         return av_props
         
+    def _write_npoints_header(self, folder='./', lime_npoints = True, lime_header = True):
+        """
+        Writes the npoints.dat and header.dat files for Lime.
+        """
+        if folder[-1] != '/': folder += '/'
+
+        if lime_npoints:
+            try: Ns = self.GRID.Nodes
+            except AttributeError: Ns = [0,0,0]
+            size_file = folder+'npoints.dat'
+            sfile = open(size_file,'w') 
+            print ('Writing grid size into %s'%size_file)
+            sfile.write("%d %d %d %d %d"%(len(self.columns), Ns[0], Ns[1], Ns[2], self.GRID.NPoints))
+            sfile.close()
+    
+        if lime_header:
+            header_file = folder+'header.dat'
+            print ('Writing columns header into %s'%header_file)
+            colswritten = np.insert(np.array([0,4242]), 1, self.prop_id).T
+            np.savetxt(header_file, colswritten, fmt = '%d')
+
+        
     def _prepare_prop(self, prop):
         """
         Prepare the prop object to write its content in ordered columns according to _col_ids().
@@ -145,7 +167,7 @@ class MakeDatatab(object):
         self.prop_header = {prop_keys_sorted[i]: prop_id_sorted[i] for i in range(self.n)}
         self.prop = prop
         
-    def submodel(self, prop, output = '0.dat', fmt = '%.6e', folder = './Subgrids'):        
+    def submodel(self, prop, output = '0.dat', fmt = '%.6e', folder = './Subgrids', lime_npoints=False, lime_header=False):        
         """
         Writes a preliminary model. 
         This method **must** be used either from the radiative transfer class `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`. 
@@ -189,14 +211,20 @@ class MakeDatatab(object):
         of `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`. 
         """
 
-        self._prepare_prop(prop)
+        
         os.system('mkdir %s'%folder)
         if folder[-1] != '/': folder += '/'
         file_path = '%s%s'%(folder,output)
         x,y,z = self.GRID.XYZ
         self.id = np.arange(self.GRID.NPoints)
-        self.columns = np.append(['id','x','y','z'], self.prop_keys)
         
+        xyz_dict = {'x': self.GRID.XYZ[0], 'y': self.GRID.XYZ[1], 'z': self.GRID.XYZ[2]}
+        prop.update(xyz_dict)
+        
+        self._prepare_prop(prop)
+        #self.columns = np.append(['id','x','y','z'], self.prop_keys)
+        self.columns = np.append(['id'], self.prop_keys)
+
         fmt_string = formatter(self.prop_keys, fmt, base = '%d %.8e %.8e %.8e')
         tmp_write = []
         #if isinstance(self.prop_list, np.ndarray): self.prop_list = self.prop_list.tolist()
@@ -205,7 +233,10 @@ class MakeDatatab(object):
         for _ in itertools.repeat(None, self.GRID.NPoints): tmp_write.append( fmt_string % tuple(next(list2write)) )
         file_data = open(file_path, 'w')        
         file_data.writelines(tmp_write)
+        
+        #self.prop_id = np.insert(self.prop_id, 0, [self.sf3d_header[coord] for coord in ['x','y','z']]) 
 
+        self._write_npoints_header(folder=folder, lime_npoints=lime_npoints, lime_header=lime_header)
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
                 
@@ -383,7 +414,9 @@ class Lime(MakeDatatab):
         self._prepare_prop(prop)
         self.id = np.arange(self.GRID.NPoints)
         self.columns = np.append(['id'], self.prop_keys)
-       
+
+        if folder[-1] != '/': folder += '/'
+
         fmt_string = formatter(self.prop_keys, fmt, base = '%d')
         tmp_write = []
         #if type(self.prop_list) == np.ndarray: self.prop_list = self.prop_list.tolist()
