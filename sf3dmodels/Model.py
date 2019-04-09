@@ -1147,7 +1147,7 @@ def velocity_random(v_disp,NPoints):
     return Struct( **{'x': v_x, 'y': v_y, 'z': v_z} )
 
 #-------------------------------
-#VELOCITY-INFALL D.W.Murray+2016
+#VELOCITY-INFALL D.W.Murray+2017
 #See eq. (4)
 #-------------------------------
 
@@ -1165,7 +1165,7 @@ def velocity_infall(dens_dict, ff_factor, MStar, r_stellar, GRID, v0 = [0.,0.,0.
     rList = GRID.rRTP[0]
     dx,dy,dz = [GRID.XYZgrid[i][1] - GRID.XYZgrid[i][0] for i in range(3)]
 
-    print ('Computing infall velocities (D.W.Murray+2016)...')
+    print ('Computing infall velocities (D.W.Murray+2017)...')
     rUnique = np.unique(rList) #sorted unique values of r
 
     mass_unit = np.array([propTags.get_dens_mass(dens_name) for dens_name in dens_dict])
