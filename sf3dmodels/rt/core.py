@@ -218,17 +218,18 @@ class MakeDatatab(object):
         x,y,z = self.GRID.XYZ
         self.id = np.arange(self.GRID.NPoints)
         
-        xyz_dict = {'x': self.GRID.XYZ[0], 'y': self.GRID.XYZ[1], 'z': self.GRID.XYZ[2]}
+        xyz_dict = {'x': x, 'y': y, 'z': z}
         prop.update(xyz_dict)
         
         self._prepare_prop(prop)
         #self.columns = np.append(['id','x','y','z'], self.prop_keys)
         self.columns = np.append(['id'], self.prop_keys)
 
-        fmt_string = formatter(self.prop_keys, fmt, base = '%d %.8e %.8e %.8e')
+        #fmt_string = formatter(self.prop_keys, fmt, base = '%d %.8e %.8e %.8e')
+        fmt_string = formatter(self.prop_keys, fmt, base = '%d')
         tmp_write = []
-        #if isinstance(self.prop_list, np.ndarray): self.prop_list = self.prop_list.tolist()
-        list2write = iter(np.array([self.id,x,y,z] + self.prop_list).T)
+        #list2write = iter(np.array([self.id,x,y,z] + self.prop_list).T)
+        list2write = iter(np.array([self.id] + self.prop_list).T)
         print ('Writing Submodel data in %s'%file_path)
         for _ in itertools.repeat(None, self.GRID.NPoints): tmp_write.append( fmt_string % tuple(next(list2write)) )
         file_data = open(file_path, 'w')        
