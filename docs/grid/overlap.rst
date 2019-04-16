@@ -1,5 +1,5 @@
 **********************************
-Overlap class at `sf3dmodels.grid`
+Overlap class in `sf3dmodels.grid`
 **********************************
 
 .. automodapi:: sf3dmodels.grid
