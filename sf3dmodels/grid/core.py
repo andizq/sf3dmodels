@@ -105,10 +105,10 @@ class Overlap(object):
 
         Notes
         -----
-        The overlaping is computed via a standard average for the densities ( :math:`\\rho`) and a weighted-by-density average for 
+        The overlaping is computed via a direct addition for the densities ( :math:`\\rho`) and a weighted-by-density average for 
         the remaining properties (:math:`X`) as follows:
  
-        .. math:: \\rho &= \\frac{1}{N}\\sum^{N}_{i=0} \\rho_i,\n\n
+        .. math:: \\rho &= \\sum^{N}_{i=0} \\rho_i,\n\n
                   X &= \\frac{\\sum^{N}_{i=0} \\rho_{wi} X_i } {\\rho_w},\n
         
         where :math:`N` is the number of submodels involved in the process and :math:`\\rho_w` the weighting density specified via ``weighting_dens``.
