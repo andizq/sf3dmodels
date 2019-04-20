@@ -115,6 +115,7 @@ class Random(Build_r):
 
         if r_max == None: r_max = self._r_max
         if n_dummy == None: n_dummy = int(round(self.GRID.NPoints / 100.))
+        else: n_dummy = int(n_dummy)
         r_rand = np.random.uniform(r_min, r_max, size = n_dummy)
         th_rand = np.random.uniform(0, np.pi, size = n_dummy)
         phi_rand = np.random.uniform(0, 2*np.pi, size = n_dummy)
