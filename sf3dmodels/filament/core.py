@@ -352,7 +352,9 @@ class FilamentModel(RandomGridAroundAxis, DefaultFunctions):
 
         Examples
         --------
-        Have a look at the `examples/outflows/ <https://github.com/andizq/star-forming-regions/tree/master/examples/outflows>`_ folder on the GitHub repository. 
+        **FROM HERE AND BELOW, STILL IN PREP:**
+
+        Have a look at the `examples/filament/ <https://github.com/andizq/star-forming-regions/tree/master/examples/outflows>`_ folder on the GitHub repository. 
         
         The example shows how to compute the free-free emission from a couple of outflows using `RADMC-3D`_. 
         Figures below, from left to right: Outflows grid points distribution; Spectral Energy Distribution; Free-free continuum image at :math:`\\lambda=` 1000 microns. 
