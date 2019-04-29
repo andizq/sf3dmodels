@@ -360,6 +360,7 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
 #RStar: Star radius
 #shFactor: Scaleheight normalization constant: H0 = shFactor * RStar
 #Ro: Outer radius of the disk
+#Rt: Radius where tapering starts
 #rhoE0: density at Rd and theta=pi/2
 #Arho: Density factor 
 #GRID
@@ -384,7 +385,7 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
         if not rdisc_max: rdisc_max = Ro
         rhoD0 = Arho * rhoE0 
         H0 = shFactor * RStar
-        print ('Scale-height normalization constant:', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
+        print ('Scale-height normalization constant (au):', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
         H = H0 * (RList / RStar)**(1 + 0.5*(1-q)) #Scaleheight, with no tapering 
         if Rt: H = H * np.exp(-((RList-Rt) / (Ro-Rt))**2)  #Scaleheight, with tapering 
         rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (RList / Ro)**-p * np.exp(-0.5 * zList**2 / H**2), 1.0)
@@ -781,6 +782,7 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
     if density.discFlag:
         print ('Computing Keplerian flared-disc temperature...')
         rdisc = density.r_disc
+        #* np.exp(-0.5 * zList**2 / H**2)
         if density.envFlag:
             renv = density.r_env
             tempDISC = np.where( (RList <= rdisc) & (rList <= renv) , 
@@ -920,7 +922,7 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
     if discTemp:
         if density.discFlag:
             print ('Setting constant Disc temperature...')
-            tempDISC = np.where( RList <= density.r_disc, discTemp, backTemp)
+            tempDISC = np.where( (RList <= density.r_disc), discTemp, backTemp) # & (abs(GRID.XYZ[2]) < density.H)
         else: sys.exit('ERROR: The disc calculation was turned ON but there is no density distribution for disc!')
     else: tempDISC = 0.
 

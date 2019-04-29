@@ -58,7 +58,7 @@ class Random(Build_r):
 
         Returns
         -------
-        ???????
+        In prep.
         
         See Also
         --------

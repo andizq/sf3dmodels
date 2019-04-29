@@ -26,7 +26,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
         else: kwargs[key_def] = defaults[key_def]
 
     x,y,z = GRID.XYZ
-    r = GRID.rRTP[0]
+    #r = GRID.rRTP[0]
     NTotal = GRID.NPoints
     unit = axisunit
     scale = colorscale
@@ -59,7 +59,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     #colors = palette_c(np.linspace(0, 1, NRand))
     indices = np.array(indices).T[0]
     x,y,z = x[indices], y[indices], z[indices]
-    r = r[indices]
+    #r = r[indices]
     
     if not np.array(colordim).any(): colordim = prop
     
@@ -77,9 +77,9 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
                     c = prop2plot, 
                     **kwargs)
     
-    ax.set_xlabel('X (AU)')
-    ax.set_ylabel('Y (AU)')
-    ax.set_zlabel('Z (AU)')
+    ax.set_xlabel('X (au)')
+    ax.set_ylabel('Y (au)')
+    ax.set_zlabel('Z (au)')
 
     ax.view_init(azim = azim, elev = elev)
     print ('3D camera azimuth: %.1f deg'%ax.azim)
