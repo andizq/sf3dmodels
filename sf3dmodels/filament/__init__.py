@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-Methods for modelling outflows.
+Methods for modelling cylinders.
 """
 # Packages may add whatever they like to this file, but
 # should keep this content at the top.
@@ -12,7 +12,6 @@ if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
 
-    from .core import OutflowModel
+    from .core import DefaultFunctions, FilamentModel
     
-#model = Model()
-__all__ = ['OutflowModel']
+__all__ = ['DefaultFunctions', 'FilamentModel']

@@ -50,14 +50,12 @@ class RandomGrid(object):
         half_points = int(self.NPoints/2)
         r_vec = np.zeros((half_points, 3))
         rand_vec_plane = np.zeros((half_points, 3))
-        
-        vmean, nemean, Tmean = [], [], []
                 
-        r = np.random.uniform(self.z_min, self.z_min+self.r_seg_mag, size = half_points) #Random r from low_mass disk border until high_mass disk border
+        r = np.random.uniform(self.z_min, self.z_min+self.r_seg_mag, size = half_points) 
         width = func_width(r)
         for i in range(half_points):
-            r_vec[i] = r[i] * self.r_seg_dir #Random vector along the outflow axis
-            R = np.random.uniform(0, width[i]) #Random R from the outflow axis
+            r_vec[i] = r[i] * self.r_seg_dir #Random vector along the long axis
+            R = np.random.uniform(0, width[i]) #Random R from the long axis
 
             rand_vec = np.random.uniform(-1,1,3) #Random vector to generate the perpendicular vector to the outflow axis
             rand_vec = rand_vec / np.linalg.norm(rand_vec)
@@ -74,88 +72,93 @@ class RandomGrid(object):
         self.grid[half_points:] = np.append(r_real_n, r.T, axis=1)
         r_c_dir = r_c / np.linalg.norm(r_c, axis = 1)[np.newaxis].T
         self.r_c_dir = np.append(r_c_dir, -1*r_c_dir, axis = 0) 
-        
+        """
         self.r_c_dir = np.append(np.repeat([self.r_seg_dir], half_points, axis=0),
                                  np.repeat([-1*self.r_seg_dir], half_points, axis=0),
                                  axis = 0)
-
+        """
         self.width = np.append(width, width)
                 
-class OutflowModel(RandomGrid,WriteProp):
-    """
-    Host class for outflow models. The grid points are generated randomly taking into account the Jet model geometry.
+class OutflowModel(RandomGrid):
+   
+    def __init__(self, pos_c, axis, z_min, z_max, dx):
+        """
+        Host class for outflow models. The grid points are generated randomly taking into account the Jet model geometry.
 
-    Available models:
- 
-       - 'reynolds86': Jet Model (`Reynolds+1986`_)
-    
-    Input units: SI (metres, kilograms, seconds).
-    
-    Parameters
-    ----------
-    pos_c : array_like, shape (3,) 
-       Outflow centre.
-    
-    axis : array_like, shape (3,) 
-       Characteristic vector of the outflow main axis, of arbitrary length. Example: for an outflow along the z-direction: axis = [0,0,1]  
-    
-    z_min : scalar
-       Minimum distance from the outflow centre to compute physical properties. Must be different to 0 (zero) to avoid indeterminate values. 
+        Available models:
 
-    z_max : scalar
-       Maximum half-length of the outflow. Then, the outflow extent would be [-z_max, z_max].
-    
-    dx : scalar
-       Maximum separation between two adjacent grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = dx.       
-    """
+           - 'reynolds86': Jet Model (`Reynolds+1986`_)
 
-    def __init__(self, pos_c, axis, z_min, z_max, dx, 
-                 prop = {'dens': True, 'temp': True}):
+        Input units: SI (metres, kilograms, seconds).
+
+        Parameters
+        ----------
+        pos_c : array_like, shape (3,) 
+           Origin of coordinates on the axis.
+
+        axis : array_like, shape (3,) 
+           Long axis direction, of arbitrary length. For example, an axis pointing to the z-direction: axis = [0,0,1]  
+
+        z_min : scalar
+           Axis lower limit to compute the physical properties.
+
+        z_max : scalar
+           Axis upper limit to compute the physical properties. The axis extent will be [z_min, z_max].
+
+        dx : scalar
+           Maximum separation between two adjacent grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = dx.       
+
+        mirror : bool, optional
+           If True, it is assumed that the model is symmetric to the reference position ``pos_c``. Defaults to True.
+        """
         RandomGrid.__init__(self, pos_c, axis, z_min, z_max, dx)
-        WriteProp.__init__(self, prop)
         print ('Invoked %s'%self._get_classname())
 
     @classmethod
     def _get_classname(cls):
         return cls.__name__
     
-    def reynolds86(self, width_pars, dens_pars=None, ionfrac_pars=None, temp_pars=None, v0=None, abund_pars=None, gtdratio=None, vsys=[0,0,0]):
+    def reynolds86(self, width_pars, dens_pars=None, ionfrac_pars=None, temp_pars=None, z0=None, v0=None, abund_pars=None, gtdratio=None, vsys=[0,0,0]):
         """
         Outflow Model from `Reynolds+1986`_.
         
-        See the **Table 1** from the paper for examples on combination of parameters and their physical interpretation.
-        
-        See the **Notes** section below for Model equations and a sketch of the Jet geometry.
-        
-        The resulting **Attributes** depend on which parameters were set on.
+           - See the **Table 1** on `Reynolds+1986`_ for examples on the combination of parameters and their physical interpretation.
+           - See the model equations and a sketch of the jet geometry in the **Notes** section below.
+           - The resulting **Attributes** depend on which parameters were set on.
         
         Input and output units: SI (metres, kilograms, seconds).
 
         Parameters
         ----------
         width_pars : array_like, shape (2,) 
-           [:math:`w_0`, :math:`\\epsilon`]: parameters to compute the Jet half-width.
+           [:math:`w_0`, :math:`\\epsilon`]: parameters to compute the Jet half-width at each :math:`z`.
 
         dens_pars : array_like, shape (2,) 
-           [:math:`n_0`, :math:`q_n`]: parameters to compute the Jet hydrogen number density.
+           [:math:`n_0`, :math:`q_n`]: parameters to compute the Jet number density.
 
         ionfrac_pars : array_like, shape (2,) 
-           [:math:`x_0`, :math:`q_x`]: parameters to compute the ionized fraction of hydrogen.
+           [:math:`x_0`, :math:`q_x`]: parameters to compute the ionized fraction of gas.
 
         temp_pars : array_like, shape (2,) 
            [:math:`T_0`, :math:`q_T`]: parameters to compute the Jet temperature.
 
-        v0 : scalar
-           Gas speed at z_min. Speed normalization factor. For mass conservation: :math:`q_v=-q_n-2\\epsilon`. 
-
         abund_pars : array_like, shape (2,) 
-           [:math:`a_0`, :math:`q_a`]: parameters to compute molecular abundance.
+           [:math:`a_0`, :math:`q_a`]: parameters to compute the molecular abundance.
+
+        z0 : scalar
+           Normalization distance. Must be different to 0 (zero) to avoid divergences. \n
+           If None, ``z_max/100`` is used. \n
+           Defaults to None.
+
+        v0 : scalar
+           Gas speed at `z0`. Speed normalization factor. For mass conservation: :math:`q_v=-q_n-2\\epsilon`. 
 
         gtdratio : scalar
            Gas-to-dust ratio value (mass ratio). Uniform at every point of the grid.
         
         vsys : array_like, shape (3,)
-           [:math:`v_{0x}, v_{0y}, v_{0z}`]: Systemic velocity to be added to the final Jet velocity field. 
+           [:math:`v_{0x}, v_{0y}, v_{0z}`]: Systemic velocity to be added to the final Jet velocity field. \n
+           Defaults to [0,0,0].
 
         Attributes
         ----------
@@ -213,16 +216,16 @@ class OutflowModel(RandomGrid,WriteProp):
         -----
         Model equations:
         
-        \t With :math:`r_0 = z_{min}`,
+        \t With :math:`r = \sqrt{x^2 + y^2+ z^2}`,
 
-        .. math:: w(r) &= w_0(r/r_0)^\\epsilon \n 
-                  n_{H}(r) &= n_0(r/r_0)^{q_n} \n
-                  T(r) &= T_0(r/r_0)^{q_T} \n
-                  x(r) &= x_0(r/r_0)^{q_x} \n
-                  n_{ion}(r) &= n_{H}(r) x(r)\n
-                  a(r) &= a_0(r/r_0)^{q_a} \n
-                  v(r) &= v_0(r/r_0)^{q_v} \n
-                  \\vec{v}(r) &= v(r) \\hat{r}, \n
+        .. math:: w(z) &= w_0(z/z_0)^\\epsilon \n 
+                  n_{H}(z) &= n_0(z/z_0)^{q_n} \n
+                  T(z) &= T_0(z/z_0)^{q_T} \n
+                  x(z) &= x_0(z/z_0)^{q_x} \n
+                  n_{ion}(z) &= n_{H}(z) x(z)\n
+                  a(z) &= a_0(z/z_0)^{q_a} \n
+                  v(z) &= v_0(z/z_0)^{q_v} \n
+                  \\vec{v}(r) &= v(z) \\hat{r}, \n
         
 
         where :math:`q_v = -q_n-2\epsilon` for mass conservation.
@@ -234,11 +237,11 @@ class OutflowModel(RandomGrid,WriteProp):
            :alt: reynolds86 model
            :figclass: align-center
 
-           Figure 1 from `Reynolds+1986`_. Jet geometry.                           
+           Figure 1 from `Reynolds+1986`_. Jet geometry. Note that the :math:`r` from the sketch is :math:`z` in our equations.                           
         """
              
-        z_min = float(self.z_min)
-        r0 = z_min
+        if z0 is None: r0 = 1e-2*self.z_max
+        else: r0 = float(z0)
         
         cw = width_pars[0] * r0**-width_pars[1]
         def func_width(r): #Jet half-width 

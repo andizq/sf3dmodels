@@ -15,7 +15,6 @@ from ..tools import formatter
 #*************
 #OVERLAP GRIDS
 #*************
-
 class Overlap(object):
     """
     Host class with functions to overlap submodels either from files or from a list of prop objects, into a unique uniform grid.
@@ -255,10 +254,96 @@ class Overlap(object):
         """
         pass
 
-#*************
-#GRID BUILDER
-#*************
+#****************
+#GRID AROUND AXIS
+#****************
+class RandomGridAroundAxis(object):
+    """
+    Base class for Random grids around a given axis.
+    """
+    def __init__(self, pos_c, axis, z_min, z_max, dx, mirror=False):
+        self.pos_c = np.asarray(pos_c)
+        self.axis = np.asarray(axis)
+        self.pos_f = self.pos_c + self.axis
+        self.z_min = z_min
+        self.z_max = z_max
+        self.dx = dx        
+        self.mirror = mirror
+        self._axis()
 
+    def _axis(self):
+        self.z_dir = self.axis/np.linalg.norm(self.axis) #Axis direction
+        z_seg = (self.z_max - self.z_min) * self.z_dir #The segment length is zmax-zmin  
+        self.dr = self.dx * 2.**-1 #3.**-1#2.5**-1
+
+        self._axis_th = np.zeros(3)
+        self._axis_th[np.argmin(self.axis)] = 1 #Cartesian axis reference to compute theta 
+
+    def _grid(self, func_width, width_pars, R_min=None):
+        
+        #Guess the number of random grid points to generate: (approximation to a rectangular region)
+        # Number of divisions along the main segment, 
+        #  times the number of divisions along an axis perpendicular to the segment,
+        #   times the number of divisions along an axis perpendicular to both of the segments above.
+        #    times an exageration factor (in dr) to increase the number of grid points.
+        #     Twice to account for the other branch of the jet.
+
+        mean_w = np.mean(func_width(np.linspace(self.z_min,self.z_max,num=100), *width_pars))
+        z_seg_mag =  self.z_max - self.z_min #Long-axis length
+        self.NPoints = int(z_seg_mag/self.dr * (mean_w/self.dr)**2 ) 
+        print ('Number of grid points: %d'%self.NPoints 
+               if self.mirror else
+               'Number of grid points: %d'%(2*self.NPoints))
+        
+        self.grid = np.zeros((self.NPoints, 4)) #x,y,z,r
+        npoints = int(self.NPoints)
+        
+        z = np.random.uniform(self.z_min, self.z_max, size=npoints) #Random z's along long axis
+        z_vec = z[:,None]*self.z_dir #Random vectors along the long axis
+        width = func_width(z, *width_pars)
+        
+        rand_vec = np.random.uniform(-1,1,size=(npoints,3)) #Random vector to generate the perpendicular vector to the long axis
+        
+        if R_min is None: R_min=0 
+        R = np.random.uniform(R_min, width) #Random R from the long axis
+        R_dir = np.cross(self.z_dir, rand_vec)        
+        R_dir /= np.linalg.norm(R_dir, axis=1, keepdims=True) #Perpendicular (random) unit vector to the long axis
+        R_vec = R[:,None]*R_dir
+
+        theta = np.sign(np.dot(np.cross(self._axis_th,R_dir), self.z_dir))*np.arccos(np.dot(self._axis_th,R_dir.T)) 
+        theta_dir = np.cross(self.z_dir,R_dir)
+        theta_dir /= np.linalg.norm(theta_dir, axis=1, keepdims=True)
+
+        r_vec = z_vec + R_vec #Vectors from the object centre to the generated points
+        r_dir = r_vec / np.linalg.norm(r_vec, axis = 1)[np.newaxis].T
+
+        r_real = self.pos_c + r_vec #Positions from the origin of coordinates
+
+        if self.mirror: 
+            r_real_n = self.pos_c - r_vec #Mirror point to real position from the origin of coordinates
+            self.grid = np.append(r_real, r_real_n, axis=0)
+            self.r_dir = np.append(r_dir, -1*r_dir, axis=0) 
+            self.width = np.append(width, width)
+            self.z = np.append(z, -1*z)
+            self.z_dir = np.repeat([self.z_dir], 2*npoints, axis=0)
+            self.R = np.append(R, R)
+            self.R_dir = np.append(R_dir, -1*R_dir, axis=0)
+            self.theta = np.append(theta, theta-np.sign(theta)*np.pi)
+            self.theta_dir = np.append(theta_dir, -1*theta_dir, axis=0)
+        else: 
+            self.grid = r_real
+            self.r_dir = r_dir
+            self.width = width
+            self.z = z
+            self.z_dir = np.repeat([self.z_dir], npoints, axis=0)
+            self.R = R
+            self.R_dir = R_dir
+            self.theta = theta
+            self.theta_dir = theta_dir
+        
+#************
+#GRID BUILDER 
+#************
 class Build_r(GridSet):
     _base = """
     Computes the spherical coordinate :math:`r` on each cartesian grid point.
