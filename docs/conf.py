@@ -86,6 +86,7 @@ rst_epilog += """
 .. _Galvan-Madrid+2009: http://adsabs.harvard.edu/abs/2009ApJ...706.1036G
 .. _Reynolds+1986: http://adsabs.harvard.edu/abs/1986ApJ...304..713R
 .. _Peters+2012: http://adsabs.harvard.edu/abs/2012MNRAS.425.2352P
+.. _Smith+2014b: http://adsabs.harvard.edu/abs/2014MNRAS.445.2900S
 """
 
 # -- Project information ------------------------------------------------------

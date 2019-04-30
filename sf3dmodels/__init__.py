@@ -19,6 +19,13 @@ if not _ASTROPY_SETUP_:
     from . import Utils
     from . import create_cylinder
     from . import create_parabola
+    from . import rt
+    from . import outflow
+    from . import filament
+    from . import grid
+    from . import tools
+    from . import utils
+    from . import arepo
     U = Utils
     Res = Resolution
 

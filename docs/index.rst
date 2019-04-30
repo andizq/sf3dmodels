@@ -166,6 +166,7 @@ New on sf3dmodels
 .. toctree::
    :maxdepth: 1   
    
+   filament/filament.rst
    outflow/outflow.rst
    radiativetransfer/rt.rst
    grid/overlap.rst
