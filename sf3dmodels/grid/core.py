@@ -116,7 +116,6 @@ class Overlap(object):
         #***************************
         #PREPARING AND READING FILES
         #***************************
-
         func_name = inspect.stack()[0][3]
         print ("Running function '%s'..."%func_name)
 
@@ -144,8 +143,7 @@ class Overlap(object):
                 
         #***************************
         #DEFINING DICTS 
-        #***************************
-        
+        #***************************        
         GRID = self.GRID
         ntotal = GRID.NPoints
         nrows = [len(data[nf]) for nf in range(nfiles)]
@@ -276,8 +274,9 @@ class RandomGridAroundAxis(object):
         z_seg = (self.z_max - self.z_min) * self.z_dir #The segment length is zmax-zmin  
         self.dr = self.dx * 2.**-1 #3.**-1#2.5**-1
 
-        self._axis_th = np.zeros(3)
-        self._axis_th[np.argmin(self.axis)] = 1 #Cartesian axis reference to compute theta 
+        self._cart_th = np.zeros(3)
+        self._cart_th[np.argmin(self.axis)] = 1 #Cartesian axis reference 
+        self._axis_th = np.cross(self.z_dir, self._cart_th) #Axis reference to compute theta 
 
     def _grid(self, func_width, width_pars, R_min=None):
         
