@@ -2,6 +2,7 @@ from __future__ import print_function
 from ..Model import Struct
 from ..grid import RandomGridAroundAxis
 from ..utils.units import au, pc
+from ..utils.constants import temp_cmb
 import numpy as np
 import inspect
 
@@ -279,7 +280,14 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
                  temp_pars=[100.,0.01*pc,-0.5], 
                  vel_pars=[(1e3,0.01*pc,-0.5), 0.5e3, 0.8e3], 
                  abund_pars=1e-8, gtdratio_pars=100., 
-                 vsys=[0,0,0]):
+                 vsys=[0,0,0], dummy_frac=0.0, 
+                 dummy_values = {'density': 1e3,
+                                 'temperature': temp_cmb,
+                                 'abundance': 1e-12,
+                                 'gtdratio': 100.,
+                                 'vx': 0.0,
+                                 'vy': 0.0,
+                                 'vz': 0.0} ):
 
         """
         Filament Model from `Smith+2014b`_.
@@ -330,6 +338,25 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         vsys : array_like, shape (3,)
            [:math:`v_{0x}, v_{0y}, v_{0z}`]: Systemic velocity to be added to the final cylinder velocity field. \n
            Defaults to [0,0,0].
+
+        dummy_frac : scalar
+           Fraction of additional points (dummy points) to fill the grid borders.
+           For radiative transfer purposes it is strongly recommended to set on this parameter (to at least 0.3)
+           in case the width function of the filament is not constant, 
+           so that the RT code(s) can know explicitly where the empty spaces are and does not perform 
+           any kind of emission interpolation.           
+           Defaults to 0.0\n
+           ndummies = dummy_frac*npoints
+        
+        dummy_values : dict
+           Dictionary containing the values of the properties of the dummy points. It will only be used if dummy_frac > 0.0
+
+        Warnings
+        --------
+        For radiative transfer purposes, if you modify the width function `~DefaultFilamentFunctions.func_width` 
+        it is strongly recommended to set on the ``dummy_frac`` parameter (to at least 0.3), 
+        so that the RT code(s) can know explicitily where the empty spaces are and does 
+        not perform any kind of emission interpolation.\n 
 
         Attributes
         ----------
@@ -403,7 +430,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            import sf3dmodels.Plot_model as pm
            from sf3dmodels.utils.units import pc
 
-           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc, mirror=False)
+           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc)
            f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4)
            pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
                         colordim = f1.temperature, 
@@ -449,6 +476,63 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         
         **Figure 3**. 115 GHz dust emission from the default cylindrical filament in two different orientations.
 
+        
+        Let's now customise some model functions and compute again the radiative transfer. 
+        This time the **temperature** will also be a function of :math:`z`, the **abundance** is no longer constant, 
+        and the **width** is a sine function of :math:`z`.
+        
+        .. plot::
+           :include-source: True
+           
+           import numpy as np
+           import sf3dmodels.filament as sf
+           import sf3dmodels.Plot_model as pm
+           from sf3dmodels.utils.units import pc
+
+
+           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 8e-3*pc)
+           
+           def new_width(z, *width_pars):
+               w0, period = width_pars
+               return w0*((0.5*np.sin(z*2*np.pi/period)**2) + 0.5)
+    
+           def new_abund(R,theta,z, *abund_pars):
+               a0, R0, p = abund_pars
+               ca = a0*R0**-p
+               return ca*R**p
+
+           def new_temp(R,theta,z, *temp_pars):
+               TR, R0, pR, zh = temp_pars
+               cR = TR*R0**-pR
+               return cR*R**pR * np.exp(np.abs(z)/zh)
+    
+           f1.func_width = new_width
+           f1.func_abund = new_abund
+           f1.func_temp = new_temp
+
+           f1.cylinder([0.1*pc, 0.3*pc], 1e-4*pc, 
+                       abund_pars = [1e-6, 0.05*pc, -0.3],
+                       temp_pars = [200, 0.02*pc, -0.15, -0.17*pc],
+                       dummy_frac = 0.5)
+
+           pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+                        colordim = f1.temperature,
+                        colorlabel = 'T [K]',
+                        NRand = 10000, 
+                        cmap = 'nipy_spectral',
+                        azim=0, elev=0, show=True)
+        
+           pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+                        colordim = f1.abundance,
+                        colorlabel = r'$\\rm n_{CO}/n_H$',
+                        NRand = 10000, 
+                        azim=0, elev=0, show=True)
+
+        **Figure 4**. 10000 grid points, randomly chosen according to their density. 
+        In the first plot the colours represent the points temperature and the abundance in the second one.
+        The black points stands for the **dummy points**, which were activated here for radiative transfer purposes.
+
+        import sf3dmodels.rt as rt
         Find the source codes on LINKTOFOLDER.
 
         """
@@ -466,18 +550,32 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
             if isinstance(pars[key], (float,int,long,complex)):
                 pars[key] = [pars[key]]
 
-        
-        self._grid(self.func_width, pars['width'], R_min = R_min)
-        self.GRID = Struct( **{'XYZ': self.grid.T, 'NPoints': self.NPoints})
-    
-        if dens_pars is not None: self.density = self.func_dens(self.R, self.theta, self.z, *pars['dens'])
-        if temp_pars is not None: self.temperature = self.func_temp(self.R, self.theta, self.z, *pars['temp'])
-        if abund_pars is not None: self.abundance = self.func_abund(self.R, self.theta, self.z, *pars['abund'])
-        if gtdratio_pars is not None: self.gtdratio = self.func_gtdratio(self.R, self.theta, self.z, *pars['gtdratio'])
+        self._grid(self.func_width, pars['width'], R_min=R_min, dummy_frac=dummy_frac)
+        if self.ndummies > 0: self.GRID = Struct( **{'XYZ': np.append(self.grid, self.grid_dummy, axis=0).T, 'NPoints': self.NPoints})
+        else: self.GRID = Struct( **{'XYZ': self.grid.T, 'NPoints': self.NPoints})
+
+        append_dummies = lambda prop, tag, n: np.append(prop, np.zeros(n)+dummy_values[tag]) 
+
+        if dens_pars is not None: 
+            self.density = self.func_dens(self.R, self.theta, self.z, *pars['dens'])
+            if self.ndummies > 0: self.density = append_dummies(self.density, 'density', self.ndummies)
+        if temp_pars is not None: 
+            self.temperature = self.func_temp(self.R, self.theta, self.z, *pars['temp'])
+            if self.ndummies > 0: self.temperature = append_dummies(self.temperature, 'temperature', self.ndummies)
+        if abund_pars is not None: 
+            self.abundance = self.func_abund(self.R, self.theta, self.z, *pars['abund'])
+            if self.ndummies > 0: self.abundance = append_dummies(self.abundance, 'abundance', self.ndummies)
+        if gtdratio_pars is not None: 
+            self.gtdratio = self.func_gtdratio(self.R, self.theta, self.z, *pars['gtdratio'])
+            if self.ndummies > 0: self.gtdratio = append_dummies(self.gtdratio, 'gtdratio', self.ndummies)
         if vel_pars is not None: 
             vx, vy, vz = self.func_vel(self.R[:,None], self.R_dir,
                                        self.theta[:,None], self.theta_dir,
                                        self.z[:,None], self.z_dir, *pars['vel']).T
+            if self.ndummies > 0: 
+                vx = append_dummies(vx, 'vx', self.ndummies)
+                vy = append_dummies(vy, 'vy', self.ndummies)
+                vz = append_dummies(vz, 'vz', self.ndummies)
             self.vel = Struct( **{'x': vx, 'y': vy, 'z': vz})
     
         print ('%s is done!'%inspect.stack()[0][3])

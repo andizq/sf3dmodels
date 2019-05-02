@@ -278,7 +278,7 @@ class RandomGridAroundAxis(object):
         self._cart_th[np.argmin(self.axis)] = 1. #Make 1 the component where the axis vector is shorter. 
         self._axis_th = np.cross(self.z_dir, self._cart_th) #The reference axis for theta is the cross product of axis and cart.
 
-    def _grid(self, func_width, width_pars, R_min=None):
+    def _grid(self, func_width, width_pars, R_min=None, dummy_frac=0.0):
         
         #Guess the number of random grid points to generate: (approximation to a rectangular region)
         # Number of divisions along the main segment, 
@@ -289,13 +289,14 @@ class RandomGridAroundAxis(object):
 
         mean_w = np.mean(func_width(np.linspace(self.z_min,self.z_max,num=100), *width_pars))
         z_seg_mag =  self.z_max - self.z_min #Long-axis length
-        self.NPoints = int(z_seg_mag/self.dr * (mean_w/self.dr)**2 ) 
-        print ('Number of grid points: %d'%(2*self.NPoints) 
-               if self.mirror else
-               'Number of grid points: %d'%self.NPoints)
         
-        self.grid = np.zeros((self.NPoints, 4)) #x,y,z,r
-        npoints = int(self.NPoints)
+        self.NPoints = int(z_seg_mag/self.dr * (mean_w/self.dr)**2 ) 
+
+        mirror_int = 1
+        if self.mirror: mirror_int = 2
+        
+        npoints = self.NPoints
+        print ('Number of grid points: %d'%(mirror_int*npoints))
         
         z = np.random.uniform(self.z_min, self.z_max, size=npoints) #Random z's along long axis
         z_vec = z[:,None]*self.z_dir #Random vectors along the long axis
@@ -318,9 +319,22 @@ class RandomGridAroundAxis(object):
 
         r_real = self.pos_c + r_vec #Positions from the origin of coordinates
 
+        self.ndummies = int(round(npoints*dummy_frac))        
+        if self.ndummies > 0:
+            rand_ind = np.random.choice(np.arange(npoints), size=self.ndummies, replace=False)
+            R_dummy = np.random.uniform(width[rand_ind], np.max(width))
+            R_dummy_vec = R_dummy[:,None]*R_dir[rand_ind]
+            r_dummy_vec = z_vec[rand_ind] + R_dummy_vec
+            r_dummy_real = self.pos_c + r_dummy_vec
+            print ('Number of dummy points: %d\nNew number of grid points: %d'
+                   %(self.ndummies, self.ndummies+mirror_int*npoints))
+            
         if self.mirror: 
             r_real_n = self.pos_c - r_vec #Mirror point to real position from the origin of coordinates
             self.grid = np.append(r_real, r_real_n, axis=0)
+            if self.ndummies > 0:
+                r_dummy_real_n = self.pos_c - r_dummy_vec 
+                self.grid_dummy = np.append(r_dummy_real, r_dummy_real_n, axis=0)
             self.r_dir = np.append(r_dir, -1*r_dir, axis=0) 
             self.width = np.append(width, width)
             self.z = np.append(z, -1*z)
@@ -331,6 +345,7 @@ class RandomGridAroundAxis(object):
             self.theta_dir = np.append(theta_dir, -1*theta_dir, axis=0)
         else: 
             self.grid = r_real
+            if self.ndummies > 0: self.grid_dummy = r_dummy_real
             self.r_dir = r_dir
             self.width = width
             self.z = z
@@ -340,6 +355,7 @@ class RandomGridAroundAxis(object):
             self.theta = theta
             self.theta_dir = theta_dir
         
+        self.NPoints = mirror_int*(npoints+self.ndummies)
 #************
 #GRID BUILDER 
 #************
