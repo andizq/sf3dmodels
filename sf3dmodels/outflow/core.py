@@ -124,7 +124,7 @@ class OutflowModel(RandomGrid):
         
            - See the **Table 1** on `Reynolds+1986`_ for examples on the combination of parameters and their physical interpretation.
            - See the model equations and a sketch of the jet geometry in the **Notes** section below.
-           - The resulting **Attributes** depend on which parameters were set on.
+           - The resulting **Attributes** depend on which parameters were set different to None.
         
         Input and output units: SI (metres, kilograms, seconds).
 
@@ -163,28 +163,28 @@ class OutflowModel(RandomGrid):
         Attributes
         ----------
         density : `numpy.ndarray`, shape (n,) 
-           Hydrogen number density.
+           Atomic hydrogen number density.
 
         temperature : `numpy.ndarray`, shape (n,) 
-           Jet temperature.
+           Gas temperature.
         
         ionfraction : `numpy.ndarray`, shape (n,) 
            Ionized fraction of hydrogen.
 
         density_ion : `numpy.ndarray`, shape (n,) 
-           Ionized gas number density: density * ionfraction.
+           Ionized hydrogen number density: density * ionfraction.
 
         speed : `numpy.ndarray`, shape (n,) 
-           Jet speed.
+           Speed.
 
         vel : `~sf3dmodels.Model.Struct`, 
-           Jet velocity. Attributes: vel.x, vel.y, vel.z, shape (n, ) each.
+           The velocity field. Attributes: vel.x, vel.y, vel.z, shape (n, ) each.
 
         abundance : `numpy.ndarray`, shape (n,) 
            Molecular abundance.
 
         gtdratio : `numpy.ndarray`, shape (n,)
-           Uniform gas-to-dust ratio.
+           Gas-to-dust ratio.
 
         GRID : `~sf3dmodels.Model.Struct`, 
            Grid point coordinates and number of grid points. \n
@@ -198,7 +198,7 @@ class OutflowModel(RandomGrid):
         Have a look at the `examples/outflows/ <https://github.com/andizq/star-forming-regions/tree/master/examples/outflows>`_ folder on the GitHub repository. 
         
         The example shows how to compute the free-free emission from a couple of outflows using `RADMC-3D`_. 
-        Figures below, from left to right: Outflows grid points distribution; Spectral Energy Distribution; Free-free continuum image at :math:`\\lambda=` 1000 microns. 
+        Figures below, from left to right: Outflows distribution of grid points; Spectral Energy Distribution; Free-free continuum image at :math:`\\lambda=` 1000 microns. 
 
         .. image:: ../../examples/outflows/global_grid_dens.png
            :width: 220px

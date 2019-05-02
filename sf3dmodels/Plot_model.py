@@ -77,9 +77,9 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
                     c = prop2plot, 
                     **kwargs)
     
-    ax.set_xlabel('X (au)')
-    ax.set_ylabel('Y (au)')
-    ax.set_zlabel('Z (au)')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
 
     ax.view_init(azim = azim, elev = elev)
     print ('3D camera azimuth: %.1f deg'%ax.azim)

@@ -274,9 +274,9 @@ class RandomGridAroundAxis(object):
         z_seg = (self.z_max - self.z_min) * self.z_dir #The segment length is zmax-zmin  
         self.dr = self.dx * 2.**-1 #3.**-1#2.5**-1
 
-        self._cart_th = np.zeros(3)
-        self._cart_th[np.argmin(self.axis)] = 1 #Cartesian axis reference 
-        self._axis_th = np.cross(self.z_dir, self._cart_th) #Axis reference to compute theta 
+        self._cart_th = np.zeros(3) #Initializing an empty cartesian vector.
+        self._cart_th[np.argmin(self.axis)] = 1. #Make 1 the component where the axis vector is shorter. 
+        self._axis_th = np.cross(self.z_dir, self._cart_th) #The reference axis for theta is the cross product of axis and cart.
 
     def _grid(self, func_width, width_pars, R_min=None):
         
@@ -290,9 +290,9 @@ class RandomGridAroundAxis(object):
         mean_w = np.mean(func_width(np.linspace(self.z_min,self.z_max,num=100), *width_pars))
         z_seg_mag =  self.z_max - self.z_min #Long-axis length
         self.NPoints = int(z_seg_mag/self.dr * (mean_w/self.dr)**2 ) 
-        print ('Number of grid points: %d'%self.NPoints 
+        print ('Number of grid points: %d'%(2*self.NPoints) 
                if self.mirror else
-               'Number of grid points: %d'%(2*self.NPoints))
+               'Number of grid points: %d'%self.NPoints)
         
         self.grid = np.zeros((self.NPoints, 4)) #x,y,z,r
         npoints = int(self.NPoints)
