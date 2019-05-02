@@ -12,6 +12,6 @@ if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
 
-    from .core import DefaultFunctions, FilamentModel
+    from .core import DefaultFilamentFunctions, FilamentModel
     
-__all__ = ['DefaultFunctions', 'FilamentModel']
+__all__ = ['DefaultFilamentFunctions', 'FilamentModel']

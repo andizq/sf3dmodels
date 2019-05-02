@@ -12,7 +12,8 @@ f1 = sf.FilamentModel([0,0,0],
 f1.func_width = lambda z, *width_pars: width_pars[0]*((0.5*np.sin(z*2*np.pi/1e16)**2) + 0.5)
 f1.cylinder(3e15, 1e-3*pc)
 
-pm.scatter3D(f1.GRID,f1.dens_gas,f1.dens_gas.min(),
-             colordim=f1.theta, #f1.z_axis,
-             NRand=10000, show=True*1)
+pm.scatter3D(f1.GRID, f1.density, f1.density.min(),
+             axisunit = pc,
+             colordim = f1.theta, 
+             NRand = 10000, show=True*1)
 

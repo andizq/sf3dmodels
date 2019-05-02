@@ -5,7 +5,7 @@ from ..utils.units import au, pc
 import numpy as np
 import inspect
 
-class DefaultFunctions(object):
+class DefaultFilamentFunctions(object):
     """
     Default functions for filament models.
     
@@ -217,7 +217,6 @@ class DefaultFunctions(object):
         
         .. math:: {\\vec{v}}(R,\\theta,z) = -v_{\\rm \\small{R_0}}(R/R_0)^{\\rm p}\\hat{R} + v_{\\theta_0}\\hat{\\theta} - v_{\\rm z_0}\\hat{z}
         """
-        print(R.shape, z_dir.shape, R_dir.shape)
         (vR0,R0,p), vth0, vz0 = pars
         cvR = vR0*R0**-p
         vR = cvR*R**p 
@@ -226,15 +225,17 @@ class DefaultFunctions(object):
         return vR * (-R_dir) + vth * theta_dir + vz * (-np.sign(z)*z_dir)
 
 
-class FilamentModel(RandomGridAroundAxis, DefaultFunctions):
+class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
 
     def __init__(self, pos_c, axis, z_min, z_max, dx, mirror=False):
         """
-        Host class for filament models. The grid points are generated randomly taking into account the filament geometry.
+        Host class for filament models. 
+
+        The grid points are generated randomly taking into account the filament width as a function of the Z-coordinate.   
 
         Available models:
 
-           - `Smith+2014b`_: See the model functions on `DefaultFunctions`
+           - `Smith+2014b`_: See the model functions on `DefaultFilamentFunctions`
 
         Input units: SI (metres, kilograms, seconds).
 
@@ -250,13 +251,21 @@ class FilamentModel(RandomGridAroundAxis, DefaultFunctions):
            Axis lower limit to compute the physical properties.
 
         z_max : scalar
-           Axis upper limit to compute the physical properties. The axis extent will be [z_min, z_max].
+           Axis upper limit to compute the physical properties. The axis extent will be [``z_min``, ``z_max``].
 
         dx : scalar
-           Maximum separation between two adjacent grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = dx.       
+           Maximum separation between two adjacent grid points. This will prevent void holes when merging this random grid into a regular grid of nodes separation = ``dx``.       
 
         mirror : bool, optional
            If True, it is assumed that the model is symmetric to the reference position ``pos_c``. Defaults to False.
+        
+        Notes
+        -----
+        The reference axis to compute :math:`\\theta` is gotten as follows::
+        
+           >>> cart = np.zeros(3) #Initializing an empty cartesian vector.
+           >>> cart[np.argmin(axis)] = 1. #Make 1 the component where the axis vector is shorter. 
+           >>> axis_theta = np.cross(axis, cart) #The reference axis for theta is the cross product of axis and cart.
         """
         RandomGridAroundAxis.__init__(self, pos_c, axis, z_min, z_max, dx, mirror=mirror)
         print ('Invoked %s'%self._get_classname())
@@ -277,9 +286,9 @@ class FilamentModel(RandomGridAroundAxis, DefaultFunctions):
         
            - See the **Section 2.4** and the **Tables 2,5 and 6** on `Smith+2014b`_ for examples on the combination of parameters.
            - See the model equations and a sketch of the cylinder geometry in the **Notes** section below.        
-           - See the model functions on `DefaultFunctions`.
-           - It is possible to re-define the model functions in order to modify the default filament geometry, density, etc. See the **example** section below.
-           - The resulting **Attributes** depend on which parameters were set on.
+           - See the model functions on `DefaultFilamentFunctions`.
+           - It is possible to customise the model functions in order to control the filament geometry, density, etc. See the **example** section below.
+           - The resulting **Attributes** depend on which parameters were set different to None.
 
         Input and output units: SI (metres, kilograms, seconds).
 
@@ -325,78 +334,123 @@ class FilamentModel(RandomGridAroundAxis, DefaultFunctions):
         Attributes
         ----------
         density : `numpy.ndarray`, shape (n,) 
-           Hydrogen number density.
+           Gas number density.
 
         temperature : `numpy.ndarray`, shape (n,) 
-           Jet temperature.
+           Gas temperature.
 
         vel : `~sf3dmodels.Model.Struct`, 
-           Jet velocity. Attributes: vel.x, vel.y, vel.z, shape (n, ) each.
+           The velocity field. Attributes: vel.x, vel.y, vel.z, shape (n, ) each.
 
         abundance : `numpy.ndarray`, shape (n,) 
            Molecular abundance.
 
         gtdratio : `numpy.ndarray`, shape (n,)
-           Uniform gas-to-dust ratio.
+           Gas-to-dust ratio.
 
         GRID : `~sf3dmodels.Model.Struct`, 
-           Grid point coordinates and number of grid points. \n
+           Coordinates of the grid points and number of grid points. \n
            Attributes: GRID.XYZ, shape(3,n): [x,y,z]; GRID.NPoints, scalar.
 
-        r : `numpy.ndarray`, shape (n,) 
-           Grid points distance to the outflow centre.
+        R : `numpy.ndarray`, shape (n,) 
+           Radial distance of the grid points, referred to the filament frame of reference.
+
+        theta : `numpy.ndarray`, shape (n,) 
+           Azimuthal coordinate of the grid points, referred to the filament frame of reference.
+
+        z : `numpy.ndarray`, shape (n,) 
+           Height of the grid points, referred to the filament frame of reference.
+        
+        R_dir : `numpy.ndarray`, shape (n,3) 
+           Radial unit vector of the grid points, referred to the filament frame of reference.
+
+        theta_dir : `numpy.ndarray`, shape (n,3) 
+           Azimuthal unit vector of the grid points, referred to the filament frame of reference.
+
+        z_dir : `numpy.ndarray`, shape (n,3) 
+           Z unit vector of the grid points, referred to the filament frame of reference.
 
         Raises
         ------
         ValueError : If R_min == 0.0
-
-        Examples
-        --------
-        **FROM HERE AND BELOW, STILL IN PREP:**
-
-        Have a look at the `examples/filament/ <https://github.com/andizq/star-forming-regions/tree/master/examples/outflows>`_ folder on the GitHub repository. 
-        
-        The example shows how to compute the free-free emission from a couple of outflows using `RADMC-3D`_. 
-        Figures below, from left to right: Outflows grid points distribution; Spectral Energy Distribution; Free-free continuum image at :math:`\\lambda=` 1000 microns. 
-
-        .. image:: ../../examples/outflows/global_grid_dens.png
-           :width: 220px
-           :height: 170px
-
-        .. image:: ../../examples/outflows/sed_outflows.png
-           :width: 200px
-           :height: 170px
-
-        .. image:: ../../examples/outflows/img_outflows.png
-           :width: 220px
-           :height: 170px
         
         Notes
         -----
-        Model equations:
+        Default model equations: `DefaultFilamentFunctions`
+                
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filament_edgeon.png?raw=true
+           :width: 320px
+           :height: 320px
+           :alt: Filament sketch - edgeon
+
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filament_faceon.png?raw=true
+           :width: 320px
+           :height: 270px
+           :alt: Filament sketch - faceon
+
+        **Figure 1**. Sketches showing the basic input geometrical components that shape the filament. Left: edge-on view, Right: face-on view. The solid vectors and lengths are referred to the **filament** frame of reference and the dashed vectors to the **GRID** frame of reference.
+
+        Examples
+        --------
+
+        The following is the most basic way to use the module. 
+        I'm using the default filament except for the temperature and abundance parameters. It's centred in (0,0,0); pointing to :math:`z`; with 0.4 pc of length and 0.1 pc of width.  
+
+        .. plot:: 
+           :include-source: True
+
+           import sf3dmodels.filament as sf
+           import sf3dmodels.Plot_model as pm
+           from sf3dmodels.utils.units import pc
+
+           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc, mirror=False)
+           f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4)
+           pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+                        colordim = f1.temperature, 
+                        colorlabel = 'T [K]',
+                        NRand = 10000, show=True)
+                        
+        **Figure 2**. The plot shows 10000 grid points, randomly chosen according to their density. The colours represent the points temperature.
+
+        For radiative transfer purposes we need to construct the ``prop`` dictionary and write the necessary files depending on the code that will be used (see `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`):
+
+        .. code-block:: python
+           
+           import sf3dmodels.rt as rt
+           prop = {'dens_H': f1.density,
+                   'temp_gas': f1.temperature,
+                   'abundance': f1.abundance,
+                   'gtdratio': f1.gtdratio,
+                   'vel_x': f1.vel.x,
+                   'vel_y': f1.vel.y,
+                   'vel_z': f1.vel.z,
+                   }
+
+           lime = rt.Lime(f1.GRID)
+           lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+
+        Since the grid of our filament is non-regular the command to run Lime in sf3dmodels mode will have an additional -G flag: 
         
-        \t With :math:`r = \sqrt{x^2 + y^2+ z^2}`,
-
-        .. math:: w(z) &= w_0(z/z_0)^\\epsilon \n 
-                  n_{H}(z) &= n_0(z/z_0)^{q_n} \n
-                  T(z) &= T_0(z/z_0)^{q_T} \n
-                  x(z) &= x_0(z/z_0)^{q_x} \n
-                  n_{ion}(z) &= n_{H}(z) x(z)\n
-                  a(z) &= a_0(z/z_0)^{q_a} \n
-                  v(z) &= v_0(z/z_0)^{q_v} \n
-                  \\vec{v}(r) &= v(z) \\hat{r}, \n
+        .. code-block:: bash
         
+           $ lime -nSG -p 4 model.c
+        
+        It will generate a set of cubes containing the :math:`^{12}\\rm CO` J=1-0 line emission and the dust emission for this model. 
 
-        where :math:`q_v = -q_n-2\epsilon` for mass conservation.
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filament_limedust_edgeon.png?raw=true
+           :width: 335px
+           :height: 275px
+           :alt: Filament dust emission - edgeon
 
-        .. figure:: ../../images/reynolds86_outflow.png
-           :width: 350px
-           :align: center
-           :height: 400px
-           :alt: reynolds86 model
-           :figclass: align-center
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filament_limedust_faceon.png?raw=true
+           :width: 335px
+           :height: 275px
+           :alt: Filament dust emission - faceon
+        
+        **Figure 3**. 115 GHz dust emission from the default cylindrical filament in two different orientations.
 
-           Figure 1 from `Reynolds+1986`_. Jet geometry. Note that the :math:`r` from the sketch is :math:`z` in our equations.                           
+        Find the source codes on LINKTOFOLDER.
+
         """
 
         if R_min == 0.0: raise ValueError('R_min must be different to zero to avoid divergences in the model functions') 
@@ -416,13 +470,15 @@ class FilamentModel(RandomGridAroundAxis, DefaultFunctions):
         self._grid(self.func_width, pars['width'], R_min = R_min)
         self.GRID = Struct( **{'XYZ': self.grid.T, 'NPoints': self.NPoints})
     
-        if dens_pars is not None: self.dens_gas = self.func_dens(self.R, self.theta, self.z, *pars['dens'])
-        if temp_pars is not None: self.temp_gas = self.func_temp(self.R, self.theta, self.z, *pars['temp'])
-        if abund_pars is not None: self.abund = self.func_abund(self.R, self.theta, self.z, *pars['abund'])
+        if dens_pars is not None: self.density = self.func_dens(self.R, self.theta, self.z, *pars['dens'])
+        if temp_pars is not None: self.temperature = self.func_temp(self.R, self.theta, self.z, *pars['temp'])
+        if abund_pars is not None: self.abundance = self.func_abund(self.R, self.theta, self.z, *pars['abund'])
         if gtdratio_pars is not None: self.gtdratio = self.func_gtdratio(self.R, self.theta, self.z, *pars['gtdratio'])
-        if vel_pars is not None: self.vel = self.func_vel(self.R[:,None], self.R_dir,
-                                                          self.theta[:,None], self.theta_dir,
-                                                          self.z[:,None], self.z_dir, *pars['vel'])
+        if vel_pars is not None: 
+            vx, vy, vz = self.func_vel(self.R[:,None], self.R_dir,
+                                       self.theta[:,None], self.theta_dir,
+                                       self.z[:,None], self.z_dir, *pars['vel']).T
+            self.vel = Struct( **{'x': vx, 'y': vy, 'z': vz})
     
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
