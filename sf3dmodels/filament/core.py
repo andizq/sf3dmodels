@@ -420,26 +420,28 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         Examples
         --------
 
-        The following is the most basic way to use the module. 
-        I'm using the default filament except for the temperature and abundance parameters. It's centred in (0,0,0); pointing to :math:`z`; with 0.4 pc of length and 0.1 pc of width.  
+        Let's get started with the basics.
+        The default filament is used except for the temperature and abundance parameters. 
+        It's centred at (0,0,0); pointing to :math:`z`; with 0.4 pc of length and 0.1 pc of width.  
 
         .. plot:: 
            :include-source: True
 
+           import numpy as np
            import sf3dmodels.filament as sf
            import sf3dmodels.Plot_model as pm
            from sf3dmodels.utils.units import pc
 
            f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc)
            f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4)
-           pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+           pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
                         colordim = f1.temperature, 
                         colorlabel = 'T [K]',
                         NRand = 10000, show=True)
                         
         **Figure 2**. The plot shows 10000 grid points, randomly chosen according to their density. The colours represent the points temperature.
 
-        For radiative transfer purposes we need to construct the ``prop`` dictionary and write the necessary files depending on the code that will be used (see `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`):
+        For the radiative transfer we need to construct the ``prop`` dictionary and write the necessary files depending on the code that will be used (see `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`):
 
         .. code-block:: python
            
@@ -474,7 +476,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            :height: 275px
            :alt: Filament dust emission - faceon
         
-        **Figure 3**. 115 GHz dust emission from the default cylindrical filament in two different orientations.
+        **Figure 3**. 115 GHz dust emission from the default cylindrical filament for two different orientations.
 
         
         Let's now customise some model functions and compute again the radiative transfer. 
@@ -511,27 +513,52 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            f1.func_temp = new_temp
 
            f1.cylinder([0.1*pc, 0.3*pc], 1e-4*pc, 
-                       abund_pars = [1e-6, 0.05*pc, -0.3],
+                       abund_pars = [1e-5, 0.05*pc, -0.15],
                        temp_pars = [200, 0.02*pc, -0.15, -0.17*pc],
                        dummy_frac = 0.5)
 
-           pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+           pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
                         colordim = f1.temperature,
                         colorlabel = 'T [K]',
                         NRand = 10000, 
-                        cmap = 'nipy_spectral',
-                        azim=0, elev=0, show=True)
+                        cmap = 'nipy_spectral_r',
+                        azim=45, elev=15, show=True)
         
-           pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+           pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
                         colordim = f1.abundance,
-                        colorlabel = r'$\\rm n_{CO}/n_H$',
+                        colorlabel = 'Molec. abund.',
                         NRand = 10000, 
-                        azim=0, elev=0, show=True)
+                        cmap = 'nipy_spectral_r',
+                        azim=45, elev=15, show=True)
 
         **Figure 4**. 10000 grid points, randomly chosen according to their density. 
-        In the first plot the colours represent the points temperature and the abundance in the second one.
-        The black points stands for the **dummy points**, which were activated here for radiative transfer purposes.
+        In the top plot the colours represent the temperature of the grid points and in the bottom one the abundance.
+        For the bottom plot the weighting value was reduced in order to make the dummy points visible (in gray colour), 
+        which were activated here for radiative transfer purposes.
 
+        And the radiative transfer block:
+
+        .. code-block:: python
+           
+           import sf3dmodels.rt as rt
+           prop = {'dens_H': f1.density,
+                   'temp_gas': f1.temperature,
+                   'abundance': f1.abundance,
+                   'gtdratio': f1.gtdratio,
+                   'vel_x': f1.vel.x,
+                   'vel_y': f1.vel.y,
+                   'vel_z': f1.vel.z,
+                   }
+
+           lime = rt.Lime(f1.GRID)
+           lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+
+        .. code-block:: bash
+        
+           $ lime -nSG -p 4 model.c
+
+        
+        
         import sf3dmodels.rt as rt
         Find the source codes on LINKTOFOLDER.
 

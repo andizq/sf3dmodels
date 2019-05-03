@@ -80,6 +80,9 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+    ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+    ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+    ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
 
     ax.view_init(azim = azim, elev = elev)
     print ('3D camera azimuth: %.1f deg'%ax.azim)
@@ -89,7 +92,8 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     cbar.ax.set_ylabel('%s'%colorlabel)
 
     if output == '': output = 'figure.png'
-
+    
+    plt.tight_layout()
     plt.savefig(output, dpi = 1000)    
     print ('Image saved as %s'%output)
     print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))

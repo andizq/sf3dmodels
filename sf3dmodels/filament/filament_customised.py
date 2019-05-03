@@ -25,22 +25,23 @@ f1.func_abund = new_abund
 f1.func_temp = new_temp
 
 f1.cylinder([0.1*pc, 0.3*pc], 1e-4*pc, 
-            abund_pars = [1e-6, 0.05*pc, -0.3],
+            abund_pars = [1e-6, 0.05*pc, -0.15],
             temp_pars = [200, 0.02*pc, -0.15, -0.17*pc],
             dummy_frac = 0.5)
 
-pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
              colordim = f1.temperature,
              colorlabel = 'T [K]',
              NRand = 10000, 
-             cmap = 'nipy_spectral',
-             azim=0, elev=0, show=True)
+             cmap = 'nipy_spectral_r',
+             azim=45, elev=15, show=True)
 
-pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
+pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
              colordim = f1.abundance,
-             colorlabel = r'$\rm n_{CO}/n_H$',
+             colorlabel = 'Molec. abund.',
              NRand = 10000, 
-             azim=0, elev=0, show=True)
+             cmap = 'nipy_spectral_r',
+             azim=45, elev=15, show=True)
 
 prop = {'dens_H': f1.density,
         'temp_gas': f1.temperature,
