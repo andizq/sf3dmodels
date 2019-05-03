@@ -20,4 +20,4 @@ prop = {'dens_H': f1.density,
         }
 
 lime = rt.Lime(f1.GRID)
-lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+lime.submodel(prop, output='datatab.dat', folder='./', lime_header=True, lime_npoints=True)

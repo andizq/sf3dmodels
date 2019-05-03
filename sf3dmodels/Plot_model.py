@@ -14,7 +14,7 @@ from . import Model
 
 def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
               colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True, 
-              azim = None, elev = None,
+              azim = None, elev = None, xlim=None, ylim=None, zlim=None,
               **kwargs):
     
     t0 = time.time()
@@ -80,6 +80,15 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+    
+    if xlim is not None: xlim=np.where(xlim != None, xlim/unit, None)
+    if ylim is not None: ylim=np.where(ylim != None, ylim/unit, None)
+    if zlim is not None: zlim=np.where(zlim != None, zlim/unit, None)
+
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+
     ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))

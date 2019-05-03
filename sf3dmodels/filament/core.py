@@ -223,7 +223,7 @@ class DefaultFilamentFunctions(object):
         vR = cvR*R**p 
         vth = vth0 + np.zeros(shape=np.shape(theta))
         vz = vz0 + np.zeros(shape=np.shape(z))
-        return vR * (-R_dir) + vth * theta_dir + vz * (-np.sign(z)*z_dir)
+        return vR * (-1*R_dir) + vth * theta_dir + vz * (-np.sign(z)*z_dir)
 
 
 class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
@@ -420,9 +420,9 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         Examples
         --------
 
-        Let's get started with the basics.
+        Let's get started with the simplest model.
         The default filament is used except for the temperature and abundance parameters. 
-        It's centred at (0,0,0); pointing to :math:`z`; with 0.4 pc of length and 0.1 pc of width.  
+        It's centred at (0,0,0); pointing to :math:`z`, i.e (0,0,1); with 0.4 pc of length and 0.1 pc of width.  
 
         .. plot:: 
            :include-source: True
@@ -432,14 +432,15 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            import sf3dmodels.Plot_model as pm
            from sf3dmodels.utils.units import pc
 
-           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc)
-           f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4)
+           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc) # Invoke the class with the filament axis geometry
+           f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4) # Specify the method and the physical parameters
+           
            pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
                         colordim = f1.temperature, 
                         colorlabel = 'T [K]',
                         NRand = 10000, show=True)
                         
-        **Figure 2**. The plot shows 10000 grid points, randomly chosen according to their density. The colours represent the points temperature.
+        **Figure 2**. The plot shows 10000 grid points, randomly picked based on their density. The colours represent the temperature of the grid points. 
 
         For the radiative transfer we need to construct the ``prop`` dictionary and write the necessary files depending on the code that will be used (see `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`):
 
@@ -456,7 +457,8 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
                    }
 
            lime = rt.Lime(f1.GRID)
-           lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+           lime.submodel(prop, output='datatab.dat', folder='./', 
+                         lime_header=True, lime_npoints=True)
 
         Since the grid of our filament is non-regular the command to run Lime in sf3dmodels mode will have an additional -G flag: 
         
@@ -477,7 +479,6 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            :alt: Filament dust emission - faceon
         
         **Figure 3**. 115 GHz dust emission from the default cylindrical filament for two different orientations.
-
         
         Let's now customise some model functions and compute again the radiative transfer. 
         This time the **temperature** will also be a function of :math:`z`, the **abundance** is no longer constant, 
@@ -536,7 +537,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         For the bottom plot the weighting value was reduced in order to make the dummy points visible (in gray colour), 
         which were activated here for radiative transfer purposes.
 
-        And the radiative transfer block:
+        And the block concerning to the radiative transfer:
 
         .. code-block:: python
            
@@ -551,15 +552,64 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
                    }
 
            lime = rt.Lime(f1.GRID)
-           lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+           lime.submodel(prop, output='datatab.dat', folder='./', 
+                         lime_header=True, lime_npoints=True)
 
         .. code-block:: bash
         
            $ lime -nSG -p 4 model.c
 
+        The dust emission: 
+
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filamentcustom_limedust_edgeon.png?raw=true
+           :width: 335px
+           :height: 275px
+           :alt: Filament dust emission - edgeon
+
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filamentcustom_limedust_faceon.png?raw=true
+           :width: 335px
+           :height: 275px
+           :alt: Filament dust emission - faceon
         
+        **Figure 5**. 115 GHz dust emission from the customised filament for two different orientations.
+
+        Finally let's compute the first two moment maps of :math:`^{12}\\rm CO J=1-0` from the Lime's output::
         
-        import sf3dmodels.rt as rt
+           >>> from astropy.io import fits
+           >>> from astropy.wcs import WCS
+           >>> from spectral_cube import SpectralCube
+
+           >>> fn = 'img_custom_CO_J1-0_LTE_jypxl_edgeon.fits'
+           >>> hdu = fits.open(fn)[0]
+           >>> hdu.header['CUNIT3'] = 'm/s' 
+
+           >>> w = WCS(hdu.header)
+           >>> cube = SpectralCube(data=hdu.data.squeeze(), wcs=w.dropaxis(3))
+           
+           >>> m0 = cube.moment(order=0) # Moment 0 (Jy/pxl m/s)
+           >>> m1 = cube.moment(order=1) # Moment 1 (m/s)
+           >>> m0.write('moment0_'+fn, overwrite=True)
+           >>> m1.write('moment1_'+fn, overwrite=True)
+
+           >>> fig, ax = plt.subplots(ncols=2, subplot_kw = {'projection': w.celestial}, figsize = (12,6))
+           
+           >>> im0 = ax[0].imshow(m0.array, cmap='hot')
+           >>> im1 = ax[1].imshow(m1.array, cmap='nipy_spectral')           
+           >>> cb0 = fig.colorbar(im0, ax=ax[0], orientation='horizontal', format='%.2f', pad=0.1)
+           >>> cb1 = fig.colorbar(im1, ax=ax[1], orientation='horizontal', pad=0.1)
+           >>> ax[0].set_title('Moment 0 - edgeon', fontsize = 14)
+           >>> ax[1].set_title('Moment 1 - edgeon', fontsize = 14)
+           >>> cb0.set_label(r'Jy pxl$^{-1}$ m s$^{-1}$', fontsize = 14)
+           >>> cb1.set_label(r'm s$^{-1}$', fontsize = 14)
+           
+           >>> plt.tight_layout(pad=2.0)
+           >>> fig.savefig('customfilament_moments_edgeon.png')
+           
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/customfilament_moments_edgeon.png?raw=true
+           :width: 770px
+           :height: 350px
+           :alt: Filament moment maps - edgeon
+
         Find the source codes on LINKTOFOLDER.
 
         """

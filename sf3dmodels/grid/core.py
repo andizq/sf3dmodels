@@ -76,7 +76,7 @@ class Overlap(object):
         Parameters
         ----------
         columns : array_like, shape (ncols,)
-           Array object containing the column names from input file. 
+           List object containing the column names of the input submodel files. 
 
         submodels : 'all' or array_like, optional 
            If 'all': reads all the '.dat' files within ``folder``.\n
@@ -356,6 +356,7 @@ class RandomGridAroundAxis(object):
             self.theta_dir = theta_dir
         
         self.NPoints = mirror_int*(npoints+self.ndummies)
+
 #************
 #GRID BUILDER 
 #************
