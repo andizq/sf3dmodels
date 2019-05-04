@@ -197,11 +197,11 @@ class OutflowModel(RandomGrid):
         --------
         Have a look at the `examples/outflows/ <https://github.com/andizq/star-forming-regions/tree/master/examples/outflows>`_ folder on the GitHub repository. 
         
-        The example shows how to compute the free-free emission from a couple of outflows using `RADMC-3D`_. 
-        Figures below, from left to right: Outflows distribution of grid points; Spectral Energy Distribution; Free-free continuum image at :math:`\\lambda=` 1000 microns. 
+        The example there shows how to compute the free-free emission from a couple of outflows using `RADMC-3D`_. 
+        Figures below, from left to right: Grid points distribution and their density; Spectral Energy Distribution; Free-free continuum image at :math:`\\lambda=` 1000 microns. 
 
         .. image:: ../../examples/outflows/global_grid_dens.png
-           :width: 220px
+           :width: 230px
            :height: 170px
 
         .. image:: ../../examples/outflows/sed_outflows.png
@@ -209,7 +209,7 @@ class OutflowModel(RandomGrid):
            :height: 170px
 
         .. image:: ../../examples/outflows/img_outflows.png
-           :width: 220px
+           :width: 230px
            :height: 170px
         
         Notes

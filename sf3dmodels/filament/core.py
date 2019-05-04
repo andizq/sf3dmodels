@@ -419,6 +419,9 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
 
         Examples
         --------
+        
+        .. note::
+           The source codes of the examples below can be found in the `examples/outflows/ <https://github.com/andizq/star-forming-regions/tree/master/examples/filaments>`_ folder on the GitHub repository.
 
         Let's get started with the simplest model.
         The default filament is used except for the temperature and abundance parameters. 
@@ -435,9 +438,12 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc) # Invoke the class with the filament axis geometry
            f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4) # Specify the method and the physical parameters
            
+           lims=np.array([-0.3,0.3])*pc
+
            pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
                         colordim = f1.temperature, 
                         colorlabel = 'T [K]',
+                        xlim=lims, ylim=lims, zlim=lims,
                         NRand = 10000, show=True)
                         
         **Figure 2**. The plot shows 10000 grid points, randomly picked based on their density. The colours represent the temperature of the grid points. 
@@ -492,7 +498,6 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            import sf3dmodels.Plot_model as pm
            from sf3dmodels.utils.units import pc
 
-
            f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 8e-3*pc)
            
            def new_width(z, *width_pars):
@@ -518,11 +523,14 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
                        temp_pars = [200, 0.02*pc, -0.15, -0.17*pc],
                        dummy_frac = 0.5)
 
+           lims=np.array([-0.3,0.3])*pc
+        
            pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
                         colordim = f1.temperature,
                         colorlabel = 'T [K]',
                         NRand = 10000, 
                         cmap = 'nipy_spectral_r',
+                        xlim=lims, ylim=lims, zlim=lims,
                         azim=45, elev=15, show=True)
         
            pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
@@ -530,6 +538,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
                         colorlabel = 'Molec. abund.',
                         NRand = 10000, 
                         cmap = 'nipy_spectral_r',
+                        xlim=lims, ylim=lims, zlim=lims,
                         azim=45, elev=15, show=True)
 
         **Figure 4**. 10000 grid points, randomly chosen according to their density. 
@@ -604,13 +613,30 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            
            >>> plt.tight_layout(pad=2.0)
            >>> fig.savefig('customfilament_moments_edgeon.png')
-           
+
         .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/customfilament_moments_edgeon.png?raw=true
            :width: 770px
            :height: 350px
            :alt: Filament moment maps - edgeon
 
-        Find the source codes on LINKTOFOLDER.
+        .. note::
+            You can also combine filaments with other kind of models to reproduce more complex scenarios. 
+            The following images result from a filament + envelope model:
+
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/global_grid_dens.png?raw=true
+           :width: 335px
+           :height: 250px
+           :alt: Filament+env density 
+
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/global_grid_temp.png?raw=true
+           :width: 335px
+           :height: 250px
+           :alt: Filament+env temperature
+
+        .. image:: https://github.com/andizq/andizq.github.io/blob/master/star-forming-regions/examples/filament/filament+env_moments_edgeon.png?raw=true
+           :width: 770px
+           :height: 350px
+           :alt: Filament+env moment maps
 
         """
 
