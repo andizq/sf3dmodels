@@ -4,7 +4,7 @@ import sf3dmodels.Plot_model as pm
 from sf3dmodels.utils.units import pc
 import sf3dmodels.rt as rt
 
-f1 = sf.FilamentModel([0,0,0], [1,0,0], -0.2*pc, 0.2*pc, 0.005*pc)
+f1 = sf.FilamentModel([0,0,0], [1,0,0], -0.2*pc, 0.2*pc, 4e-3*pc)
 
 def new_temp(R,theta,z, *temp_pars):
     TR, R0, pR, zh = temp_pars
@@ -14,7 +14,7 @@ def new_temp(R,theta,z, *temp_pars):
 f1.func_temp = new_temp
 
 f1.cylinder(0.1*pc, 1e-4*pc,
-            dens_pars = [7e10, 0.1*pc, 2.0],
+            dens_pars = [7e10, 0.03*pc, 2.0],
             temp_pars = [200, 0.02*pc, -0.15, -0.17*pc],
             abund_pars = 1e-4)
 

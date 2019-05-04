@@ -29,11 +29,13 @@ f1.cylinder([0.1*pc, 0.3*pc], 1e-4*pc,
             temp_pars = [200, 0.02*pc, -0.15, -0.17*pc],
             dummy_frac = 0.5)
 
+lims=np.array([-0.3,0.3])*pc
 pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
              colordim = f1.temperature,
              colorlabel = 'T [K]',
              NRand = 10000, 
              cmap = 'nipy_spectral_r',
+             xlim=lims, ylim=lims, zlim=lims,
              azim=45, elev=15, show=True)
 
 pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
@@ -41,6 +43,7 @@ pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
              colorlabel = 'Molec. abund.',
              NRand = 10000, 
              cmap = 'nipy_spectral_r',
+             xlim=lims, ylim=lims, zlim=lims,
              azim=45, elev=15, show=True)
 
 prop = {'dens_H': f1.density,
@@ -53,4 +56,4 @@ prop = {'dens_H': f1.density,
         }
 
 lime = rt.Lime(f1.GRID)
-lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+lime.submodel(prop, output='datatab.dat', folder='./', lime_header=True, lime_npoints=True)

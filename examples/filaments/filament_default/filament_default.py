@@ -5,9 +5,12 @@ import sf3dmodels.rt as rt
 
 f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc)
 f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4)
+
+lims=[-0.3*pc,0.3*pc]
 pm.scatter3D(f1.GRID, f1.density, f1.density.min(), axisunit = pc,
              colordim = f1.temperature, 
              colorlabel = 'T [K]',
+             xlim=lims, ylim=lims, zlim=lims,
              NRand = 10000, show=True)
 
 prop = {'dens_H': f1.density,
@@ -20,4 +23,4 @@ prop = {'dens_H': f1.density,
         }
 
 lime = rt.Lime(f1.GRID)
-lime.submodel(prop, output='datatab.dat', lime_header=True, lime_npoints=True)
+lime.submodel(prop, output='datatab.dat', folder='./', lime_header=True, lime_npoints=True)

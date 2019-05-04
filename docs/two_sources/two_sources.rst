@@ -9,7 +9,7 @@ Source codes and figures on GitHub: `two_sources <https://github.com/andizq/star
 The first 2 examples of the section 
 `Modelling a single star forming region <http://star-forming-regions.readthedocs.io/en/latest/single_source/single_source.html>`_ 
 will be used here to illustrate how to overlap two (or more) models in a single **global grid**. 
-The overlaped physical properties are computed as in section 3.2 of `Izquierdo et al. 2018`_. See also `~sf3dmodels.grid.Overlap`.
+The overlaped physical properties are computed as in section 3.2 of `Izquierdo+2018`_. See also `~sf3dmodels.grid.Overlap`.
 
 .. note:: 
    `W33A MM1-Main`: The most massive compact source of the complex star forming region W33A MM1. 

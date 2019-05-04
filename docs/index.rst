@@ -193,6 +193,6 @@ more information.
 Citing sf3dmodels
 =================
 
-If you find the **sf3dmodels** package useful for your research please cite the work of `Izquierdo et al. 2018`_.
+If you find the **sf3dmodels** package useful for your research please cite the work of `Izquierdo+2018`_.
    
 .. warning:: This package, as well as its documentation, are currently under development and may often undergo modifications.

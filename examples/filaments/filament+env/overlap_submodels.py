@@ -20,8 +20,8 @@ import numpy as np
 #GRIDDING
 #********
 sizex = sizey = sizez = 0.3 * u.pc
-Nx = Ny = Nz = 100
-GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz])
+Nx = Ny = Nz = 145
+GRID = Model.grid([sizex, sizey, sizez], [Nx, Ny, Nz], include_zero=False)
 
 #**********
 #OVERLAPING
@@ -52,13 +52,14 @@ from matplotlib.colors import LogNorm
 lims=np.array([-0.3,0.3])*u.pc
 
 Pm.scatter3D(GRID, density, weight, NRand = 7000, axisunit = u.pc, 
-             norm=LogNorm(vmin=1e4, vmax=1e7), cmap = 'nipy_spectral',
+             norm=LogNorm(vmin=1e3, vmax=1e7), cmap = 'nipy_spectral',
              colorlabel = r'${\rm log}_{10}(\rho [cm^{-3}])$', output = 'global_grid_dens.png',
              xlim=lims, ylim=lims, zlim=lims)
 
 #--------------------
 #Plot for TEMPERATURE
 #--------------------
-Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = u.au, colorscale = 'log',
-             cmap = 'brg', colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png',
+Pm.scatter3D(GRID, density, weight, colordim = temperature, NRand = 7000, axisunit = u.pc, 
+             colorscale = 'log', cmap = 'brg', 
+             colorlabel = r'${\rm log}_{10}(T$ $[K])$', output = 'global_grid_temp.png',
              xlim=lims, ylim=lims, zlim=lims)
