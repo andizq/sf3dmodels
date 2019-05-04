@@ -81,9 +81,15 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     
-    if xlim is not None: xlim=np.where(xlim != None, xlim/unit, None)
-    if ylim is not None: ylim=np.where(ylim != None, ylim/unit, None)
-    if zlim is not None: zlim=np.where(zlim != None, zlim/unit, None)
+    if xlim is not None: 
+        xlim=np.asarray(xlim)
+        xlim=np.where(xlim != None, xlim/unit, None)
+    if ylim is not None: 
+        ylim=np.asarray(ylim)
+        ylim=np.where(ylim != None, ylim/unit, None)
+    if zlim is not None: 
+        zlim=np.asarray(zlim)
+        zlim=np.where(zlim != None, zlim/unit, None)
 
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
