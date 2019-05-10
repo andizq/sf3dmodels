@@ -70,12 +70,12 @@ rst_epilog += """
 .. _download: https://github.com/andizq/star-forming-regions/archive/master.zip
 .. _docs: http://star-forming-regions.readthedocs.io
 .. _Documentation: http://star-forming-regions.readthedocs.io
-.. _RADMC-3D: http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/
-.. _LIME: https://lime.readthedocs.io/en/latest/
-.. _AREPO:  https://wwwmpa.mpa-garching.mpg.de/~volker/arepo/ 
-.. _Izquierdo+2018: https://ui.adsabs.harvard.edu/doi/10.1093/mnras/sty1096
+.. _RADMC-3D: http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d
+.. _LIME: https://lime.readthedocs.io/en/latest
+.. _AREPO:  https://wwwmpa.mpa-garching.mpg.de/~volker/arepo
+.. _Izquierdo+2018: https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I
 .. _Galvan-Madrid+2010: https://ui.adsabs.harvard.edu/abs/2010ApJ...725...17G 
-.. _Maud+2017: https://ui.adsabs.harvard.edu/doi/10.1093/mnrasl/slx010
+.. _Maud+2017: https://ui.adsabs.harvard.edu/abs/2017MNRAS.467L.120M
 .. _Lee+2017b: https://ui.adsabs.harvard.edu/abs/2017SciA....3E2935L
 .. _Li+2017: https://ui.adsabs.harvard.edu/abs/2017ApJ...840...72L
 .. _Keto+2010: https://ui.adsabs.harvard.edu/abs/2010MNRAS.406..102K
@@ -86,7 +86,7 @@ rst_epilog += """
 .. _Reynolds+1986: https://ui.adsabs.harvard.edu/abs/1986ApJ...304..713R
 .. _Peters+2012: https://ui.adsabs.harvard.edu/abs/2012MNRAS.425.2352P
 .. _Smith+2014b: https://ui.adsabs.harvard.edu/abs/2014MNRAS.445.2900S
-.. _Murray+2017: https://ui.adsabs.harvard.edu/abs/2017MNRAS.465.1316M/abstract
+.. _Murray+2017: https://ui.adsabs.harvard.edu/abs/2017MNRAS.465.1316M
 """
 
 # -- Project information ------------------------------------------------------
