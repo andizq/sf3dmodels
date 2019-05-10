@@ -184,10 +184,10 @@ Working on...
 Developers
 ==========
 
-`Andres Izquierdo <https://github.com/andizq>`_
-`Roberto Galvan-Madrid <https://github.com/rgalvanmadrid>`_
-`Adam Ginsburg <https://github.com/keflavich>`_
-`Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
+* `Andres Izquierdo <https://github.com/andizq>`_
+* `Roberto Galvan-Madrid <https://github.com/rgalvanmadrid>`_
+* `Adam Ginsburg <https://github.com/keflavich>`_
+* `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
 License
 =======
@@ -201,7 +201,7 @@ more information.
 Citing sf3dmodels
 =================
 
-If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo+2018`::
+If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo+2018`_::
 
    @ARTICLE{2018MNRAS.478.2505I,
       author = {{Izquierdo}, Andr{\'e}s F. and {Galv{\'a}n-Madrid}, Roberto and
