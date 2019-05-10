@@ -49,7 +49,7 @@ class DefaultFilamentFunctions(object):
 
     def func_dens(self,R,theta,z,*pars):
         """
-        Default temperature function.
+        Default number density function.
         
         Parameters
         ----------
@@ -72,7 +72,7 @@ class DefaultFilamentFunctions(object):
         
         Notes
         -----
-        Default model: Plummer-like function. See the section 2.4 of `Smith+2014b`_
+        Default model: a Plummer-like density profile. See the section 2.4 of `Smith+2014b`_
         
         .. math:: n(R,\\theta,z) = \\frac{n_c}{\\big[1+(R/R_{\\rm flat})^2]^{\\rm p/2}}
         """
@@ -81,7 +81,7 @@ class DefaultFilamentFunctions(object):
 
     def func_temp(self,R,theta,z,*pars):
         """
-        Default number density function.
+        Default temperature function.
         
         Parameters
         ----------
