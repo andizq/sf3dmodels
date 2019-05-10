@@ -145,7 +145,7 @@ more information.
 Citing sf3dmodels
 -----------------
 
-If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo+2018 https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/`_::
+If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo et al. 2018 <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/>`_::
 
    @ARTICLE{2018MNRAS.478.2505I,
       author = {{Izquierdo}, Andr{\'e}s F. and {Galv{\'a}n-Madrid}, Roberto and
