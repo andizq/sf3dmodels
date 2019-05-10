@@ -180,7 +180,15 @@ Working on...
    tools/tools.rst
    arepo/arepo.rst
    grid/grid.rst
-   
+
+Developers
+==========
+
+`Andres Izquierdo <https://github.com/andizq>`_
+`Roberto Galvan-Madrid <https://github.com/rgalvanmadrid>`_
+`Adam Ginsburg <https://github.com/keflavich>`_
+`Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
+
 License
 =======
 
@@ -193,6 +201,27 @@ more information.
 Citing sf3dmodels
 =================
 
-If you find the **sf3dmodels** package useful for your research please cite the work of `Izquierdo+2018`_.
+If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo+2018`::
+
+   @ARTICLE{2018MNRAS.478.2505I,
+      author = {{Izquierdo}, Andr{\'e}s F. and {Galv{\'a}n-Madrid}, Roberto and
+                {Maud}, Luke T. and {Hoare}, Melvin G. and {Johnston}, Katharine G. and
+         	{Keto}, Eric R. and {Zhang}, Qizhou and {de Wit}, Willem-Jan},
+      title = "{Radiative transfer modelling of W33A MM1: 3D structure and dynamics of a complex massive star-forming region}",
+      journal = {\mnras},
+      keywords = {radiative transfer, stars: formation, stars: massive, stars: protostars, Astrophysics - Astrophysics of Galaxies, Astrophysics - Solar and Stellar Astrophysics},
+      year = "2018",
+      month = "Aug",
+      volume = {478},
+      number = {2},
+      pages = {2505-2525},
+      doi = {10.1093/mnras/sty1096},
+      archivePrefix = {arXiv},
+      eprint = {1804.09204},
+      primaryClass = {astro-ph.GA},
+      adsurl = {https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+   }
+
    
 .. warning:: This package, as well as its documentation, are currently under development and may often undergo modifications.
