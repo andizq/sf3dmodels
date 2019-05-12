@@ -9,15 +9,37 @@ from . import GridInit
 from . import GridSet
 from ..utils.units import pc, amu
 from ..utils.constants import temp_cmb
-from ..rt import propTags
+from ..utils.prop import propTags
 from ..tools import formatter
 
 #*************
 #OVERLAP GRIDS
 #*************
-class Overlap(object):
+class NeighbourRegularGrid(object):
     """
-    Host class with functions to overlap submodels either from files or from a list of prop objects, into a unique uniform grid.
+    Class for getting nearest neighbours in regular grids. 
+    """
+    def _get_nearest_id_lime(self,i_list,j_list,k_list,ns):
+        nx,ny,nz = ns
+        return np.array(i_list)*ny*nz + np.array(j_list)*nz + np.array(k_list)
+
+    def _get_nearest_id_radmc3d(self,i_list,j_list,k_list,ns):
+        nx,ny,nz = ns
+        return np.array(k_list)*ny*nx + np.array(j_list)*nx + np.array(i_list) 
+
+    def _neighbour1d(self,x,xma,Nx):
+        """
+        Returns the index of the nearest value from the array ``xma`` to the scalar ``x``. 
+        """
+        j = np.where(xma < x)[0]
+        if len(j) == 0: j = 0 #left-border
+        else: j = j[-1] #closest from the left
+        if j+1 == Nx: return j #right-border
+        else: return j if (x-xma[j]) < (xma[j+1]-x) else j+1 #compare to the closest from the right
+
+class Overlap(NeighbourRegularGrid):
+    """
+    Host class with functions to overlap submodels either from files or from prop objects into a single regular grid.
     
     Parameters
     ----------
@@ -27,25 +49,6 @@ class Overlap(object):
     def __init__(self, GRID):
         self.GRID = GRID
         
-    def _get_id_lime(self,i_list,j_list,k_list,ns):
-        nx,ny,nz = ns
-        return np.array(i_list)*ny*nz + np.array(j_list)*nz + np.array(k_list)
-
-    def _get_id_radmc3d(self,i_list,j_list,k_list,ns):
-        nx,ny,nz = ns
-        return np.array(k_list)*ny*nx + np.array(j_list)*nx + np.array(i_list) 
-
-    def _mindistance(self,x,xma,Nx):
-        """
-        Returns index of the nearest value in array xma to scalar x. 
-        """
-        
-        j = np.where(xma < x)[0]
-        if len(j) == 0: j = 0
-        else: j = j[-1]
-        if j+1 == Nx: return j
-        else: return j if (x-xma[j]) < (xma[j+1]-x) else j+1
-
     def _get_files_in_folder(self,folder):
         """
         Returns the list of .dat files in folder.
@@ -186,8 +189,8 @@ class Overlap(object):
         others_tmp_dicts = [{col: data_dicts[j][col] * data_dicts[j][weighting_dens] for col in others} for j in range(nfiles)]
         num_list = [] 
         num_uniques = []
-        if rt_code == 'lime': get_id = self._get_id_lime
-        elif rt_code == 'radmc3d': get_id = self._get_id_radmc3d
+        if rt_code == 'lime': get_id = self._get_nearest_id_lime
+        elif rt_code == 'radmc3d': get_id = self._get_nearest_id_radmc3d
         else: raise ValueError("The value '%s' in rt_code is invalid. Please choose amongst the following: 'lime', 'radmc3d'"%rt_code)
         for nf in range(nfiles): 
             i_list, j_list, k_list = [], [], []
@@ -195,9 +198,9 @@ class Overlap(object):
             yiter = iter(data_dicts[nf]['y'])
             ziter = iter(data_dicts[nf]['z'])
             for _ in itertools.repeat(None, nrows[nf]): 
-                i_list.append(self._mindistance(next(xiter),xgrid,nx))
-                j_list.append(self._mindistance(next(yiter),ygrid,ny))
-                k_list.append(self._mindistance(next(ziter),zgrid,nz))
+                i_list.append(self._neighbour1d(next(xiter),xgrid,nx))
+                j_list.append(self._neighbour1d(next(yiter),ygrid,ny))
+                k_list.append(self._neighbour1d(next(ziter),zgrid,nz))
             num_list.append(get_id(i_list,j_list,k_list,GRID.Nodes))
             num_uniques.append(np.unique(num_list[nf], return_counts=True))
 

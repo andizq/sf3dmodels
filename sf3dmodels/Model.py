@@ -1193,7 +1193,7 @@ def velocity_infall(dens_dict, ff_factor, MStar, r_stellar, GRID, v0 = [0.,0.,0.
 #GRID
 #v0: systemic velocity, optional
 
-    from .rt import propTags
+    from .utils.prop import propTags
 
     rList = GRID.rRTP[0]
     dx,dy,dz = [GRID.XYZgrid[i][1] - GRID.XYZgrid[i][0] for i in range(3)]

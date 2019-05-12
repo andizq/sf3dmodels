@@ -9,7 +9,6 @@ from ..tools import formatter
 #******************************************
 #WRITING DATA (LIME v1.9.5, RADMC-3D v0.41)
 #******************************************
-
 class PropTags(object):
     """
     Tag the physical properties. Contains functions for naming and tagging the grid and physical properties.
