@@ -44,11 +44,24 @@ class Overlap(NeighbourRegularGrid):
     Parameters
     ----------
     GRID : `~sf3dmodels.Model.Struct`
-       Grid structure where submodels will be merged in. 
+       Grid structure where submodels will be merged in.
+
+    Attributes
+    ----------
+    min_values : dict, optional
+       Dictionary containing the base minimum values for the final-overlaped physical properties.
     """
     def __init__(self, GRID):
         self.GRID = GRID
-        
+        self.min_values = {'dens_H': 1e3,
+                           'dens_H2': 1e3,
+                           'dens_Hplus': 1e3,
+                           'dens_ion': 1e3,
+                           'dens_e': 1e3,
+                           'temp_gas': temp_cmb,
+                           'temp_dust:': temp_cmb,
+                           'gtdratio': 1e2}
+
     def _get_files_in_folder(self,folder):
         """
         Returns the list of .dat files in folder.
@@ -60,14 +73,6 @@ class Overlap(NeighbourRegularGrid):
     def fromfiles(self, columns, 
                   submodels = 'all',
                   weighting_dens = 'all', 
-                  min_values = {'dens_H': 1e6,
-                                'dens_H2': 1e6,
-                                'dens_Hplus': 1e3,
-                                'dens_ion': 1e3,
-                                'dens_e': 1e3,
-                                'temp_gas': temp_cmb,
-                                'temp_dust:': temp_cmb,
-                                'gtdratio': 1e2},
                   rt_code = 'lime',
                   folder = './Subgrids'): 
                   #weighting_dens = {'Lime': ['dens_H', 'dens_H2'],
@@ -90,9 +95,6 @@ class Overlap(NeighbourRegularGrid):
            Density column name for weighting the non-density properties. See equations in the **Notes** section.\n
            If 'all': The algorithm takes the sum of all the density columns multiplied by their respective atomic mass.\n
            Defaults to 'all'.
-        
-        min_values : dict, optional
-           Dictionary containing the base minimum values for the final-overlaped physical properties.
                    
         rt_code : 'lime' or 'radmc3d', optional
            Radiative transfer code that is going to be used later with the output prop.
@@ -236,10 +238,10 @@ class Overlap(NeighbourRegularGrid):
         #mask_empty = np.ones(ntotal, dtype=bool)
         #mask_empty[final_unique] = False
         for col in densities+others:
-            if col in min_values: 
+            if col in self.min_values: 
                 #final_dict[col][mask_empty] = empty_cells[col] 
-                final_dict[col] = np.where(final_dict[col] < min_values[col], min_values[col], final_dict[col])
-                print ('Using constant minimum value %.3e'%min_values[col], "for column '%s'."%col)
+                final_dict[col] = np.where(final_dict[col] < self.min_values[col], self.min_values[col], final_dict[col])
+                print ('Using constant minimum value %.3e'%self.min_values[col], "for column '%s'."%col)
             else: 
                 final_dict[col] = np.where(final_dict[col] < 0.0, 0.0, final_dict[col])
                 #final_dict[col] = np.where(final_dict[col] < 0., 0., final_dict[col])
@@ -248,7 +250,7 @@ class Overlap(NeighbourRegularGrid):
         if weighting_dens == 'dens_mass': _ = final_dict.pop(weighting_dens)
  
         return final_dict
-
+    
     def fromprops(self, props):
         """
         In preparation.

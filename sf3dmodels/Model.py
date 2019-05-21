@@ -36,39 +36,38 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
 
     print ('-------------------------------------------------\n-------------------------------------------------')
     
-    XYZmax = np.array(XYZmax)
-
+    XYZmax = np.asarray(XYZmax)
+    NP = np.asarray(NP).astype('int32')
     #----------------
     #NUMBER OF POINTS
     #----------------
-    #Each NP becomes odd if it's not. This is done to force the grid to contain the midplane too.
+    #if include_zero NP becomes odd where it's not in order to force the grid to contain the midplane(s).
     
     if include_zero:
-        NP_dum = [ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in range(3) ] 
+        NP_dum = np.array([ NP[i] + 1 if NP[i]%2 == 0 else NP[i] for i in range(3) ])
         print('Setting the number of grid points to be {},'.format(NP_dum) +
               '\n so that the planes x=0, y=0, z=0 are all present...' +
               '\nTurn off this feature by setting the flag include_zero=False'
-              if NP != NP_dum
+              if (NP != NP_dum).any()
               else '... ... ...'
               )
-        
         NP = NP_dum
     else: 
-        for i in range(3): print('Coordinate zero NOT included for axis: %d'%i
+        for i in range(3): print('Coordinate zero NOT included for axis %d'%i
                                   if NP[i]%2 == 0
-                                  else 'Coordinate zero included for axis: %d'%i)
-    
+                                  else 'Coordinate zero included for axis %d'%i)
     #--------
     #XYZ GRID
     #--------
     print ('Computing Grid...')
     
     Xmax,Ymax,Zmax = XYZmax    
-    step = 2. * XYZmax / NP
+    step = 2. * XYZmax / (NP-1)
     #epsilon = [RSun / 1.] * 3
-    
+    print (step)
     if rt_code == 'radmc3d': 
-        step = 2. * XYZmax / (NP - np.ones(3))
+        step = 2. * XYZmax / (NP)
+        print(step)
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in range(3)]
         #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in range(3)]
         X, Y ,Z = XYZgrid #The grid must contain the cell corners, but the properties are computed in the centres. 
@@ -86,15 +85,20 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     #--------------------------------------
     #Extended Lists of distance coordinates
     #--------------------------------------
+    """    
     if rt_code == 'radmc3d': rRxyzList = np.array([ ((x**2 + y**2 + z**2)**0.5, (x**2 + y**2)**0.5, x,y,z) for z in Z for y in Y for x in X])
     elif rt_code == 'lime': rRxyzList = np.array([ ((x**2 + y**2 + z**2)**0.5, (x**2 + y**2)**0.5, x,y,z) for x in X for y in Y for z in Z])
-    
     rList = rRxyzList[:,0] ; RList = rRxyzList[:,1]; xList = rRxyzList[:,2]; yList = rRxyzList[:,3]; zList = rRxyzList[:,4]
-    rList = np.where(rList < 1., sorted(set(rList))[1] / 2 , rList ) # If r == 0: use the second minimum value of r divided by 2
+    """
+    XYZ = np.meshgrid(X,Y,Z, indexing='ij')
+    xList, yList, zList = [xyz.flatten() for xyz in XYZ]
+    rList = np.linalg.norm([xList,yList,zList], axis = 0)
+    RList = np.linalg.norm([xList,yList], axis = 0)
     
+    rList = np.where(rList < 1., sorted(set(rList))[1] / 2 , rList ) # If r == 0: use the second minimum value of r divided by 2
     #"set" eliminates duplicates and "sorted" sorts values upwards 
     RList = np.where(RList < 1., sorted(set(RList))[1] / 2 , RList )
-    
+
     #-----
     #THETA
     #-----
@@ -116,8 +120,6 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     phiList = np.where(phiList < 0, phiList + twoPi, phiList )
     #-----
     #-----
-
-    dx = abs(X[1] - X[0]) #Linear step in X
     XYZ = [xList,yList,zList]
     rRTP = [rList,RList,thetaList,phiList]
     
@@ -127,7 +129,7 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     print ('-------------------------------------------------\n-------------------------------------------------')
 
     
-    return Struct( **{'XYZgrid': XYZgrid, 'XYZcentres': XYZcentres, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP, 'step': dx})
+    return Struct( **{'XYZgrid': XYZgrid, 'XYZcentres': XYZcentres, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP, 'step': step})
 
 """
 #Not tested
@@ -1263,18 +1265,18 @@ def MakeHole(T_min,T_max,dens_val,temp_val,abund_val,densList,tempList,abundList
 
 def PrintProperties(density, temperature, GRID): 
 
-    dx = GRID.step
+    dv = GRID.step[0]*GRID.step[1]*GRID.step[2]
     inddisc = np.where(temperature.disc > 2.)
     indtotal = np.where(temperature.total > 2.)
     Mu_MSun = 2 * Mu/MSun
     
-    print ('Total mass (MSun):', np.sum(density.total) * dx**3 * Mu_MSun)
+    print ('Total mass (MSun):', np.sum(density.total) * dv * Mu_MSun)
     print ('Mean Total Temperature (Kelvin), weighted by density:', 
            (np.sum(temperature.total[ indtotal ] * density.total[ indtotal ]) 
             / np.sum(density.total[ indtotal ]) ))
     if density.discFlag:
-        print ('Total Disc mass (MSun):', np.sum(density.disc) * dx**3 * Mu_MSun)
-        print ('Total Envelope mass (MSun):', np.sum(density.env) * dx**3 * Mu_MSun)
+        print ('Total Disc mass (MSun):', np.sum(density.disc) * dv * Mu_MSun)
+        print ('Total Envelope mass (MSun):', np.sum(density.env) * dv * Mu_MSun)
         print ('Mean Disc Temperature (Kelvin), weighted by density:', 
                (np.sum(temperature.disc[ inddisc ] * density.disc[ inddisc ])
                 / np.sum(density.disc[ inddisc ]) ))

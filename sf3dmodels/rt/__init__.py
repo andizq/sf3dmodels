@@ -12,8 +12,8 @@ if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
 
-    from .core import Lime, Radmc3d, Radmc3dDefaults, Radmc3dRT, PropTags, MakeDatatab
+    from .core import Lime, Radmc3d, Radmc3dDefaults, Radmc3dRT, MakeDatatab
 
-propTags = PropTags()
-__all__ = ['PropTags', 'propTags', 'MakeDatatab', 'Lime',
+__all__ = ['MakeDatatab', 
+           'Lime',
            'Radmc3d', 'Radmc3dRT', 'Radmc3dDefaults']
