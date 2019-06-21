@@ -264,7 +264,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         -----
         The reference axis to compute :math:`\\theta` is gotten as follows::
         
-           >>> cart = np.zeros(3) #Initializing an empty cartesian vector.
+           >>> cart = np.zeros(3) #Initialise an empty cartesian vector.
            >>> cart[np.argmin(axis)] = 1. #Make 1 the component where the axis vector is shorter. 
            >>> axis_theta = np.cross(axis, cart) #The reference axis for theta is the cross product of axis and cart.
         """
