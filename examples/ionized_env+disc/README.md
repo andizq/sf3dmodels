@@ -8,7 +8,7 @@ Type the following commands:
 $ python ExecModel_keto+disc.py
 $ radmc3d sed
 $ python plot_sed.py
-$ radmc3d image lambda 9090 phi 90 incl 45 sizeau 8000 dpc 4000 npix 100
+$ radmc3d image lambda 9090 phi 0 posang 0 incl 45 sizeau 8000 dpc 4000 npix 100
 $ python plot_fits_image.py
 $ python plot_cont.py
 $ python convolucionGauss_All.py
