@@ -304,7 +304,7 @@ class Lime(MakeDatatab):
         ----------
         prop : dict
            Dictionary containing the model physical properties.\n
-           See the **Notes** section below for available physical properties.
+           See the **Notes** section above for a list with the available input properties.
            
         fmt : str or dict, optional
             If str: Format string for all the columns. Defaults to '%.6e'.\n

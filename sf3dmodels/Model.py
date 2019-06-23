@@ -709,7 +709,7 @@ def abundance_Powerlaw(r_max, r_min, ab0, q, GRID, ab_min = 1e-10):
 
 #r_max: Maximum radius of the envelope 
 #r_min: Minimum radius of the envelope 
-#rho0: Density at r_min
+#ab0: scaling coefficient
 #q: power-law for density
 #GRID: Grid to work in
 #rho_min: Minimum density
