@@ -1,4 +1,4 @@
-# Dust continuum and line emission for a composite model: filament + core
+# Dust continuum and line emission from a composite model: filament + core
 
 Type the following commands:
 
