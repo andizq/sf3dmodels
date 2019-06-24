@@ -59,8 +59,13 @@ class Overlap(NeighbourRegularGrid):
                            'dens_ion': 1e3,
                            'dens_e': 1e3,
                            'temp_gas': temp_cmb,
-                           'temp_dust:': temp_cmb,
-                           'gtdratio': 1e2}
+                           'temp_dust': temp_cmb,
+                           #'abundance': 1e-10,
+                           'gtdratio': 1e2,
+                           #'vel_x': -3e8*1,
+                           #'vel_y': -3e8*1,
+                           #'vel_z': -3e8*1
+                           }
 
     def _get_files_in_folder(self,folder):
         """
@@ -156,11 +161,12 @@ class Overlap(NeighbourRegularGrid):
         xgrid, ygrid, zgrid = GRID.XYZcentres 
         cm3_to_m3 = 1e6
         
-        coords, densities, others = [], [], []
+        coords, densities, velocities, others = [], [], [], []
         for col in columns: 
             kind = propTags.get_prop_kind(col)
             if kind == 'grid': coords.append(col) 
             elif kind == 'density': densities.append(col)
+            elif kind == 'velocity': velocities.append(col)
             else: others.append(col)
 
         tmp_dict = {}
@@ -168,8 +174,11 @@ class Overlap(NeighbourRegularGrid):
         
         for col in densities+others:
             tmp_dict[col] = np.zeros(ntotal)
+            val0_dict[col] = 0            
+        for col in velocities:
+            tmp_dict[col] = np.zeros(ntotal) #np.random.normal(scale=10*amu,size=ntotal)
             val0_dict[col] = 0
-    
+
         if weighting_dens == 'dens_mass': 
             for nf in range(nfiles):
                 data_dicts[nf][weighting_dens] = np.zeros(nrows[nf])
@@ -188,7 +197,7 @@ class Overlap(NeighbourRegularGrid):
         #***************************
         #FILLING EACH FILE's DICT 
         #***************************
-        others_tmp_dicts = [{col: data_dicts[j][col] * data_dicts[j][weighting_dens] for col in others} for j in range(nfiles)]
+        others_tmp_dicts = [{col: data_dicts[j][col] * data_dicts[j][weighting_dens] for col in velocities+others} for j in range(nfiles)]
         num_list = [] 
         num_uniques = []
         if rt_code == 'lime': get_id = self._get_nearest_id_lime
@@ -212,9 +221,9 @@ class Overlap(NeighbourRegularGrid):
             for _ in itertools.repeat(None, nrows[nf]): 
                 row = next(rowiter)
                 for col in densities: partial_dicts[nf][col][num[row]] += data_dicts[nf][col][row]
-                for col in others: partial_dicts[nf][col][num[row]] += others_tmp_dicts[nf][col][row]
+                for col in velocities+others: partial_dicts[nf][col][num[row]] += others_tmp_dicts[nf][col][row]
             
-            for col in others:
+            for col in velocities+others:
                 partial_dicts[nf][col][num_uniques[nf][0]] /= partial_dicts[nf][weighting_dens][num_uniques[nf][0]]         
             for col in densities: 
                 #partial_dicts[nf][col][num_uniques[nf][0]] -= val0_dict[col] #Commented to avoid nans in the final division on final_dict
@@ -229,7 +238,7 @@ class Overlap(NeighbourRegularGrid):
         
         final_dict = {}        
         for col in densities: final_dict[col] = np.sum([partial_dicts[nf][col] for nf in range(nfiles)], axis=0)
-        for col in others: final_dict[col] = np.sum([partial_dicts[nf][weighting_dens] * partial_dicts[nf][col] for nf in range(nfiles)], axis=0) / final_dict[weighting_dens]
+        for col in velocities+others: final_dict[col] = np.sum([partial_dicts[nf][weighting_dens] * partial_dicts[nf][col] for nf in range(nfiles)], axis=0) / final_dict[weighting_dens]
 
         #******************************************
         #FILLING DICT WITH min_values and 0's
@@ -237,6 +246,7 @@ class Overlap(NeighbourRegularGrid):
         #final_unique = np.unique(reduce(np.append, [num_uniques[nf][0] for nf in range(nfiles)]))
         #mask_empty = np.ones(ntotal, dtype=bool)
         #mask_empty[final_unique] = False
+
         for col in densities+others:
             if col in self.min_values: 
                 #final_dict[col][mask_empty] = empty_cells[col] 

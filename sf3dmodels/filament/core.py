@@ -650,7 +650,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
                 'gtdratio': gtdratio_pars}
 
         for key in pars:
-            if isinstance(pars[key], (float,int,long,complex)):
+            if isinstance(pars[key], (float,int,complex)):
                 pars[key] = [pars[key]]
 
         self._grid(self.func_width, pars['width'], R_min=R_min, dummy_frac=dummy_frac)

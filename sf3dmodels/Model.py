@@ -356,7 +356,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
 #------------------------------
 
 def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID, 
-                       p = 2.25, q = 0.5, 
+                       p = 2.25, q = 0.5, rho_thres = 10.0, rho_min = 0.0, 
                        Rt = False, discFlag=True, rdisc_max = False):
 
 #RStar: Star radius
@@ -390,8 +390,8 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
         print ('Scale-height normalization constant (au):', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
         H = H0 * (RList / RStar)**(1 + 0.5*(1-q)) #Scaleheight, with no tapering 
         if Rt: H = H * np.exp(-((RList-Rt) / (Ro-Rt))**2)  #Scaleheight, with tapering 
-        rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (RList / Ro)**-p * np.exp(-0.5 * zList**2 / H**2), 1.0)
-        rhoDISC = np.where( rhoDISC < 1.0, 1.0, rhoDISC)
+        rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (RList / Ro)**-p * np.exp(-0.5 * zList**2 / H**2), rho_min)
+        rhoDISC = np.where( rhoDISC < rho_thres, rho_min, rhoDISC)
     else: 
         print ('No Disc was invoked!')
         rhoDISC = np.zeros(GRID.NPoints)
@@ -943,7 +943,10 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
     #Weighted temperature with density 
 
     #zerodens_mask = np.equal(density.total, 0.0)
-    TEMP = np.where(density.total != 0.0, (tempDISC * rhoDISC + tempENV * rhoENV) / density.total, backTemp)
+    if envTemp and discTemp: TEMP = np.where(density.total != 0.0, (tempDISC * rhoDISC + tempENV * rhoENV) / density.total, backTemp)
+    elif envTemp: TEMP = np.where(density.total != 0.0, tempENV, backTemp)
+    elif discTemp: TEMP = np.where(density.total != 0.0, tempDISC, backTemp)
+    
     #TEMP = np.choose(zerodens_mask, ((tempDISC * rhoDISC + tempENV * rhoENV) / density.total, backTemp))
         
     print ('%s is done!'%inspect.stack()[0][3])
@@ -1102,6 +1105,9 @@ def velocity(RStar,MStar,Rd,density,GRID):
     rhoDISC, rhoENV = density.disc, density.env
     theta4vel = GRID.theta4vel
 
+    vr = np.zeros(NPoints)
+    vtheta = np.zeros(NPoints)
+    vphi = np.zeros(NPoints)
     #------------------------------
     #MODEL. Keto,E & Zhang,Q (2010)
     #------------------------------
@@ -1113,7 +1119,8 @@ def velocity(RStar,MStar,Rd,density,GRID):
         print ('Computing Disc velocity...')
         rdisc = density.r_disc
         #Pure azimuthal component. It's assumed that the radial velocity in the rotationally supported disc is comparatively small (Keto 2010).
-        vdisc = np.where( RList <= rdisc, (G * MStar / RList)**0.5, 0.)  
+        vdisc = np.where( RList <= rdisc, (G * MStar / RList)**0.5, 0*-3e8)
+        vphi = vdisc
     else: vdisc = 0.
 
     #----------------
@@ -1142,12 +1149,12 @@ def velocity(RStar,MStar,Rd,density,GRID):
                                                (1 + costheta[good_ind] / costheta0[good_ind])**0.5 )
         vphi[good_ind] = (G * MStar / rList[good_ind])**0.5 * (sintheta0[good_ind] / sintheta[good_ind]) * (1 - costheta[good_ind] / costheta0[good_ind])**0.5
 
-
-    else: vr, vtheta, vphi = 0.,0.,0.
+    #else: vr, vtheta, vphi = 0.,0.,0.
         
     #Weighted velocity with density. Vectorial sum.
-    vr , vtheta, vphi = map( lambda x,y : (rhoDISC * x + rhoENV * y) / density.total, 
-                             [ 0, 0, vdisc ], [vr, vtheta, vphi] ) 
+    if density.envFlag and density.discFlag: 
+        vr , vtheta, vphi = map( lambda x,y : (rhoDISC * x + rhoENV * y) / density.total, 
+                                 [ 0, 0, vdisc ], [vr, vtheta, vphi] ) 
 
     print ('Converting to cartesian coordinates...') 
     vx, vy, vz = sphe_cart( list( zip(vr, vtheta, vphi) ), theta4vel, phiList)
