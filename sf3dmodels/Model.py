@@ -76,11 +76,17 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
         Z = 0.5 * ( Z[0:NP[2]] + Z[1:NP[2]+1] )
         XYZcentres = [X,Y,Z]
 
+        ZYX = np.meshgrid(Z,Y,X, indexing='ij')
+        zList, yList, xList = [zyx.flatten() for zyx in ZYX]
         #X = X[:-1]; Y = Y[:-1]; Z = Z[:-1] #...the calculations must be done w/o that node 
+
     elif rt_code == 'lime': #lime
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in range(3)]
         X, Y, Z = XYZgrid
         XYZcentres = XYZgrid
+
+        XYZ = np.meshgrid(X,Y,Z, indexing='ij')
+        xList, yList, zList = [xyz.flatten() for xyz in XYZ]
 
     #--------------------------------------
     #Extended Lists of distance coordinates
@@ -90,8 +96,7 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     elif rt_code == 'lime': rRxyzList = np.array([ ((x**2 + y**2 + z**2)**0.5, (x**2 + y**2)**0.5, x,y,z) for x in X for y in Y for z in Z])
     rList = rRxyzList[:,0] ; RList = rRxyzList[:,1]; xList = rRxyzList[:,2]; yList = rRxyzList[:,3]; zList = rRxyzList[:,4]
     """
-    XYZ = np.meshgrid(X,Y,Z, indexing='ij')
-    xList, yList, zList = [xyz.flatten() for xyz in XYZ]
+    
     rList = np.linalg.norm([xList,yList,zList], axis = 0)
     RList = np.linalg.norm([xList,yList], axis = 0)
     
