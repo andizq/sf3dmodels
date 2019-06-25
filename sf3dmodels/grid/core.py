@@ -60,11 +60,7 @@ class Overlap(NeighbourRegularGrid):
                            'dens_e': 1e3,
                            'temp_gas': temp_cmb,
                            'temp_dust': temp_cmb,
-                           #'abundance': 1e-10,
                            'gtdratio': 1e2,
-                           #'vel_x': -3e8*1,
-                           #'vel_y': -3e8*1,
-                           #'vel_z': -3e8*1
                            }
 
     def _get_files_in_folder(self,folder):
