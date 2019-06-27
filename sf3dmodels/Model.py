@@ -1283,13 +1283,16 @@ def MakeHole(T_min,T_max,dens_val,temp_val,abund_val,densList,tempList,abundList
 #--------------------------------
 #--------------------------------    
 
-def PrintProperties(density, temperature, GRID): 
+def PrintProperties(density, temperature, GRID, species='dens_H2'): 
+
+    from .utils.prop import propTags
 
     dv = GRID.step[0]*GRID.step[1]*GRID.step[2]
     inddisc = np.where(temperature.disc > 2.)
     indtotal = np.where(temperature.total > 2.)
-    Mu_MSun = 2 * Mu/MSun
+    Mu_MSun = propTags.dens_mass[species] / MSun #2 * Mu/MSun
     
+    print ('Mass from '+species)
     print ('Total mass (MSun):', np.sum(density.total) * dv * Mu_MSun)
     print ('Mean Total Temperature (Kelvin), weighted by density:', 
            (np.sum(temperature.total[ indtotal ] * density.total[ indtotal ]) 
