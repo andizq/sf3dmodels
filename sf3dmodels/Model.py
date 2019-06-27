@@ -64,10 +64,8 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     Xmax,Ymax,Zmax = XYZmax    
     step = 2. * XYZmax / (NP-1)
     #epsilon = [RSun / 1.] * 3
-    print (step)
     if rt_code == 'radmc3d': 
         step = 2. * XYZmax / (NP)
-        print(step)
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in range(3)]
         #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in range(3)]
         X, Y ,Z = XYZgrid #The grid must contain the cell corners, but the properties are computed in the centres. 
@@ -100,10 +98,15 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     rList = np.linalg.norm([xList,yList,zList], axis = 0)
     RList = np.linalg.norm([xList,yList], axis = 0)
     
-    rList = np.where(rList < 1., sorted(set(rList))[1] / 2 , rList ) # If r == 0: use the second minimum value of r divided by 2
-    #"set" eliminates duplicates and "sorted" sorts values upwards 
-    RList = np.where(RList < 1., sorted(set(RList))[1] / 2 , RList )
-
+    r_ind_zero, = np.where(rList < 1.)
+    R_ind_zero, = np.where(RList < 1.)
+    if len(r_ind_zero)>0: rList[r_ind_zero] = 0.5*np.unique(rList)[1]
+    if len(R_ind_zero)>0: RList[R_ind_zero] = 0.5*np.unique(RList)[1]
+  
+    """
+    rList = np.where(rList < 1., 0.5*rList_unique[1], rList) # If r == 0: use half of the second minimum value of r
+    RList = np.where(RList < 1., 0.5*RList_unique[1], RList)
+    """
     #-----
     #THETA
     #-----
@@ -132,9 +135,11 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     print ('Number of grid nodes for x,y,z:', NP)
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
-
     
-    return Struct( **{'XYZgrid': XYZgrid, 'XYZcentres': XYZcentres, 'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 'NPoints': len(rList), 'Nodes': NP, 'step': step})
+    return Struct( **{'XYZgrid': XYZgrid, 'XYZcentres': XYZcentres, 
+                      'XYZ': XYZ, 'rRTP': rRTP, 'theta4vel': theta4vel, 
+                      'NPoints': len(rList), 'Nodes': NP, 'step': step,
+                      'r_ind_zero': r_ind_zero, 'R_ind_zero': R_ind_zero})
 
 """
 #Not tested
@@ -405,7 +410,8 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
     #----------------------------------------------
 
     nonzero_ids = np.where(rhoDISC != 0.0)
-
+    #rhoDISC[GRID.R_ind_zero] = 0 #*np.mean(rhoDISC)
+    
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
@@ -1154,8 +1160,7 @@ def velocity(RStar,MStar,Rd,density,GRID):
                                                (1 + costheta[good_ind] / costheta0[good_ind])**0.5 )
         vphi[good_ind] = (G * MStar / rList[good_ind])**0.5 * (sintheta0[good_ind] / sintheta[good_ind]) * (1 - costheta[good_ind] / costheta0[good_ind])**0.5
 
-    #else: vr, vtheta, vphi = 0.,0.,0.
-        
+
     #Weighted velocity with density. Vectorial sum.
     if density.envFlag and density.discFlag: 
         vr , vtheta, vphi = map( lambda x,y : (rhoDISC * x + rhoENV * y) / density.total, 
@@ -1163,7 +1168,10 @@ def velocity(RStar,MStar,Rd,density,GRID):
 
     print ('Converting to cartesian coordinates...') 
     vx, vy, vz = sphe_cart( list( zip(vr, vtheta, vphi) ), theta4vel, phiList)
-         
+
+    for vi in [vx,vy,vz]: vi[GRID.r_ind_zero] = 0.0
+    #for vi in [vx,vy]: vi[GRID.R_ind_zero] = 0.0
+
     #----------------------------------------------
     #----------------------------------------------
     print ('%s is done!'%inspect.stack()[0][3])
