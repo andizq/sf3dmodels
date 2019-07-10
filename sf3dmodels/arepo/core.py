@@ -59,14 +59,15 @@ class UniqueCells(object):
  
         Notes
         -----
-        The order of the data in the input dictionary is modified, and the values in the ``data['mass']`` array will slightly be different as mass from twins was merged into the survivor cells. 
-        You can access your original data via the attribute origdata.
+        - The order of the data in the input dictionary is modified for reasons of the redistribution algorithm that finds twin cells. 
+        - The values in the ``data['mass']`` array will slightly be different as mass from twins was merged into the survivor cells. 
+        - You can access your original data via the attribute origdata.
 
         .. code-block:: python
 
            >>> A = UniqueCells(data, header) 
            >>> inds = A.mergemass() 
-           >>> new_rho = data['rho'][id_pos]
+           >>> new_rho = data['rho'][inds]
            >>> orig_data = A.origdata
 
         """
