@@ -61,6 +61,7 @@ class UniqueCells(object):
         -----
         The order of the data in the input dictionary is modified, and the values in the ``data['mass']`` array will slightly be different as mass from twins was merged into the survivor cells. 
         You can access your original data via the attribute origdata.
+
         .. code-block:: python
 
            >>> A = UniqueCells(data, header) 
