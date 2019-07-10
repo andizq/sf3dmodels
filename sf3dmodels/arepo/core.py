@@ -12,19 +12,19 @@ class ArepoTags(object):
     
 class UniqueCells(object):
     """
-    Finds non-repeated cells on the input AREPO dataset.
+    Finds non-repeated cells in the input AREPO dataset.
     
     Parameters
     ----------
     data : dict
-       Dictionary containing the physical data of the AREPO snapshot.
+       Dictionary with the physical data of the AREPO snapshot.
     
     header : dict
-       Dictionary containing the header information of the AREPO snapshot.
+       Dictionary with the header information of the AREPO snapshot.
 
     Notes
     -----
-    This tool computes the search over the gas particles.
+    The search for twin cells is perfomed over the gas particles only.
 
     """
 
@@ -54,22 +54,19 @@ class UniqueCells(object):
         
         Returns
         -------
-        indices : 1-d `numpy.ndarray`, length: *number of non-repeated cells*
+        indices : 1-d `numpy.ndarray`, length: N$_{non-repeated}$
            The indices of the non-repeated cells.
  
         Notes
         -----
-        The initial data dictionary is modified on its sorting and on its ``data['mass']`` array. 
-        If you want to keep stored your original data you can do so via the copy library:
-        
-        UPDATE THIS doc: I have defined the attribute self.origdata to save time to the user...
-
+        The order of the data in the input dictionary is modified, and the values in the ``data['mass']`` array will slightly be different as mass from twins was merged into the survivor cells. 
+        You can access your original data via the attribute origdata.
         .. code-block:: python
 
-           >>> from copy import deepcopy
-           >>> data_orig = deepcopy(data)
            >>> A = UniqueCells(data, header) 
            >>> inds = A.mergemass() 
+           >>> new_rho = data['rho'][id_pos]
+           >>> orig_data = A.origdata
 
         """
 
