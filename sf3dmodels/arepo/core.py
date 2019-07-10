@@ -54,7 +54,7 @@ class UniqueCells(object):
         
         Returns
         -------
-        indices : 1-d `numpy.ndarray`, length: N$_{non-repeated}$
+        indices : 1-d `numpy.ndarray`, length: :math:`N_{non-repeated}`
            The indices of the non-repeated cells.
  
         Notes
