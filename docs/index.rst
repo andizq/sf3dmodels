@@ -57,20 +57,20 @@ To clone the package, if you have a github account:
 
 .. code-block:: bash
 
-   $ git clone git@github.com:andizq/star-forming-regions.git
+   git clone git@github.com:andizq/star-forming-regions.git
 
 if you don't have one:
 
 .. code-block:: bash
 
-   $ git clone https://github.com/andizq/star-forming-regions.git
+   git clone https://github.com/andizq/star-forming-regions.git
 
 Get into the star-forming-regions cloned folder and run the **setup.py** script in installation mode:
 
 .. code-block:: bash
 
-   $ cd star-forming-regions
-   $ python setup.py install
+   cd star-forming-regions
+   python setup.py install
 
 You can test whether the installation was successful by running a example from **star-forming-regions/examples**.
 
@@ -79,18 +79,18 @@ Upgrade the package
    
 .. code-block:: bash
    
-   $ cd star-forming-regions
-   $ git fetch --all
-   $ git reset --hard origin/master
-   $ git submodule update --force --remote -- lime
-   $ python setup.py install
+   cd star-forming-regions
+   git fetch --all
+   git reset --hard origin/master
+   git submodule update --force --remote -- lime
+   python setup.py install
 
 Uninstall
 ---------
 
 .. code-block:: bash
    
-   $ pip uninstall sf3dmodels
+   pip uninstall sf3dmodels
 
 Using sf3dmodels
 ================
@@ -127,7 +127,7 @@ To invoke this option, a ``-S`` flag (uppercase) must be added in the usual LIME
 
 .. code-block:: bash
 
-   $ lime -S model.c
+   lime -S model.c
 
 The standard LIME command line options may also be invoked. For instance, to set LIME to 
 (1.) produce normal output rather than the default ncurses output style, (2.)  
@@ -136,7 +136,7 @@ you should execute:
 
 .. code-block:: bash
 
-   $ lime -nS -p 4 model.c
+   lime -nS -p 4 model.c
 
 
 **Note** that if the ``-S`` option *is not set* you will get back the 'traditional' operation of LIME.
