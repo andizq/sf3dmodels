@@ -1203,6 +1203,7 @@ def velocity_random(v_disp,NPoints):
 
 #-------------------------------
 #VELOCITY-INFALL D.W.Murray+2017
+#http://adsabs.harvard.edu/abs/2017MNRAS.465.1316M
 #See eq. (4)
 #-------------------------------
 
