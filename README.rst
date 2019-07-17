@@ -62,7 +62,7 @@ Get into the star-forming-regions cloned folder and run the ``setup.py`` script 
    cd star-forming-regions
    python setup.py install
 
-You can test whether the installation was successful by running a example from **star-forming-regions/examples**.
+You can test whether the installation was successful by running an example from **star-forming-regions/examples**.
 
 Upgrade the package
 *******************
