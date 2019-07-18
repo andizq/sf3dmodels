@@ -116,7 +116,7 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
 
     #If theta is under the xy plane, take its image above the plane.
     # This is done to avoid negative cosines in func streamline(), 
-    #  taking advantage on the symmetry of discs and envelopes along xy.         
+    #  taking advantage of the symmetry of discs and envelopes along xy.         
     deltaTh = np.where(thetaList > np.pi/2, thetaList - halfPi, 0.)
     thetaList = thetaList - 2 * deltaTh
 
@@ -532,14 +532,14 @@ def density_PowerlawShells(r_list, q_list, rho0, GRID, rho_min = 1.0e3):
     print ('Computing Envelope density using power-laws:', q_list)
     
     rhoENV = np.zeros(NPoints)
-    rho0_list = [rho0]
+    rho0_coeff = [rho0]
     for i,r in enumerate(r_list[1:-1],1):
         r_tmp = np.max(rList[rList<=r])
-        rho0_list.append(rho0_list[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+        rho0_coeff.append(rho0_coeff[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
     
     for i,q in enumerate(q_list):
         ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
-        rhoENV[ind] += rho0_list[i]*(rList[ind]/r_list[i])**q  
+        rhoENV[ind] += rho0_coeff[i]*(rList[ind]/r_list[i])**q  
 
     rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
 
@@ -1103,7 +1103,7 @@ def temperature_PowerlawShells(r_list, q_list, T0, GRID, T_min = 1.0e3):
 
 def velocity(RStar,MStar,Rd,density,GRID):
 
-#MStar: Star mass
+#MStar: Mass of the central source
 #Rd: Centrifugal radius
 #GRID: [xList,yList,zList]
 
@@ -1153,7 +1153,7 @@ def velocity(RStar,MStar,Rd,density,GRID):
         vr = np.where( rList <= renv, - (G * MStar / rList)**0.5 * (1 + costheta / costheta0)**0.5, 0.)
         
         signo = np.where( theta4vel> np.pi/2, -1, 1) #To respect symmetry. (Using the thetaList from 0 to pi)
-        good_ind = np.where( (thetaList != 0.) & (rList <= renv) ) #To avoid the polar angle for theta and phi. In the polar angle all the velocity is radial
+        good_ind = np.where( (thetaList != 0.) & (rList <= renv) ) #To avoid the polar axis for theta and phi. Along the polar axis all the velocities are all radial.
         vtheta, vphi = np.zeros(NPoints), np.zeros(NPoints)
 
         vtheta[good_ind] = signo[good_ind] * ( (G * MStar / rList[good_ind])**0.5 * (costheta0[good_ind] - costheta[good_ind]) / sintheta[good_ind] * 
@@ -1161,7 +1161,7 @@ def velocity(RStar,MStar,Rd,density,GRID):
         vphi[good_ind] = (G * MStar / rList[good_ind])**0.5 * (sintheta0[good_ind] / sintheta[good_ind]) * (1 - costheta[good_ind] / costheta0[good_ind])**0.5
 
 
-    #Weighted velocity with density. Vectorial sum.
+    #Weighted velocity by density. Vectorial sum.
     if density.envFlag and density.discFlag: 
         vr , vtheta, vphi = map( lambda x,y : (rhoDISC * x + rhoENV * y) / density.total, 
                                  [ 0, 0, vdisc ], [vr, vtheta, vphi] ) 
@@ -1182,6 +1182,70 @@ def velocity(RStar,MStar,Rd,density,GRID):
 
 #----------------------
 #----------------------
+
+def velocity_piecewise(r_list, q_list, v0, density, GRID, polar=True, radial=False):
+
+#r_list: List of piecewise limits, length (n,)
+#q_list: List of powerlaws in r_list intervals, length (n-1,)
+#v0: velocity vector at r_list[0]
+#GRID: Grid to work in
+#rho_min: Background density
+#If polar: polar rotation, in sph. coords: v = (0,0,vphi(R))
+#If radial: infall or outflow, in sph. coords:  v = (-vr(r), 0, 0)
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, RList, phiList = GRID.rRTP[0], GRID.rRTP[1], GRID.rRTP[3]
+    theta4vel = GRID.theta4vel
+    NPoints = GRID.NPoints 
+
+    #-------------------------
+    #MODEL. Envelope powerlaws
+    #-------------------------
+    print ('Computing Envelope density using power-laws:', q_list)
+
+    def v_kepler(r, q):
+        return (G*MStar/r)**q 
+
+    vr, vtheta, vphi = np.zeros((3,NPoints))        
+    if polar:
+        print ('Computing keplerian velocity...')
+        vphi_coeff = [v0[2]]
+        #Pure azimuthal component. It's assumed that the radial velocity in the rotationally supported disc is comparatively small (Keto 2010).
+        for i,r in enumerate(r_list[1:-1],1):
+            r_tmp = np.max(rList[rList<=r])
+            vphi_coeff.append(vphi_coeff[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+    
+        for i,q in enumerate(q_list):
+            ind, = np.where((RList >= r_list[i]) & (RList <= r_list[i+1]))
+            vphi[ind] += vphi_coeff[i]*(RList[ind]/r_list[i])**q  
+        
+    if radial:
+        print ('Computing infall velocity...')
+        vr_coeff = [v0[0]]
+        #Infall velocity. Pointing radially inwards.
+        for i,r in enumerate(r_list[1:-1],1):
+            r_tmp = np.max(rList[rList<=r])
+            vr_coeff.append(-vr_coeff[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+    
+        for i,q in enumerate(q_list):
+            ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
+            vr[ind] += vr_coeff[i]*(rList[ind]/r_list[i])**q  
+
+    print ('Converting to cartesian coordinates...') 
+    vx, vy, vz = sphe_cart( list( zip(vr, vtheta, vphi) ), theta4vel, phiList)
+
+    for vi in [vx,vy,vz]: vi[GRID.r_ind_zero] = 0.0        
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'x': vx, 'y': vy, 'z': vz} )
+
+
 
 #--------------------------
 #VELOCITY (Random) FUNCTION
