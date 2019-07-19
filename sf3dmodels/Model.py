@@ -288,7 +288,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
                      rdisc_max = False, renv_max = False, 
                      ang_cavity = False, rho_min_env = 1.0e9):
 
-#RStar: Star radius
+#RStar: stellar radius
 #Rd: Centrifugal radius
 #rhoE0: density at Rd and theta=pi/2
 #Arho: Factor between envelope and disk densities
@@ -369,12 +369,14 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
                        p = 2.25, q = 0.5, rho_thres = 10.0, rho_min = 0.0, 
                        Rt = False, discFlag=True, rdisc_max = False):
 
-#RStar: Star radius
-#shFactor: Scaleheight normalization constant: H0 = shFactor * RStar
-#Ro: Outer radius of the disk
-#Rt: Radius where tapering starts
+#RStar: stellar radius
+#shFactor: scaleheight normalization constant --> H0 = shFactor * RStar
+#Ro: outer radius of the disk
+#Rt: radius where tapering commences
 #rhoE0: density at Rd and theta=pi/2
-#Arho: Density factor 
+#q: scaleheight exponent
+#p: density scaling exponent 
+#Arho: density scaling factor 
 #GRID
 
     XYZ, rRTP = GRID.XYZ, GRID.rRTP
@@ -420,8 +422,82 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
                       'r_disc': rdisc_max, 'r_env': False,
                       'nonzero_ids': nonzero_ids} ) 
 
-#------------------------------
-#------------------------------
+#------------------------------------------
+#DENSITY (Hamburguers - piecewise) FUNCTION
+#------------------------------------------
+
+def density_Hamburgers_piecewise(RStar, H0, R_list, p_list, rho0, GRID, RH_list = None,
+                                 q_list = [0.5], rho_thres = 10.0, rho_min = 0.0, 
+                                 Rt = False):
+
+#RStar: stellar radius
+#H0: scaleheight normalization constant --> usually H0 = shFactor * R0
+#R_list: List of polar limits, length (n,)
+#p_list: List of powerlaws in R_list intervals, length (n-1,)
+#rho0: density at R_list[0]
+#Optionals:
+#RH_list: List of limits for piecewise scaleheight, length (n,)
+#q_list: List of powerlaws in RH_list intervals, length (n-1,)
+#rho_thres: minimum reachable density by the model
+#rho_min: background density
+#Rt: radius where the disc tapering starts
+
+    XYZ, rRTP, NPoints = GRID.XYZ, GRID.rRTP, GRID.NPoints
+    #------------
+    #LISTS TO USE
+    #------------
+    zList = XYZ[2]
+    rList, RList = rRTP[:-2] 
+    #-----------------------------------------------------
+    #MODEL. Chin-Fei Lee, Zhi-Yun Li, Paul Ho, et al. 2017
+    #-----------------------------------------------------
+
+    #------------
+    #DISC PROFILE
+    #------------
+    print ('Computing Hamburger-disc density profile using power-laws:', p_list)
+    Rd = R_list[-1]
+    rhoDISC = np.zeros(NPoints)
+    rho0_coeff = [rho0]
+    for i,R in enumerate(R_list[1:-1],1):
+        R_tmp = np.max(RList[RList<=R])
+        rho0_coeff.append(rho0_coeff[i-1]*(R_tmp/R_list[i-1])**p_list[i-1])
+    for i,p in enumerate(p_list):
+        ind, = np.where((RList >= R_list[i]) & (RList <= R_list[i+1]))
+        rhoDISC[ind] += rho0_coeff[i]*(RList[ind]/R_list[i])**p  
+
+    if RH_list is None:
+        q = q_list[0]
+        H = H0 * (RList / R0)**(1 + 0.5*(1-q)) #Scaleheight, without tapering 
+            
+    else: 
+        H = np.ones(NPoints) #ones instead of zeroes to avoid dividing by zero at empty spaces.
+        H_coeff = [H0]
+        for i,R in enumerate(RH_list[1:-1],1):
+            RH_tmp = np.max(RList[RList<=R])
+            H_coeff.append(H_coeff[i-1]*(RH_tmp/RH_list[i-1])**(1 + 0.5 - 0.5*q_list[i-1]))
+        for i,q in enumerate(q_list):
+            ind, = np.where((RList >= RH_list[i]) & (RList <= RH_list[i+1]))
+            H[ind] += H_coeff[i]*(RList[ind]/RH_list[i])**(1 + 0.5 - 0.5*q)  
+        
+    if Rt: H = H * np.exp(-((RList-Rt) / (Rd-Rt))**2)  #Scaleheight, with tapering 
+            
+    rhoDISC = np.where( RList <= Rd, rhoDISC * np.exp(-0.5 * zList**2 / H**2), rho_min)
+    rhoDISC = np.where( rhoDISC < rho_thres, rho_min, rhoDISC)
+            
+    #----------------------------------------------
+    #----------------------------------------------
+
+    nonzero_ids = np.where(rhoDISC != 0.0)
+    #rhoDISC[GRID.R_ind_zero] = 0 #*np.mean(rhoDISC)
+    
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': rhoDISC, 'disc': rhoDISC, 'env': 0., 'H': H,  
+                      'discFlag': True, 'envFlag': False, 'Rt': Rt, 
+                      'r_disc': Rd, 'r_env': False,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #-----------------------------------
 #DENSITY (PowerLaw-mean_rho) FUNCTION
@@ -513,10 +589,10 @@ def density_Powerlaw2(r_max, r_min, rho0, q, GRID, rho_min = 1.0e3):
 #DENSITY (PowerLaw-Shells) FUNCTION
 #------------------------------------
 
-def density_PowerlawShells(r_list, q_list, rho0, GRID, rho_min = 1.0e3):
+def density_PowerlawShells(r_list, p_list, rho0, GRID, rho_min = 1.0e3):
 
 #r_list: List of shells' limits, length (n,)
-#q_list: List of powerlaws in r_list intervals, length (n-1,)
+#p_list: List of powerlaws in r_list intervals, length (n-1,)
 #rho0: Density at r_list[0]
 #GRID: Grid to work in
 #rho_min: Minimum density
@@ -529,15 +605,15 @@ def density_PowerlawShells(r_list, q_list, rho0, GRID, rho_min = 1.0e3):
     #-------------------------
     #MODEL. Envelope powerlaws
     #-------------------------
-    print ('Computing Envelope density using power-laws:', q_list)
+    print ('Computing Envelope density using power-laws:', p_list)
     
     rhoENV = np.zeros(NPoints)
     rho0_coeff = [rho0]
     for i,r in enumerate(r_list[1:-1],1):
         r_tmp = np.max(rList[rList<=r])
-        rho0_coeff.append(rho0_coeff[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+        rho0_coeff.append(rho0_coeff[i-1]*(r_tmp/r_list[i-1])**p_list[i-1])
     
-    for i,q in enumerate(q_list):
+    for i,p in enumerate(p_list):
         ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
         rhoENV[ind] += rho0_coeff[i]*(rList[ind]/r_list[i])**q  
 
@@ -769,10 +845,10 @@ def gastodust(val, NPoints):
 def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID, 
                 Tmin_disc = 30., Tmin_env = 30., p = 0.33, ang_cavity = False):
 
-#TStar: Star temperature
+#TStar: stellar temperature
 #T10Env: Envelope temperature at 10AU
-#RStar: Star radius
-#MStar: Star mass
+#RStar: stellar radius
+#MStar: stellar mass
 #MRate: Mass accretion rate
 #BT: Disc temperature factor
 #p: (Envelope) Temperature power law exponent 
@@ -842,10 +918,10 @@ def temperature(TStar, Rd, T10Env, RStar, MStar, MRate, BT, density, GRID,
 def temperature_Hamburgers(TStar, RStar, MStar, MRate, Rd, T10Env, BT, density, GRID, 
                            p = 0.33, Tmin_disc = 30., Tmin_env = 30., inverted = False):
 
-#TStar: Star temperature
+#TStar: stellar temperature
 #T10Env: Envelope temperature at 10AU
-#RStar: Star radius
-#MStar: Star mass
+#RStar: stellar radius
+#MStar: stellar mass
 #MRate: Mass accretion rate
 #BT: Disc temperature factor
 #p: Temperature power law exponent 
@@ -1054,10 +1130,10 @@ def temperature_Powerlaw2(r_max, r_min, T0, q, GRID, T_min = 2.725):
 #TEMPERATURE (PowerLaw-Shells) FUNCTION
 #------------------------------------
 
-def temperature_PowerlawShells(r_list, q_list, T0, GRID, T_min = 1.0e3):
+def temperature_PowerlawShells(r_list, p_list, T0, GRID, T_min = 1.0e3):
 
 #r_list: List of shells' limits, length (n,)
-#q_list: List of powerlaws in r_list intervals, length (n-1,)
+#p_list: List of powerlaws in r_list intervals, length (n-1,)
 #T0: Temperature at r_list[0]
 #GRID: Grid to work in
 #T_min: Minimum temperature
@@ -1070,15 +1146,15 @@ def temperature_PowerlawShells(r_list, q_list, T0, GRID, T_min = 1.0e3):
     #-------------------------
     #MODEL. Envelope powerlaws
     #-------------------------
-    print ('Computing Envelope temperature using power-laws:', q_list)
+    print ('Computing Envelope temperature using power-laws:', p_list)
 
     TENV = np.zeros(NPoints)
     T0_list = [T0]
     for i,r in enumerate(r_list[1:-1],1):
         r_tmp = np.max(rList[rList<=r])
-        T0_list.append(T0_list[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+        T0_list.append(T0_list[i-1]*(r_tmp/r_list[i-1])**p_list[i-1])
 
-    for i,q in enumerate(q_list):
+    for i,p in enumerate(p_list):
         ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
         TENV[ind] += T0_list[i]*(rList[ind]/r_list[i])**q  
 
@@ -1183,15 +1259,20 @@ def velocity(RStar,MStar,Rd,density,GRID):
 #----------------------
 #----------------------
 
-def velocity_piecewise(r_list, q_list, v0, density, GRID, polar=True, radial=False):
+def velocity_piecewise(density, GRID, 
+                       R_list=None, pR_list=None, v0R=None, #Polar piecewise
+                       r_list=None, pr_list=None, v0r=None  #Radial piecewise
+                       ):
 
-#r_list: List of piecewise limits, length (n,)
-#q_list: List of powerlaws in r_list intervals, length (n-1,)
-#v0: velocity vector at r_list[0]
-#GRID: Grid to work in
-#rho_min: Background density
-#If polar: polar rotation, in sph. coords: v = (0,0,vphi(R))
-#If radial: infall or outflow, in sph. coords:  v = (-vr(r), 0, 0)
+#density grid
+#GRID: grid to work with
+#R_list: List of polar piecewise limits, length (n,)
+#pR_list: List of powerlaws in R_list intervals, length (n-1,)
+#v0R: velocity vector at R_list[0] --> polar rotation, in sph. coords: v = (0,0,vphi(R))
+
+#r_list: List of radial piecewise limits, length (n,)
+#pr_list: List of powerlaws in r_list intervals, length (n-1,)
+#v0r: velocity vector at r_list[0], can be negative or positive --> radial infall/outflow, defaults to positive (outflow). In sph. coords: v = (vr(r),0,0)
 
     #------------
     #LISTS TO USE
@@ -1200,38 +1281,36 @@ def velocity_piecewise(r_list, q_list, v0, density, GRID, polar=True, radial=Fal
     theta4vel = GRID.theta4vel
     NPoints = GRID.NPoints 
 
-    #-------------------------
-    #MODEL. Envelope powerlaws
-    #-------------------------
-    print ('Computing Envelope density using power-laws:', q_list)
-
-    def v_kepler(r, q):
-        return (G*MStar/r)**q 
+    #-------------------------------------------
+    #MODEL. polar and radial piecewise powerlaws
+    #-------------------------------------------
+    def v_kepler(r, p):
+        return (G*MStar/r)**p 
 
     vr, vtheta, vphi = np.zeros((3,NPoints))        
-    if polar:
-        print ('Computing keplerian velocity...')
-        vphi_coeff = [v0[2]]
+    if R_list is not None:
+        print ('Computing keplerian velocity with powerlaws', pR_list)
+        vphi_coeff = [v0R[2]]
         #Pure azimuthal component. It's assumed that the radial velocity in the rotationally supported disc is comparatively small (Keto 2010).
-        for i,r in enumerate(r_list[1:-1],1):
-            r_tmp = np.max(rList[rList<=r])
-            vphi_coeff.append(vphi_coeff[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+        for i,R in enumerate(R_list[1:-1],1):
+            R_tmp = np.max(RList[RList<=R])
+            vphi_coeff.append(vphi_coeff[i-1]*(R_tmp/R_list[i-1])**pR_list[i-1])
     
-        for i,q in enumerate(q_list):
-            ind, = np.where((RList >= r_list[i]) & (RList <= r_list[i+1]))
-            vphi[ind] += vphi_coeff[i]*(RList[ind]/r_list[i])**q  
+        for i,p in enumerate(pR_list):
+            ind, = np.where((RList >= R_list[i]) & (RList <= R_list[i+1]))
+            vphi[ind] += vphi_coeff[i]*(RList[ind]/R_list[i])**p  
         
-    if radial:
-        print ('Computing infall velocity...')
-        vr_coeff = [v0[0]]
+    if r_list is not None:
+        print ('Computing infall velocity with powerlaws', pr_list)
+        vr_coeff = [v0r[0]]
         #Infall velocity. Pointing radially inwards.
         for i,r in enumerate(r_list[1:-1],1):
             r_tmp = np.max(rList[rList<=r])
-            vr_coeff.append(-vr_coeff[i-1]*(r_tmp/r_list[i-1])**q_list[i-1])
+            vr_coeff.append(vr_coeff[i-1]*(r_tmp/r_list[i-1])**pr_list[i-1])
     
-        for i,q in enumerate(q_list):
+        for i,p in enumerate(pr_list):
             ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
-            vr[ind] += vr_coeff[i]*(rList[ind]/r_list[i])**q  
+            vr[ind] += vr_coeff[i]*(rList[ind]/r_list[i])**p  
 
     print ('Converting to cartesian coordinates...') 
     vx, vy, vz = sphe_cart( list( zip(vr, vtheta, vphi) ), theta4vel, phiList)
