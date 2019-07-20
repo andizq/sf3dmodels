@@ -1313,8 +1313,20 @@ def velocity_piecewise(density, GRID,
             vr[ind] += vr_coeff[i]*(rList[ind]/r_list[i])**p  
 
     print ('Converting to cartesian coordinates...') 
+    
+    if density.discFlag and density.envFlag:
+        vphi[RList>density.r_disc] = 0.0
+        vr[rList>density.r_env] = 0.0
+    elif density.discFlag: 
+        vphi[RList>density.r_disc] = 0.0
+        vr[RList>density.r_disc] = 0.0
+    elif density.envFlag: 
+        vphi[rList>density.r_env] = 0.0
+        vr[rList>density.r_env] = 0.0
+
     vx, vy, vz = sphe_cart( list( zip(vr, vtheta, vphi) ), theta4vel, phiList)
 
+    
     for vi in [vx,vy,vz]: vi[GRID.r_ind_zero] = 0.0        
     #------------------------
     #------------------------
