@@ -14,7 +14,6 @@ from . import Model
 
 def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
               colorlabel = '', output = 'figscatter.png', show = True, 
-              norm = None,
               colorscale = 'uniform', 
               azim = None, elev = None, xlim=None, ylim=None, zlim=None,
               **kwargs):
@@ -22,7 +21,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     t0 = time.time()
     print ('Plotting 3D model with %d random-weighted points...'%NRand)
 
-    defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none', vmin = None, vmax = None) #scatter3d kwargs
+    defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none', vmin = None, vmax = None, norm = None) #scatter3d kwargs
     for key_def in defaults.keys():
         if key_def in kwargs.keys(): continue
         else: kwargs[key_def] = defaults[key_def]
