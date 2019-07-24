@@ -64,7 +64,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     
     if not np.array(colordim).any(): colordim = prop
 
-    if norm is not None or scale == 'uniform': prop2plot = np.sort(colordim[indices]) 
+    if kwargs['norm'] is not None or scale == 'uniform': prop2plot = np.sort(colordim[indices]) 
     elif scale == 'log': prop2plot = np.sort(np.log10(colordim[indices]))
 
     ind2plot = np.argsort(colordim[indices])
