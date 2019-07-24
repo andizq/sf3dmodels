@@ -13,7 +13,9 @@ from . import BuildGlobalGrid as BGG
 from . import Model
 
 def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
-              colorscale = 'uniform', colorlabel = '', output = 'figscatter.png', show = True, 
+              colorlabel = '', output = 'figscatter.png', show = True, 
+              norm = None,
+              colorscale = 'uniform', vmin = None, vmax = None,
               azim = None, elev = None, xlim=None, ylim=None, zlim=None,
               **kwargs):
     
@@ -31,7 +33,7 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     unit = axisunit
     scale = colorscale
 
-    palette_c = getattr(cm , kwargs['cmap'])
+    palette_c = cm.get_cmap(kwargs['cmap']) #getattr(cm , kwargs['cmap'])
 
     #population = range(NTotal) #All the population
     population = list( np.where(abs(prop) > 2.725)[0] ) # > 1e3. #Rejecting zero cells 
@@ -62,8 +64,8 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     #r = r[indices]
     
     if not np.array(colordim).any(): colordim = prop
-    
-    if scale == 'uniform': prop2plot = np.sort(colordim[indices])
+
+    if norm is not None or scale == 'uniform': prop2plot = np.sort(colordim[indices]) 
     elif scale == 'log': prop2plot = np.sort(np.log10(colordim[indices]))
 
     ind2plot = np.argsort(colordim[indices])

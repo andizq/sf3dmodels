@@ -1782,8 +1782,8 @@ def DataTab_LIME2(dens_H2,dens_H,dens_Hp,temp,vel,abund,gtd,GRID,tdust = None,do
             """
             Sorting from least to greatest leads to confusions in the reorderGrid function of Lime (at grid.c and grid_aux.c)
             because the last pIntensity points (the grid points written here) might likely be flagged as sinkPoints since they lie
-            over (or close) the domain's radius and therefore their ids (close to Npoints on the left) lie very close to those of the 
-            sinkPoints defined first (close to Npoints on the right). This fact, causes almost always an underestimation of the 
+            over (or close) the domain's radius and therefore their ids (close to Npoints from the left) lie very close to those of the 
+            sinkPoints defined first (close to Npoints from the right). This fact, causes almost always an underestimation of the 
             new sinkPoints found by Lime (nExtraSinks), and required to recalculate the parameters par->pIntensity and par->sinkPoints. 
             
             Thus, sorting from greatest to least solves this issue. 
