@@ -615,7 +615,7 @@ def density_PowerlawShells(r_list, p_list, rho0, GRID, rho_min = 1.0e3):
     
     for i,p in enumerate(p_list):
         ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
-        rhoENV[ind] += rho0_coeff[i]*(rList[ind]/r_list[i])**q  
+        rhoENV[ind] += rho0_coeff[i]*(rList[ind]/r_list[i])**p
 
     rhoENV = np.where(rhoENV < rho_min, rho_min, rhoENV)
 
@@ -1156,7 +1156,7 @@ def temperature_PowerlawShells(r_list, p_list, T0, GRID, T_min = 1.0e3):
 
     for i,p in enumerate(p_list):
         ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
-        TENV[ind] += T0_list[i]*(rList[ind]/r_list[i])**q  
+        TENV[ind] += T0_list[i]*(rList[ind]/r_list[i])**p  
 
     TENV = np.where(TENV < T_min, T_min, TENV)
 
