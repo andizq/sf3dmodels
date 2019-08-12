@@ -10,7 +10,7 @@ Find the source code on `GitHub`_.
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-SF3dmodels is a star forming region(s) modelling package that brings together
+sf3dmodels is a star forming region(s) modelling package that brings together
 analytical models in order to compute their physical properties in a 3-Dimensional grid. 
 The package can couple different models in a single grid to recreate complex star
 forming systems as those being revealed by current data. 
