@@ -1,16 +1,82 @@
 from __future__ import print_function
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.colors as colors
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import random
 import inspect
 import sys
 import time
 
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+from mpl_toolkits.mplot3d import Axes3D
+
 from . import BuildGlobalGrid as BGG
 from . import Model
+
+
+TINY_SIZE = 5
+SMALL_SIZE = 10
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 20
+
+matplotlib.rcParams['font.family'] = 'monospace'
+matplotlib.rcParams['font.weight'] = 'normal'
+matplotlib.rcParams['lines.linewidth'] = 1.5
+matplotlib.rcParams['axes.linewidth'] = 1.8
+
+matplotlib.rcParams['xtick.minor.width']=1.
+matplotlib.rcParams['ytick.minor.width']=1.
+matplotlib.rcParams['xtick.major.width']=1.3
+matplotlib.rcParams['ytick.major.width']=1.3
+
+matplotlib.rcParams['xtick.minor.size']=2.8
+matplotlib.rcParams['ytick.minor.size']=2.8
+matplotlib.rcParams['xtick.major.size']=5.5
+matplotlib.rcParams['ytick.major.size']=5.5
+
+matplotlib.rc('font', size=MEDIUM_SIZE) 
+matplotlib.rc('axes', titlesize=MEDIUM_SIZE, labelsize=MEDIUM_SIZE)    
+matplotlib.rc('xtick', labelsize=SMALL_SIZE)   
+matplotlib.rc('ytick', labelsize=SMALL_SIZE)   
+matplotlib.rc('legend', fontsize=SMALL_SIZE)   
+matplotlib.rc('figure', titlesize=BIGGER_SIZE)  
+
+
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class InputError(Error):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
+
+class MakeCanvas(object):
+    def __init__(self, fig=None, ax=None, rect=[0,0,1,1], fig_kw={}, **axes_kw):
+        """
+        try: self._fig = axes_kw['figure']            
+        except KeyError: self._fig = plt.gcf()
+        """
+        if fig is None: fig = plt.figure(**fig_kw)
+        self._fig = fig
+        if ax is None: ax = fig.add_axes(rect, **axes_kw)
+        self._ax = ax
+
+class Canvas3d(MakeCanvas):
+    def __init__(self, fig=None, ax=None, rect=[0.1,0.1,0.8,0.8], fig_kw={}, **axes_kw):
+        axes_kw.update({'projection': '3d'})
+        if ax is not None and ax.name != '3d': 
+            raise InputError('You are providing an existing Axes instance with a non 3d projection, please make sure to do projection=3d')            
+        super(Canvas3d, self).__init__(fig, ax, rect, fig_kw, **axes_kw)
+        
 
 def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
               colorlabel = '', output = 'figscatter.png', show = True, 
@@ -72,8 +138,8 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
     x,y,z = x[ind2plot]/unit, y[ind2plot]/unit, z[ind2plot]/unit
 
     fig = plt.figure()
-    fig.clf()
-    ax = fig.gca(projection='3d') 
+    #fig.clf()
+    ax = plt.gca(projection='3d') 
     sp = ax.scatter(x,y,z, 
                     c = prop2plot, 
                     **kwargs)
@@ -127,7 +193,6 @@ def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1
 
 def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False, 
             colorlabel = '', output = 'figplane.png', show = True, auto = True, **kwargs):
-
     
     unit = axisunit
     i,j,k = 0,0,0
@@ -247,8 +312,8 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
         xyz = ['X', 'Y', 'Z']
         #ax.set_xlabel(xyz[dim2plot[0]])
         #ax.set_ylabel(xyz[dim2plot[1]])
-        ax.set_ylabel('au', fontsize = 'x-large') #Default 'large'
-        ax.set_xlabel('au', fontsize = 'x-large')
+        ax.set_ylabel('au')
+        ax.set_xlabel('au')
         
         min_cbar, max_cbar = im.get_clim()
         min_prop, max_prop = np.min(prop_2d), np.max(prop_2d) 
