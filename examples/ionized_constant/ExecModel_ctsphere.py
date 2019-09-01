@@ -55,8 +55,8 @@ Rad.freefree(prop)
 tag = 'ctsphere_HII'
 weight = dens_e
 
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = density.total / 1e6 / 1e5, axisunit = u.au, cmap = 'winter', 
+Plot_model.scatter3D(GRID, density.total, weight, power=0, NRand = 4000, colordim = density.total / 1e6 / 1e5, axisunit = u.au, cmap = 'winter', 
                      marker = 'o', colorlabel = r'$n_{\rm e}$ [cm$^{-3}$] x $10^5$', output = '3Ddens_%s.png'%tag, show = True)
 
-Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = u.au, cmap = 'winter', 
+Plot_model.scatter3D(GRID, density.total, weight, power=0, NRand = 4000, colordim = temperature.total, axisunit = u.au, cmap = 'winter', 
                      marker = 'o', colorlabel = r'$T_{\rm e}$ [Kelvin]', output = '3Dtemp_%s.png'%tag, show = True)
