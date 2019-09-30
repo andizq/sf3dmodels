@@ -4,6 +4,8 @@ import random
 import inspect
 import sys
 import time
+import warnings
+import itertools
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -64,13 +66,13 @@ class InputError(Error):
 class MakeCanvas(object):
     def __init__(self, fig=None, ax=None, rect=[0,0,1,1], fig_kw={}, axes_kw={}):
         """
-        try: self._fig = axes_kw['figure']            
-        except KeyError: self._fig = plt.gcf()
+        try: self.fig = axes_kw['figure']            
+        except KeyError: self.fig = plt.gcf()
         """
         if fig is None: fig = plt.figure(**fig_kw)
-        self._fig = fig
+        self.fig= fig
         if ax is None: ax = fig.add_axes(rect, **axes_kw)
-        self._ax = ax
+        self.ax = ax
 
 class Canvas3d(MakeCanvas):
     def __init__(self, fig=None, ax=None, rect=[0.1,0.1,0.8,0.8], fig_kw={}, axes_kw={}):
@@ -81,12 +83,10 @@ class Canvas3d(MakeCanvas):
         self.fig_kw = fig_kw
         self.axes_kw = axes_kw
         
-    def scatter_random(self, GRID, prop, weight, NRand = 1000, power = 0.5,  
-                       colordim = None, prop_min = None,
-                       **scatter_kw):
+    def scatter_random(self, GRID, prop, weight, NRand = 1000, prop_color = None, prop_min = None, GRID_norm=1.0, power = 0.5, count_max=50, **scatter_kw):
         t0 = time.time()
-        print ('Plotting 3D model with %d points...'%NRand)
-        print ('Using (prop_i/weight)**power to reject/accept points, with power=%.1f and weight=%.1e'%(power, weight))
+        print ('Plotting 3D model with %d random grid points...'%NRand)
+        print ("Using '(prop_i/weight)**power > random[0,1] ?' to reject/accept the i-th point of \n  the randomly-selected sample, where power=%.1f and weight=%.1e"%(power, weight))
         
         """
         defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none', vmin = None, vmax = None, norm = None) #scatter3d kwargs
@@ -94,12 +94,12 @@ class Canvas3d(MakeCanvas):
             if key_def in kwargs.keys(): continue
             else: kwargs[key_def] = defaults[key_def]
         """
-        x,y,z = GRID.XYZ
         #r = GRID.rRTP[0]
         N = GRID.NPoints
-
-        if prop_min is not None: population = range(N) #All the population
-        else: population, = np.where(prop >= prop_min) # > 1e3. #Rejecting zero cells 
+        prop = np.asarray(prop)
+        
+        index_pop = np.arange(N) #All the population
+        if prop_min is not None: index_pop = index_pop[prop > prop_min] #Can reject e.g. zero cells 
 
         indices = []
         count = 0
@@ -107,45 +107,48 @@ class Canvas3d(MakeCanvas):
         for _ in itertools.repeat(None, NRand):
             rand = random.random()
             while 1:
-                index = random.sample(population, 1) #Selects 1 point from the given list
+                index = np.random.choice(index_pop) #Selects 1 point from the given list
                 val = (prop[index]/weight)**power
-
                 if val > rand:
                     indices.append(index)
                     count = 0
-                    k = 0
                     break
                 count += 1
-                
-                if count == 50: #If after 50 points the algorithm has not selected any, pick another point randomly.
+                if count == count_max: #If after 50 points the algorithm has not selected any, pick another point randomly.
+                    warnings.warn("The algorithm is struggling to find acceptable grid points. If it's taking too long try increasing the weighting 'weight' or reducing the exponent 'power'")
                     count = 0
                     rand = random.random()
 
         #colors = palette_c(np.linspace(0, 1, NRand))
-        indices = np.array(indices).T[0]
-        x,y,z = x[indices], y[indices], z[indices]
+        indices = np.array(indices)#[0]
+        x,y,z = [xi[indices]/GRID_norm for xi in GRID.XYZ]
         #r = r[indices]
     
-        if not np.array(colordim).any(): colordim = prop
+        if prop_color is None: prop_color = prop
+
+        #if scatter_kw['norm'] is not None: prop2plot = np.sort(colordim[indices]) 
+        #elif scale == 'log': prop2plot = np.sort(np.log10(colordim[indices]))
         
-        if kwargs['norm'] is not None or scale == 'uniform': prop2plot = np.sort(colordim[indices]) 
-        elif scale == 'log': prop2plot = np.sort(np.log10(colordim[indices]))
-        
-        ind2plot = np.argsort(colordim[indices])
+        #ind2plot = np.argsort(colordim[indices])
     
-        x,y,z = x[ind2plot]/unit, y[ind2plot]/unit, z[ind2plot]/unit
+        #x,y,z = x[ind2plot]/unit, y[ind2plot]/unit, z[ind2plot]/unit
         
-        fig = plt.figure()
-    #fig.clf()
-        ax = plt.gca(projection='3d') 
-        sp = ax.scatter(x,y,z, 
-                        c = prop2plot, 
-                        **kwargs)
+        #fig.clf()
+        #ax = plt.gca(projection='3d') 
+        sp = self.ax.scatter(x,y,z, 
+                             c = prop_color[indices], 
+                             **scatter_kw)
     
+        self.ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+        self.ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+        self.ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+
+        """
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
-    
+
+        
         if xlim is not None: 
             xlim=np.asarray(xlim)
             xlim=np.where(xlim != None, xlim/unit, None)
@@ -176,18 +179,18 @@ class Canvas3d(MakeCanvas):
         plt.tight_layout()
         plt.savefig(output, dpi = 1000)    
         print ('Image saved as %s'%output)
-        print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
-
+        
         if show:
             print ('Showing computed image...')
             plt.show()
         else:
             print ('The show-image mode is off!')
             plt.close()
-
+        """
+        print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
-        return prop2plot
+        return sp 
 
 
 def scatter3D(GRID, prop, weight, 
