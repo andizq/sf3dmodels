@@ -57,10 +57,12 @@ class InputError(Error):
 
     def __init__(self, expression, message):
         self.expression = expression
-        self.message = message
+        self.message = message        
+    def __str__(self):
+        return self.expression+self.message
 
 class MakeCanvas(object):
-    def __init__(self, fig=None, ax=None, rect=[0,0,1,1], fig_kw={}, **axes_kw):
+    def __init__(self, fig=None, ax=None, rect=[0,0,1,1], fig_kw={}, axes_kw={}):
         """
         try: self._fig = axes_kw['figure']            
         except KeyError: self._fig = plt.gcf()
@@ -71,14 +73,125 @@ class MakeCanvas(object):
         self._ax = ax
 
 class Canvas3d(MakeCanvas):
-    def __init__(self, fig=None, ax=None, rect=[0.1,0.1,0.8,0.8], fig_kw={}, **axes_kw):
+    def __init__(self, fig=None, ax=None, rect=[0.1,0.1,0.8,0.8], fig_kw={}, axes_kw={}):
         axes_kw.update({'projection': '3d'})
         if ax is not None and ax.name != '3d': 
-            raise InputError('You are providing an existing Axes instance with a non 3d projection, please make sure to do projection=3d')            
-        super(Canvas3d, self).__init__(fig, ax, rect, fig_kw, **axes_kw)
+            raise InputError("__init__():\t", "input Axes instance is not a 3d projection, you can do for example ax=plt.axes(projection='3d')")                   
+        super(Canvas3d, self).__init__(fig, ax, rect, fig_kw, axes_kw)
+        self.fig_kw = fig_kw
+        self.axes_kw = axes_kw
         
+    def scatter_random(self, GRID, prop, weight, NRand = 1000, power = 0.5,  
+                       colordim = None, prop_min = None,
+                       **scatter_kw):
+        t0 = time.time()
+        print ('Plotting 3D model with %d points...'%NRand)
+        print ('Using (prop_i/weight)**power to reject/accept points, with power=%.1f and weight=%.1e'%(power, weight))
+        
+        """
+        defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none', vmin = None, vmax = None, norm = None) #scatter3d kwargs
+        for key_def in defaults.keys():
+            if key_def in kwargs.keys(): continue
+            else: kwargs[key_def] = defaults[key_def]
+        """
+        x,y,z = GRID.XYZ
+        #r = GRID.rRTP[0]
+        N = GRID.NPoints
 
-def scatter3D(GRID, prop, weight, colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
+        if prop_min is not None: population = range(N) #All the population
+        else: population, = np.where(prop >= prop_min) # > 1e3. #Rejecting zero cells 
+
+        indices = []
+        count = 0
+
+        for _ in itertools.repeat(None, NRand):
+            rand = random.random()
+            while 1:
+                index = random.sample(population, 1) #Selects 1 point from the given list
+                val = (prop[index]/weight)**power
+
+                if val > rand:
+                    indices.append(index)
+                    count = 0
+                    k = 0
+                    break
+                count += 1
+                
+                if count == 50: #If after 50 points the algorithm has not selected any, pick another point randomly.
+                    count = 0
+                    rand = random.random()
+
+        #colors = palette_c(np.linspace(0, 1, NRand))
+        indices = np.array(indices).T[0]
+        x,y,z = x[indices], y[indices], z[indices]
+        #r = r[indices]
+    
+        if not np.array(colordim).any(): colordim = prop
+        
+        if kwargs['norm'] is not None or scale == 'uniform': prop2plot = np.sort(colordim[indices]) 
+        elif scale == 'log': prop2plot = np.sort(np.log10(colordim[indices]))
+        
+        ind2plot = np.argsort(colordim[indices])
+    
+        x,y,z = x[ind2plot]/unit, y[ind2plot]/unit, z[ind2plot]/unit
+        
+        fig = plt.figure()
+    #fig.clf()
+        ax = plt.gca(projection='3d') 
+        sp = ax.scatter(x,y,z, 
+                        c = prop2plot, 
+                        **kwargs)
+    
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+    
+        if xlim is not None: 
+            xlim=np.asarray(xlim)
+            xlim=np.where(xlim != None, xlim/unit, None)
+        if ylim is not None: 
+            ylim=np.asarray(ylim)
+            ylim=np.where(ylim != None, ylim/unit, None)
+        if zlim is not None: 
+            zlim=np.asarray(zlim)
+            zlim=np.where(zlim != None, zlim/unit, None)
+
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        ax.set_zlim(zlim)
+
+        ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+        ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+        ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+
+        ax.view_init(azim = azim, elev = elev)
+        print ('3D camera azimuth: %.1f deg'%ax.azim)
+        print ('3D camera elevation: %.1f deg'%ax.elev)
+
+        cbar = plt.colorbar(sp)
+        cbar.ax.set_ylabel('%s'%colorlabel)
+
+        if output == '': output = 'figure.png'
+    
+        plt.tight_layout()
+        plt.savefig(output, dpi = 1000)    
+        print ('Image saved as %s'%output)
+        print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
+
+        if show:
+            print ('Showing computed image...')
+            plt.show()
+        else:
+            print ('The show-image mode is off!')
+            plt.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+        return prop2plot
+
+
+def scatter3D(GRID, prop, weight, 
+              colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
               colorlabel = '', output = 'figscatter.png', show = True, 
               colorscale = 'uniform', 
               azim = None, elev = None, xlim=None, ylim=None, zlim=None,
