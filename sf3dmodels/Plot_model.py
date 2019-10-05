@@ -141,7 +141,7 @@ class Canvas3d(MakeCanvas):
         t0 = time.time()
         print ('Plotting 3D vectorial field...')        
         quiver_kw.update({'length': length, 'arrow_length_ratio': arrow_length_ratio})
-        x,y,z = [xi/GRID_unit for xi in [x,y,z]]
+        x,y,z = [np.asarray(xi)/GRID_unit for xi in [x,y,z]]
         vp = self.ax.quiver(x,y,z, vx,vy,vz, **quiver_kw)
         print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
         print ('%s is done!'%inspect.stack()[0][3])
