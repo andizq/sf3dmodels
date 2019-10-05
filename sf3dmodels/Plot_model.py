@@ -64,29 +64,31 @@ class InputError(Error):
         return self.expression+self.message
 
 class MakeCanvas(object):
-    def __init__(self, fig=None, ax=None, rect=[0,0,1,1], fig_kw={}, axes_kw={}):
-        """
-        try: self.fig = axes_kw['figure']            
-        except KeyError: self.fig = plt.gcf()
-        """
+    """
+    Base class for 1d,2d,3d canvases
+    """
+    def __init__(self, fig=None, ax=None, ax_rect=[0.05,0.05,0.9,0.9], fig_kw={}, ax_kw={}):
         if fig is None: fig = plt.figure(**fig_kw)
         self.fig= fig
-        if ax is None: ax = fig.add_axes(rect, **axes_kw)
+        if ax is None: ax = fig.add_axes(ax_rect, **ax_kw)
         self.ax = ax
 
 class Canvas3d(MakeCanvas):
-    def __init__(self, fig=None, ax=None, rect=[0.1,0.1,0.8,0.8], fig_kw={}, axes_kw={}):
-        axes_kw.update({'projection': '3d'})
+    def __init__(self, fig=None, ax=None, ax_rect=[0.05,0.05,0.9,0.9], fig_kw={}, ax_kw={}):
+        ax_kw.update({'projection': '3d'})
         if ax is not None and ax.name != '3d': 
             raise InputError("__init__():\t", "input Axes instance is not a 3d projection, you can do for example ax=plt.axes(projection='3d')")                   
-        super(Canvas3d, self).__init__(fig, ax, rect, fig_kw, axes_kw)
+        super(Canvas3d, self).__init__(fig, ax, ax_rect, fig_kw, ax_kw)
         self.fig_kw = fig_kw
-        self.axes_kw = axes_kw
-        
-    def scatter_random(self, GRID, prop, weight, NRand = 1000, prop_color = None, prop_min = None, GRID_norm=1.0, power = 0.5, count_max=50, **scatter_kw):
+        self.ax_kw = ax_kw
+        self.ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+        self.ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
+        self.ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))    
+
+    def scatter_random(self, GRID, prop, weight, NRand = 1000, prop_color = None, prop_min = None, GRID_unit=1.0, power = 0.5, count_max=50, **scatter_kw):
         t0 = time.time()
         print ('Plotting 3D model with %d random grid points...'%NRand)
-        print ("Using '(prop_i/weight)**power > random[0,1] ?' to reject/accept the i-th point of \n  the randomly-selected sample, where power=%.1f and weight=%.1e"%(power, weight))
+        print ("Using '(prop_i/weight)**power > random[0,1] ?' to reject/accept the i-th point of \n  the randomly-selected sample. You set power=%.1f and weight=%.1e"%(power, weight))
         
         """
         defaults = dict(marker = '+', cmap = 'hot', s = 3, edgecolors = 'none', vmin = None, vmax = None, norm = None) #scatter3d kwargs
@@ -94,7 +96,6 @@ class Canvas3d(MakeCanvas):
             if key_def in kwargs.keys(): continue
             else: kwargs[key_def] = defaults[key_def]
         """
-        #r = GRID.rRTP[0]
         N = GRID.NPoints
         prop = np.asarray(prop)
         
@@ -115,83 +116,63 @@ class Canvas3d(MakeCanvas):
                     break
                 count += 1
                 if count == count_max: #If after 50 points the algorithm has not selected any, pick another point randomly.
-                    warnings.warn("The algorithm is struggling to find acceptable grid points. If it's taking too long try increasing the weighting 'weight' or reducing the exponent 'power'")
+                    warnings.warn("The algorithm is struggling to accept grid points. If it's taking too long try increasing the weighting 'weight' or reducing the exponent 'power'")
                     count = 0
                     rand = random.random()
 
-        #colors = palette_c(np.linspace(0, 1, NRand))
-        indices = np.array(indices)#[0]
-        x,y,z = [xi[indices]/GRID_norm for xi in GRID.XYZ]
-        #r = r[indices]
+        indices = np.array(indices)
+        x,y,z = [xi[indices]/GRID_unit for xi in GRID.XYZ]
     
         if prop_color is None: prop_color = prop
 
-        #if scatter_kw['norm'] is not None: prop2plot = np.sort(colordim[indices]) 
-        #elif scale == 'log': prop2plot = np.sort(np.log10(colordim[indices]))
-        
-        #ind2plot = np.argsort(colordim[indices])
-    
-        #x,y,z = x[ind2plot]/unit, y[ind2plot]/unit, z[ind2plot]/unit
-        
-        #fig.clf()
-        #ax = plt.gca(projection='3d') 
         sp = self.ax.scatter(x,y,z, 
                              c = prop_color[indices], 
                              **scatter_kw)
     
-        self.ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
-        self.ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
-        self.ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
-
-        """
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-
-        
-        if xlim is not None: 
-            xlim=np.asarray(xlim)
-            xlim=np.where(xlim != None, xlim/unit, None)
-        if ylim is not None: 
-            ylim=np.asarray(ylim)
-            ylim=np.where(ylim != None, ylim/unit, None)
-        if zlim is not None: 
-            zlim=np.asarray(zlim)
-            zlim=np.where(zlim != None, zlim/unit, None)
-
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-        ax.set_zlim(zlim)
-
-        ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
-        ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
-        ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
-
-        ax.view_init(azim = azim, elev = elev)
-        print ('3D camera azimuth: %.1f deg'%ax.azim)
-        print ('3D camera elevation: %.1f deg'%ax.elev)
-
-        cbar = plt.colorbar(sp)
-        cbar.ax.set_ylabel('%s'%colorlabel)
-
-        if output == '': output = 'figure.png'
-    
-        plt.tight_layout()
-        plt.savefig(output, dpi = 1000)    
-        print ('Image saved as %s'%output)
-        
-        if show:
-            print ('Showing computed image...')
-            plt.show()
-        else:
-            print ('The show-image mode is off!')
-            plt.close()
-        """
         print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------\n-------------------------------------------------')
         return sp 
 
+    def vectors(self, x,y,z, vx,vy,vz, GRID_unit=1, length=1, arrow_length_ratio=0.1, **quiver_kw):
+        """
+        quiver_kw: Axes3D.quiver kwargs: https://matplotlib.org/mpl_toolkits/mplot3d/tutorial.html#quiver
+        """
+        t0 = time.time()
+        print ('Plotting 3D vectorial field...')        
+        quiver_kw.update({'length': length, 'arrow_length_ratio': arrow_length_ratio})
+        x,y,z = [xi/GRID_unit for xi in [x,y,z]]
+        vp = self.ax.quiver(x,y,z, vx,vy,vz, **quiver_kw)
+        print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+        return vp 
+    
+
+"""
+class Canvas2d(MakeCanvas):
+    def __init__():
+        self._vectors_arrow = mpatches.ArrowStyle.CurveFilledB(head_length=0.25, head_width=0.1)
+
+    @property
+    def vectors_arrow(self):
+        return self._vectors_arrow
+    @vectors_arrow.setter
+    def vectors_arrow(self, val):
+        if not isinstance(val, mpatches.ArrowStyle):
+            raise ValueError("Please use a matplotlib mpatches.ArrowStyle instance")
+        self._vectors_arrow = val
+    
+    def vectors(x,y,z, vx,vy,vz, max_length=10., GRID_unit=1, **annotate_kw):
+        t0 = time.time()
+        print ('Plotting 2D vectorial field...')
+        arrow = self._vectors_arrow
+        ax[i].annotate("", xy=(xf[n], yf[n]), xytext=(x[n], y[n]), arrowprops=dict(arrowstyle=arrow, color='k',linewidth=1.0))
+        print ("Ellapsed time from %s: %.2f s"%(inspect.stack()[0][3], time.time()-t0))
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------\n-------------------------------------------------')
+        return vp 
+"""        
 
 def scatter3D(GRID, prop, weight, 
               colordim = [False], NRand = 1000, axisunit = 1.0, power = 0.6,
