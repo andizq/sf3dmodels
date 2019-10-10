@@ -819,8 +819,50 @@ def abundance_Powerlaw(r_max, r_min, ab0, q, GRID, ab_min = 1e-10):
 
     return abundList 
     
-#------------------
-#------------------
+#------------------------------------
+#DENSITY (PowerLaw-Shells) FUNCTION
+#------------------------------------
+
+def abundance_PowerlawShells(r_list, p_list, abund0, GRID, abundance_min = 1e-15):
+
+#r_list: List of shells' limits, length (n,)
+#p_list: List of powerlaws in r_list intervals, length (n-1,)
+#abund0: Density at r_list[0]
+#GRID: Grid to work in
+#abundance_min: Minimum density
+
+    #------------
+    #LISTS TO USE
+    #------------
+    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+
+    #-------------------------
+    #MODEL. Envelope powerlaws
+    #-------------------------
+    print ('Computing Envelope density using power-laws:', p_list)
+    
+    abund = np.zeros(NPoints)
+    abund0_coeff = [abund0]
+    for i,r in enumerate(r_list[1:-1],1):
+        r_tmp = np.max(rList[rList<=r])
+        abund0_coeff.append(abund0_coeff[i-1]*(r_tmp/r_list[i-1])**p_list[i-1])
+    
+    for i,p in enumerate(p_list):
+        ind, = np.where((rList >= r_list[i]) & (rList <= r_list[i+1]))
+        abund[ind] += abund0_coeff[i]*(rList[ind]/r_list[i])**p
+
+    abund = np.where(abund < abundance_min, abundance_min, abund)
+
+    #------------------------
+    #------------------------
+
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return abund
+
+#---------------------------
+#---------------------------
 
 #-----------------
 #GAS-TO-DUST RATIO
