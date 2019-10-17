@@ -36,9 +36,10 @@ if not _ASTROPY_SETUP_:
     #from .example_mod import *
 
     from . import fillgrid
-    from .core import Overlap, RandomGridAroundAxis, Build_r, Build_theta, Build_phi, NeighbourRegularGrid
+    from .core import Grid, Overlap, RandomGridAroundAxis, Build_r, Build_theta, Build_phi, NeighbourRegularGrid
     
-__all__ = ['NeighbourRegularGrid',
+__all__ = ['Grid',
+           'NeighbourRegularGrid',
            'Overlap',
            'RandomGridAroundAxis',
            'Build_r', 'Build_theta', 'Build_phi',

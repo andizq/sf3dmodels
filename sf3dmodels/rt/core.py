@@ -166,7 +166,7 @@ class MakeDatatab(object):
         file_path = '%s%s'%(folder,output)
         x,y,z = self.GRID.XYZ
         self.id = np.arange(self.GRID.NPoints)
-        
+
         xyz_dict = {'x': x, 'y': y, 'z': z}
         prop.update(xyz_dict)
         

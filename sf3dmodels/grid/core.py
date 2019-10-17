@@ -7,10 +7,53 @@ import itertools
 import numpy as np
 from . import GridInit
 from . import GridSet
-from ..utils.units import pc, amu
+from ..utils.units import au, pc, amu
 from ..utils.constants import temp_cmb
 from ..utils.prop import propTags
 from ..tools import formatter
+from .. import Model
+
+#****************
+#MAKE GRID (Included: Random)
+#****************
+class Grid(object):
+    def __init__(self):
+        self.kind = {'random_weighted': True}
+        
+    def _accept_point(self, val, norm, power):
+        flag = np.random.random()
+        val = (val / norm)**power
+        if val >= flag: return True
+        else: return False
+
+    def _sph_to_cart(self, r,th,phi):
+        x = r * np.sin(th) * np.cos(phi)
+        y = r * np.sin(th) * np.sin(phi)
+        z = r * np.cos(th)
+        return x,y,z
+
+    def random(self, function=None, r_size=100*au, normalization=1e16, power=0.5, npoints=50000, kwargs_func={}):
+        #Include an option to define a certain r to compute the normalization.
+        x,y,z = np.zeros((3,npoints))
+        rh,Rh,th,ph = np.zeros((4,npoints))
+        n = 0
+        twopi = 2*np.pi
+        while (n < npoints):
+            #i = np.random.randint(r_size)
+            r = np.random.uniform(0,r_size)
+            phi = np.random.uniform(0,twopi)
+            theta = np.random.uniform(0,np.pi)
+            R = r * np.sin(theta)
+            kwargs_func.update({'loc': {'r': r, 'R': R, 'theta': theta, 'phi': phi, 'z': r*np.cos(theta)}})
+            val = function(**kwargs_func)
+            if self._accept_point(val,normalization,power): 
+                x[n],y[n],z[n] = self._sph_to_cart(r, theta, phi)
+                rh[n],Rh[n],th[n],ph[n] = r, R, theta, phi
+                n+=1
+            else: continue
+        GRID = Model.Struct( XYZ = np.array([x,y,z]), NPoints = npoints)
+        GRID.rRTP = [rh,Rh,th,ph]
+        return GRID
 
 #*************
 #OVERLAP GRIDS
