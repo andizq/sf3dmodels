@@ -24,10 +24,12 @@ class Transition(object):
 
     def powerlaw_cavity(self, grid=None, R_cav=30*au, h=5*au, n_cav=1e16, power=-1.0, dn_cav=1e-4, loc={'R': None, 'z': None}):
         if loc['R'] is not None:
-            R = loc['R']
-            if R > R_cav: a_cav = n_cav
-            else: a_cav = dn_cav*n_cav
-            val = a_cav*(R/R_cav)**power * self.gaussian_profile(loc['z'], h)
+            R = np.asarray(loc['R'])
+            z = np.asarray(loc['z'])
+            val = np.zeros(R.shape)
+            cav = R < R_cav
+            val = n_cav*(R/R_cav)**power * self.gaussian_profile(z, h)
+            val[cav] *= dn_cav
         if grid is not None:
             print (loc)
             profile = (grid.rRTP[1]/R_cav)**power
