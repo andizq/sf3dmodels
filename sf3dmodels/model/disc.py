@@ -35,16 +35,15 @@ class Transition(object):
     def powerlaw_cavity(self, grid=None, R_cav=30*au, h=5*au, n_cav=1e16, power=-1.0, dn_cav=1e-4, coord={'R': None, 'z': None}, func_1d=False):
         if func_1d: return self._powerlaw_cavity1d
         if coord['R'] is not None:
-            print (coord['R'])
             R = np.asarray(coord['R'])
             z = np.asarray(coord['z'])
             val = np.zeros(R.shape)
             cav = R < R_cav
             val = n_cav*(R/R_cav)**power * self.gaussian_profile(z, h)
-            val[cav] *= dn_cav
-            #val = np.where(cav,dn_cav*val,val)
+            #val[cav] *= dn_cav
+            val = np.where(cav,dn_cav*val,val)
         if grid is not None:
-            print (coord)
+            #print (coord)
             profile = (grid.rRTP[1]/R_cav)**power
             val = np.where(grid.rRTP[1] > R_cav, n_cav*profile, dn_cav*n_cav*profile) * self.gaussian_profile(grid.XYZ[2], h)
         return val

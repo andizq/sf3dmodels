@@ -76,7 +76,7 @@ class MakeCanvas(object):
 class Canvas3d(MakeCanvas):
     def __init__(self, fig=None, ax=None, ax_rect=[0.05,0.05,0.9,0.9], fig_kw={}, ax_kw={}):
         ax_kw.update({'projection': '3d'})
-        if ax is not None and ax.name != '3d': 
+        if ax is not None and ax.name != '3d':
             raise InputError("__init__():\t", "input Axes instance is not a 3d projection, you can do for example ax=plt.axes(projection='3d')")                   
         super(Canvas3d, self).__init__(fig, ax, ax_rect, fig_kw, ax_kw)
         self.fig_kw = fig_kw
