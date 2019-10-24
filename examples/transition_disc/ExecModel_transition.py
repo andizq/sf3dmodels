@@ -30,8 +30,8 @@ kwargs_dtg={'dn_cav': 1e-2, 'n_cav': 0.01, 'R_cav': 35*u.au, 'power': 0}
 grid = init_grid.random(function=transition.powerlaw_cavity, power=0.4, r_size=70*u.au, kwargs_func=kwargs_dens, normalization=1e16, npoints=100000)
 
 density = transition.powerlaw_cavity(grid=grid, **kwargs_dens)
-gtdratio = 1./transition.powerlaw_cavity(grid=grid, **kwargs_dtg)
-temperature = np.zeros(grid.NPoints) + 100.
+gtdratio = 1./transition.powerlaw_cavity(grid=grid, **kwargs_dtg) #Converting to gas-to-dust ratio
+temperature = np.zeros(grid.NPoints) + 100. #Constant temperature
 
 prop = {'dens_H2': density,
         'gtdratio': gtdratio,
