@@ -26,12 +26,9 @@ class Grid(object):
         if val >= flag: return True
         else: return False
     
-    _sph_to_cart_x = lambda self,r,th,phi: r * np.sin(th) * np.cos(phi)
-    def _sph_to_cart_y(self, r,th,phi):
-        return r * np.sin(th) * np.sin(phi)
-    def _sph_to_cart_z(self, r,th):
-        return r * np.cos(th)
-        
+    _sph_to_cart_x = lambda self,r,th,phi: r*np.sin(th)*np.cos(phi)
+    _sph_to_cart_y = lambda self,r,th,phi: r*np.sin(th)*np.sin(phi)
+    _sph_to_cart_z = lambda self,r,th: r*np.cos(th)        
 
     def random(self, function=None, r_size=100*au, normalization=1e16, power=0.5, npoints=50000, kwargs_func={}):
         #Include an option to define a certain r to compute the normalization.
@@ -46,7 +43,7 @@ class Grid(object):
             theta = np.random.uniform(0,np.pi)
             R = r * np.sin(theta)
             z_ = r * np.cos(theta)
-            kwargs_func.update({'loc': {'r': [r], 'R': [R], 'theta': [theta], 'phi': [phi], 'z': [z_]}})
+            kwargs_func.update({'coord': {'r': r, 'R': R, 'theta': theta, 'phi': phi, 'z': z_}})
             val = function(**kwargs_func)
             if self._accept_point(val,normalization,power): 
                 x[n] = self._sph_to_cart_x(r, theta, phi)
