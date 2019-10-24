@@ -30,8 +30,10 @@ class Grid(object):
     _sph_to_cart_y = lambda self,r,th,phi: r*np.sin(th)*np.sin(phi)
     _sph_to_cart_z = lambda self,r,th: r*np.cos(th)        
 
-    def random(self, function=None, r_size=100*au, normalization=1e16, power=0.5, npoints=50000, kwargs_func={}):
-        #Include an option to define a certain r to compute the normalization.
+    def random(self, func=None, r_size=100*au, normalization=1e16, power=0.5, npoints=50000, kwargs_func={}):
+        #Make the user able to define a certain r on which the normalization will be computed.
+        func_1d = func(func_1d=True)
+        kwargs_func_cp = copy.copy(kwargs_func) #prevents modifying user-defined dicts
         x,y,z = np.zeros((3,npoints))
         rh,Rh,th,ph = np.zeros((4,npoints))
         n = 0
@@ -43,8 +45,8 @@ class Grid(object):
             theta = np.random.uniform(0,np.pi)
             R = r * np.sin(theta)
             z_ = r * np.cos(theta)
-            kwargs_func.update({'coord': {'r': r, 'R': R, 'theta': theta, 'phi': phi, 'z': z_}})
-            val = function(**kwargs_func)
+            kwargs_func_cp.update({'coord': {'r': r, 'R': R, 'theta': theta, 'phi': phi, 'z': z_}})
+            val = func_1d(**kwargs_func_cp)
             if self._accept_point(val,normalization,power): 
                 x[n] = self._sph_to_cart_x(r, theta, phi)
                 y[n] = self._sph_to_cart_y(r, theta, phi)
