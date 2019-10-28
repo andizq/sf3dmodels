@@ -66,7 +66,6 @@ class Transition(object):
             if phi_stddev is not None: 
                 phi = grid.rRTP[3] - phi_mean
                 phi = np.where(phi > np.pi, phi-2*np.pi, phi)
-                print (phi.max()*180/np.pi, phi.min()*180/np.pi, grid.rRTP[3].max(), grid.rRTP[3].min())
                 phi_val = self.gaussian_profile(phi, 0, phi_stddev)
             else: phi_val = 1.0
             val = np.where(grid.rRTP[1] > R_cav, n_cav*profile, dn_cav*n_cav*profile) * self.gaussian_profile(grid.XYZ[2], z_mean, z_stddev) * phi_val
