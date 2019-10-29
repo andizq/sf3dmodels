@@ -146,7 +146,7 @@ ax2.yaxis.set_label_position('right')
 #2D plotting
 #******************
 ax3 = fig.add_subplot(323)
-data = fits.getdata('img_cont_faceon.fits')
+data = fits.getdata('img_cont_faceon_band7.fits')
 Tb = ax3.imshow(data.squeeze(), cmap='nipy_spectral', extent = [-70,70,-70,70], origin='lower left', norm=colors.Normalize(vmax=47))
 ax3.set_xlabel('au')
 ax3.set_ylabel('face-on')
@@ -157,7 +157,7 @@ cbar_dat.ax.set_ylabel(r'T$_b$ [K] - Band 7')
 #2D plotting
 #******************
 ax4 = fig.add_subplot(325)
-data = fits.getdata('img_cont_edgeon_phi90.fits')
+data = fits.getdata('img_cont_edgeon_phi90_band7.fits')
 Tb = ax4.imshow(data.squeeze(), cmap='nipy_spectral', extent = [-70,70,-70,70], origin='lower left')#, norm=colors.Normalize(vmax=47))
 ax4.set_xlabel('au')
 ax4.set_ylabel(r'edge-on $\phi$=90$^o$')
