@@ -1,17 +1,13 @@
-"""
-Transition Disc Example
-=======================
-
-This example uses the gas and dust density profiles inferred for the transitional disc HD135344B.
-"""
 #******************
 #sf3dmodels modules
 #******************
 from sf3dmodels import Model, Plot_model
 import sf3dmodels.utils.units as u
+import sf3dmodels.utils.constants as ct
 import sf3dmodels.rt as rt
 from sf3dmodels.model import disc
 from sf3dmodels.grid import Grid
+
 #******************
 #External libraries
 #******************
@@ -32,30 +28,59 @@ import struct
 import bisect
 
 t0 = time.time()
-#******************
-#Model parameters
-#******************
-kwargs_dens={'dn_cav': 1e-5, 'n_cav': 2e17, 'R_cav': 30*u.au, 'power':-0.9, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
-kwargs_dtg={'dn_cav': 1e-2, 'n_cav': 0.01, 'R_cav': 40*u.au, 'power': 0}#, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
-R_disc = 70*u.au
+nfrac = 100000*1
+
+file = 'snap_00108.ascii'
+data = np.loadtxt(file) 
+#Quantities in code units: i.e length referred to semi-major axis between stars a0, mass referred to mass of stars, time referred to orbital period between binaries
+
+a0 = 5*u.au
+Ms = 2*u.MSun
+Rs = 2.5*u.RSun
+Teff = 9500.
+
+mu = ct.G * 2*Ms #Reduced mass
+P = 2*np.pi*a0**1.5/mu**0.5 #Orbital period
+
+star1_pos = np.array([3.1349969E-01,   3.9121187E-01,  -8.4040770E-03]) * a0 
+star2_pos = np.array([-3.1147322E-01,  -3.8484186E-01,   1.1820099E-02]) * a0
+
+data_gas = data[data[:,12]==1]
+ngas = len(data_gas)
+
+if nfrac: 
+    ids_rand = np.random.choice(np.arange(0,ngas), size=nfrac)
+    data_gas = data_gas[ids_rand]
+
+data_gas[:,0:3] *= a0
+data_r = np.linalg.norm(data_gas[:,0:3], axis=1)
+data_gas = data_gas[data_r <= 100*u.au]
+data_gas[:,5] = np.where(data_gas[:,5]<1.0, 1.0, data_gas[:,5]*0.01*Ms/a0**3/ct.mH)
+data_gas[:,6:9] *= a0/P
+
+
+grid = Model.Struct(XYZ = data_gas[:,0:3].T, NPoints=len(data_gas))
+prop = {'dens_H2': data_gas[:,5],
+        'vel_x': data_gas[:,6],
+        'vel_y': data_gas[:,7],
+        'vel_z': data_gas[:,8]}
+
+print ('Ellapsed time:', time.time()-t0)
 
 #******************
-#Grid creation
+#3D plotting
 #******************
-transition = disc.Transition()
-init_grid = Grid()
-grid = init_grid.random(func=transition.powerlaw_cavity, power=0.4, r_size=R_disc, kwargs_func=kwargs_dens, normalization=1e16, npoints=100000)
-
-#*****************************************
-#Computing relevant physical distributions
-#*****************************************
-density = transition.powerlaw_cavity(grid=grid, **kwargs_dens)
-gtdratio = 1./transition.powerlaw_cavity(grid=grid, **kwargs_dtg) #Converting to gas-to-dust ratio for LIME
-temperature = np.zeros(grid.NPoints) + 100. #Constant temperature 100 K
-
-prop = {'dens_H2': density,
-        'gtdratio': gtdratio,
-        'temp_gas': temperature}
+lims = np.array([-100,100])
+weight = 1. 
+ax_kw = {'projection': '3d', 'xlim': lims, 'ylim': lims, 'zlim': lims, 'azim': 30, 'elev': 13}
+canvas3d = Plot_model.Canvas3d(ax_kw=ax_kw)
+ax = canvas3d.ax
+sp = canvas3d.scatter_random(grid, prop['dens_H2']/1e6, weight, GRID_unit=u.au, power=0, NRand=10000, prop_min=1.0, #function arguments
+                             marker = '+', cmap = 'jet', s = 3, edgecolors = 'none', vmin=1e7, norm = colors.LogNorm()) #Scatter kwargs
+cbar = plt.colorbar(sp)
+cbar.ax.set_ylabel(r'H$_2$ density [cm$^{-3}$]')
+ax.set_xlabel('au')
+plt.savefig('img_H2_density_sph.png')
 
 #*******************************************************************************
 #Writing file for self-consistently calculation of dust temperature with POLARIS
@@ -127,7 +152,7 @@ print ("length of convex hull: ", len(convex_hull))
 print ("Delaunay: done")
 
 num_cols = len(data_ids)
-l_max = 2*R_disc
+l_max = 2*100*u.au
 file = open(output_file, "wb")
 
 file.write(struct.pack("H", grid_id))
@@ -136,15 +161,34 @@ file.write(struct.pack("H", num_cols))
 for d_ids in data_ids:
     file.write(struct.pack("H", d_ids))
 
+n_neighbours = []
+has_neigh = []
+for i in range(grid.NPoints):
+    p_list = list(neighbours[i])
+    sign = int(is_in_hull(convex_hull, i))
+    n_neigh = int(len(p_list))
+    n_neigh *= sign
+    if n_neigh==0: has_neigh.append(True)
+    #print ('cell %d has no neighbours, omiting it'%i)
+    else: has_neigh.append(True)
+    n_neighbours.append(n_neigh)
+ 
+has_neigh = np.array(has_neigh)
+id_list = np.arange(grid.NPoints)[has_neigh]
+grid.NPoints -= np.sum(~has_neigh)
+
+print('Omitted cells with no neighbours:', np.sum(~has_neigh))
+
 file.write(struct.pack("d", grid.NPoints))
 file.write(struct.pack("d", l_max))
 
+
 pos_counter = 0
-for i in range(grid.NPoints):
+for i in id_list:
+
     x = grid.XYZ[0][i]
     y = grid.XYZ[1][i]
     z = grid.XYZ[2][i]
-    #dens = data['rho'][i]*arepoDensity #in g/ccm
     n_gas = prop['dens_H2'][i]
     
     volume = vol[i]
@@ -154,17 +198,11 @@ for i in range(grid.NPoints):
     file.write(struct.pack("f", z))
 
     file.write(struct.pack("d", volume))
-
     file.write(struct.pack("f", n_gas))
-    
-    p_list = list(neighbours[pos_counter])
-    sign = int(is_in_hull(convex_hull, pos_counter))
-    n_neighbours = int(len(p_list))
-    n_neighbours *= sign
+    file.write(struct.pack("i", int(n_neighbours[i])))
 
-    file.write(struct.pack("i", int(n_neighbours)))
-
-    for j in range(0, int(abs(n_neighbours))):
+    p_list = list(neighbours[i])
+    for j in range(0, int(abs(n_neighbours[i]))):
         tmp_n=int(p_list[j])
         file.write(struct.pack("i", tmp_n))
 
@@ -178,3 +216,6 @@ print ("DONE")
 
 print ('Ellapsed time:', time.time()-t0)
 #******************
+
+
+

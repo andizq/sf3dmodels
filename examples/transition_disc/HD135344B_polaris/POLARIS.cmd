@@ -21,7 +21,7 @@
 </common>
 
 <task> 1
-	<source_star nr_photons = "1000000"> 0	0	0	0.9	4000
+	<source_star nr_photons = "3000000"> 0	0	0	0.9	4000
 
 	<cmd>			CMD_TEMP
 

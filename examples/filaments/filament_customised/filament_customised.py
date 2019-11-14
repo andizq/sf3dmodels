@@ -36,7 +36,7 @@ pm.scatter3D(f1.GRID, f1.density, np.mean(f1.density), axisunit = pc,
              NRand = 10000, 
              cmap = 'nipy_spectral_r',
              xlim=lims, ylim=lims, zlim=lims,
-             azim=45, elev=15, show=True)
+             azim=45, elev=15, output='fig_filament_temp.png', show=True)
 
 pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
              colordim = f1.abundance,
@@ -44,7 +44,7 @@ pm.scatter3D(f1.GRID, f1.density, np.min(f1.density), axisunit = pc,
              NRand = 10000, 
              cmap = 'nipy_spectral_r',
              xlim=lims, ylim=lims, zlim=lims,
-             azim=45, elev=15, show=True)
+             azim=45, elev=15, output='fig_filament_abund.png', show=True)
 
 prop = {'dens_H': f1.density,
         'temp_gas': f1.temperature,

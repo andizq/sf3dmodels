@@ -27,8 +27,8 @@ t0 = time.time()
 #******************
 #Model parameters
 #******************
-kwargs_dens={'dn_cav': 1e-5, 'n_cav': 2e17, 'R_cav': 30*u.au, 'power':-0.9}#, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
-kwargs_dtg={'dn_cav': 1e-2, 'n_cav': 0.01, 'R_cav': 40*u.au, 'power': 0, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}#, 'phi_stddev': np.pi/2}
+kwargs_dens={'dn_cav': 1e-5, 'n_cav': 2e17, 'R_cav': 30*u.au, 'power':-0.9}
+kwargs_dtg={'dn_cav': 1e-2, 'n_cav': 0.01, 'R_cav': 40*u.au, 'power': 0, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
 R_disc = 70*u.au
 
 #******************
