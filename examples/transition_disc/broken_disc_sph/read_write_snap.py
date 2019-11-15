@@ -58,7 +58,6 @@ data_gas = data_gas[data_r <= 100*u.au]
 data_gas[:,5] = np.where(data_gas[:,5]<1.0, 1.0, data_gas[:,5]*0.01*Ms/a0**3/ct.mH)
 data_gas[:,6:9] *= a0/P
 
-
 grid = Model.Struct(XYZ = data_gas[:,0:3].T, NPoints=len(data_gas))
 prop = {'dens_H2': data_gas[:,5],
         'vel_x': data_gas[:,6],
