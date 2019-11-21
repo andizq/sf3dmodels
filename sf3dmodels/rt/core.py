@@ -564,7 +564,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = dens_ion.ravel(order='F') # Create a 1-D view, fortran-style indexing
             dens_ion.tofile(f, sep='\n', format=fmt)
-            f.close()
+            f.closeo()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
@@ -614,6 +614,28 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
             
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
+
+    def write_dust_temperature(self, temp_dust, fmt = '%13.6e'):
+        """
+        Writes the file 'dust_temperature.inp' for radmc3d. 
+        
+        Parameters
+        ----------
+        temp_dust : list or array_like, shape(n,)  
+           The model dust temperature.
+        
+        fmt : str
+           Format string for numbers in the output file.
+        """
+        with open('dust_temperature.inp','w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            temp_dust.tofile(f, sep='\n', format=fmt)
+            f.close()
+            
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
 
     def write_microturbulence(self, microturbulence, fmt = '%13.6e'):
         """
@@ -748,7 +770,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         print ('-------------------------------------------------')
 
     def write_stars(self, nstars = 1, pos = [[0.,0.,0.]], 
-                    rstars = [6.96e10], mstars = [1.99e33],
+                    rstars = [6.96e8], mstars = [1.99e30],
                     lam = [1e-1,5e2,2e4,4e4,3e5], nxx = [50,50,50,50], 
                     flux = [[-5780]], fmt = '%.6e'):
         """
@@ -763,10 +785,10 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
            [x,y,z] position of each star in meters.
         
         rstars : list or array_like, length `nstars`
-           Radii of the stars in centimeters.
+           Radii of the stars in meters.
         
         mstars : list or array_like, length `nstars`
-           Mass of the stars in grams.
+           Mass of the stars in kilograms.
 
         lam : list or array_like,  
            Wavelength intervals, in microns.
@@ -775,7 +797,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
            Number of wavelenghts in each interval 
 
         flux : list of lists or array_like, shape (`nstars`, number of wavelenghts)
-           Flux from the stars at each wavelength. 
+           Flux from the stars at each wavelength in cgs. If the first number of the list(s) is negative, it is
+           assumed to be the blackbody temperature of the star and the flux is computed accordingly. 
 
         fmt : str
            Format string for the flux values.
@@ -785,14 +808,14 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         Have a look at the `RADMC-3D`_ manual, section A.7, for further information about the input parameters and scnearios.
         """
         nlam = np.sum(nxx)
-        rstars = np.array(rstars)
-        mstars = np.array(mstars)
+        rstars = np.array(rstars)*cm
+        mstars = np.array(mstars)*1e3
         with open('stars.inp','w+') as f:
             f.write('2\n')
             f.write('%d %d\n'%(nstars, nlam))
             for i in range(nstars): f.write('%.2e %.2e %.2e %.2e %.2e\n'
                                             %(rstars[i], mstars[i], 
-                                              pos[i][0], pos[i][1], pos[i][2]))
+                                              pos[i][0]*cm, pos[i][1]*cm, pos[i][2]*cm))
             self._write_lam(f, lam, nxx)
 
             for i in range(nstars): 
