@@ -91,6 +91,6 @@ cbar = plt.colorbar(sp)
 cbar.ax.set_ylabel(r'H$_2$ density [cm$^{-3}$]')
 ax.set_xlabel('au')
 plt.savefig('img_H2_density_sph.png')
-
+plt.show()
 
 
