@@ -6,7 +6,7 @@ import sf3dmodels.utils.units as u
 import sf3dmodels.utils.constants as ct
 import sf3dmodels.rt as rt
 from sf3dmodels.model import disc
-from sf3dmodels.grid import Grid
+from sf3dmodels.grid import Grid, fillgrid
 
 #******************
 #External libraries
@@ -22,13 +22,13 @@ import sys
 #********************************
 #Gridding and writing for Polaris
 #********************************
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, Voronoi
 from collections import defaultdict
 import struct
 import bisect
 
 t0 = time.time()
-nfrac = 100000*1
+nfrac = 300000*1
 
 file = 'snap_00108.ascii'
 data = np.loadtxt(file) 
@@ -54,8 +54,9 @@ if nfrac:
 
 data_gas[:,0:3] *= a0
 data_r = np.linalg.norm(data_gas[:,0:3], axis=1)
-data_gas = data_gas[data_r <= 100*u.au]
-data_gas[:,5] = np.where(data_gas[:,5]<1.0, 1.0, data_gas[:,5]*0.01*Ms/a0**3/ct.mH)
+data_gas = data_gas[data_r <= 100*u.au] 
+data_gas[:,5] *= 0.01*Ms/a0**3/ct.mH
+data_gas[:,5] = np.where(data_gas[:,5]<1.0, 1.0, data_gas[:,5])
 data_gas[:,6:9] *= a0/P
 
 grid = Model.Struct(XYZ = data_gas[:,0:3].T, NPoints=len(data_gas))
@@ -63,6 +64,13 @@ prop = {'dens_H2': data_gas[:,5],
         'vel_x': data_gas[:,6],
         'vel_y': data_gas[:,7],
         'vel_z': data_gas[:,8]}
+
+fill = fillgrid.Random(grid)
+fill_rand = fill.spherical(prop,
+                           prop_fill = {'dens_H2': 1.0},
+                           r_min = 1*u.au, r_max = 100*u.au,
+                           n_dummy = grid.NPoints/10.)
+
 
 print ('Ellapsed time:', time.time()-t0)
 
@@ -132,10 +140,13 @@ def tetrahedron_volume(a, b, c, d):
 CLR_LINE =   "                                                               \r"
 print ("creating delaunay")
 
-tri = Delaunay(np.array(grid.XYZ).T)
+points = np.array(grid.XYZ).T
+tri = Delaunay(points)
 tets = tri.points[tri.simplices]
-vol = tetrahedron_volume(tets[:, 0], tets[:, 1], 
-                         tets[:, 2], tets[:, 3])
+#vol = tetrahedron_volume(tets[:, 0], tets[:, 1], 
+#                         tets[:, 2], tets[:, 3])
+
+vor = Voronoi(points)
 
 print ("finding all neighbours")
 
@@ -167,7 +178,7 @@ for i in range(grid.NPoints):
     sign = int(is_in_hull(convex_hull, i))
     n_neigh = int(len(p_list))
     n_neigh *= sign
-    if n_neigh==0: has_neigh.append(True)
+    if n_neigh==0: has_neigh.append(True) #Should be False but rejecting points here causes segm.fault in Polaris... I think that after removing cells with no neighbours, the Delaunay grid must be recalculated.
     #print ('cell %d has no neighbours, omiting it'%i)
     else: has_neigh.append(True)
     n_neighbours.append(n_neigh)
@@ -181,22 +192,28 @@ print('Omitted cells with no neighbours:', np.sum(~has_neigh))
 file.write(struct.pack("d", grid.NPoints))
 file.write(struct.pack("d", l_max))
 
-
 pos_counter = 0
+volume = np.zeros(grid.NPoints)+1.0
 for i in id_list:
-
     x = grid.XYZ[0][i]
     y = grid.XYZ[1][i]
     z = grid.XYZ[2][i]
     n_gas = prop['dens_H2'][i]
     
-    volume = vol[i]
+    vor_region_i = np.array(vor.regions[vor.point_region[i]]) #Indices of vertices forming region i.
+    vor_region_valid = vor_region_i[vor_region_i!=-1] #-1 indicates vertex outside the Voronoi diagram.
+    verts_region_valid = vor.vertices[vor_region_valid]
+    delau_i = Delaunay(verts_region_valid)
+    tets_i = delau_i.points[delau_i.simplices]
+    vol = tetrahedron_volume(tets_i[:, 0], tets_i[:, 1], 
+                             tets_i[:, 2], tets_i[:, 3]).sum()
+    volume[pos_counter] = vol
 
     file.write(struct.pack("f", x))
     file.write(struct.pack("f", y))
     file.write(struct.pack("f", z))
 
-    file.write(struct.pack("d", volume))
+    file.write(struct.pack("d", vol))
     file.write(struct.pack("f", n_gas))
     file.write(struct.pack("i", int(n_neighbours[i])))
 

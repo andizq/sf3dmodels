@@ -26,7 +26,7 @@ import sys
 #********************************
 #Gridding and writing for Polaris
 #********************************
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, ConvexHull, Voronoi
 from collections import defaultdict
 import struct
 import bisect
@@ -36,7 +36,7 @@ t0 = time.time()
 #Model parameters
 #******************
 kwargs_dens={'dn_cav': 1e-5, 'n_cav': 2e17, 'R_cav': 30*u.au, 'power':-0.9, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
-kwargs_dtg={'dn_cav': 1e-2, 'n_cav': 0.01, 'R_cav': 40*u.au, 'power': 0}#, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
+kwargs_dtg={'dn_cav': 1e-2, 'n_cav': 0.01, 'R_cav': 40*u.au, 'power': 0} #, 'phi_stddev': 2*np.pi/3, 'phi_mean': -np.pi/2}
 R_disc = 70*u.au
 
 #******************
@@ -102,16 +102,27 @@ def create_convex_hull_list(hull):
 
     return sorted(list(neighbours[0]))
 
+def convex_hull_volume(pts):
+    ch = ConvexHull(pts)
+    dt = Delaunay(pts[ch.vertices])
+    tets = dt.points[dt.simplices]
+    return np.sum(tetrahedron_volume(tets[:, 0], tets[:, 1],
+                                     tets[:, 2], tets[:, 3]))
 def tetrahedron_volume(a, b, c, d):
     return np.abs(np.einsum('ij,ij->i', a-d, np.cross(b-d, c-d))) / 6
 
 CLR_LINE =   "                                                               \r"
 print ("creating delaunay")
 
-tri = Delaunay(np.array(grid.XYZ).T)
+points = np.array(grid.XYZ).T
+tri = Delaunay(points)
 tets = tri.points[tri.simplices]
-vol = tetrahedron_volume(tets[:, 0], tets[:, 1], 
-                         tets[:, 2], tets[:, 3])
+#vol = tetrahedron_volume(tets[:, 0], tets[:, 1], 
+#                         tets[:, 2], tets[:, 3])
+#convHull = ConvexHull(points) #This computes the smallest region enclosing the whole set of points
+#volume = convHull.volume/grid.NPoints #Averaged volume
+
+vor = Voronoi(points)
 
 print ("finding all neighbours")
 
@@ -140,20 +151,38 @@ file.write(struct.pack("d", grid.NPoints))
 file.write(struct.pack("d", l_max))
 
 pos_counter = 0
+volume = np.zeros(grid.NPoints)+1.0
 for i in range(grid.NPoints):
     x = grid.XYZ[0][i]
     y = grid.XYZ[1][i]
     z = grid.XYZ[2][i]
+    r = grid.rRTP[0][i]
     #dens = data['rho'][i]*arepoDensity #in g/ccm
     n_gas = prop['dens_H2'][i]
-    
-    volume = vol[i]
 
+    vor_region_i = np.array(vor.regions[vor.point_region[i]]) #Indices of vertices forming region i.
+    vor_region_valid = vor_region_i[vor_region_i!=-1] #-1 indicates vertex outside the Voronoi diagram.
+    verts_region_valid = vor.vertices[vor_region_valid]
+    #convHull_i = ConvexHull(verts_region_valid) #Failing to get convexhull when vertices are close to a common plane. Computing the delaunay and summing the volume of tetrahedrons leads to same results apparently.
+    #volume_2[i] = convHull_i.volume
+    delau_i = Delaunay(verts_region_valid)
+    tets_i = delau_i.points[delau_i.simplices]
+    vol = tetrahedron_volume(tets_i[:, 0], tets_i[:, 1], 
+                             tets_i[:, 2], tets_i[:, 3]).sum()
+      
+    if r > R_disc-u.au or abs(z)/u.au > 20: vol = 1.0
+    else:
+        delau_i = Delaunay(verts_region_valid)
+        tets_i = delau_i.points[delau_i.simplices]
+        vol = tetrahedron_volume(tets_i[:, 0], tets_i[:, 1], 
+                             tets_i[:, 2], tets_i[:, 3]).sum()
+    volume[i] = vol
+        
     file.write(struct.pack("f", x))
     file.write(struct.pack("f", y))
     file.write(struct.pack("f", z))
 
-    file.write(struct.pack("d", volume))
+    file.write(struct.pack("d", vol))
 
     file.write(struct.pack("f", n_gas))
     
