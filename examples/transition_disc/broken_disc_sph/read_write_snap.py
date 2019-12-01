@@ -28,7 +28,7 @@ import struct
 import bisect
 
 t0 = time.time()
-nfrac = 300000*1
+nfrac = 300000
 
 file = 'snap_00108.ascii'
 data = np.loadtxt(file) 
@@ -71,6 +71,8 @@ fill_rand = fill.spherical(prop,
                            r_min = 1*u.au, r_max = 100*u.au,
                            n_dummy = grid.NPoints/10.)
 
+
+np.savetxt('pre_datatab.dat', np.array([prop['dens_H2'], prop['vel_x'], prop['vel_y'], prop['vel_z']]).T, fmt='%.6e')
 
 print ('Ellapsed time:', time.time()-t0)
 

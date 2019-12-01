@@ -19,7 +19,7 @@ input(inputPars *par, image *img){
    */
   par->radius                   = 100*AU;
   par->minScale                 = 0.1*AU; // 2 * sizex / Nx / 2
-  par->pIntensity               = 327006;
+  par->pIntensity               = 327012;
   par->sinkPoints               = 50000; 
   par->dust                     = "../../opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "co.dat";
@@ -86,8 +86,56 @@ input(inputPars *par, image *img){
   img[i].filename               = "img_cont_edgeon_phi90_band7.fits";
   img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
 
-  //Line image
+  //Dust continuum image
   i=3;
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_cont_faceon_band7_tau.fits";
+  img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
+
+  //Dust continuum image
+  i=4;
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_cont_faceon_band6.fits";
+  img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
+
+  //Dust continuum image
+  i=5;
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_cont_edgeon_band6.fits";
+  img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
+
+  //Dust continuum image
+  i=6;
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = -M_PI/2;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_cont_edgeon_phi90_band6.fits";
+  img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
+  
+  //Line image
+  i=7;
   img[i].trans                   = 127;            //Line transition
   img[i].molI                   = 1;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -102,7 +150,7 @@ input(inputPars *par, image *img){
   img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_faceon.fits";
 
   //Line image
-  i=4;
+  i=8;
   img[i].trans                   = 127;            //Line transition
   img[i].molI                   = 1;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -117,7 +165,7 @@ input(inputPars *par, image *img){
   img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_edgeon.fits";
 
   //Line image
-  i=5;
+  i=9;
   img[i].trans                   = 127;            //Line transition
   img[i].molI                   = 1;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -131,20 +179,8 @@ input(inputPars *par, image *img){
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
   img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_edgeon_phi90.fits";
 
-  //Dust continuum image
-  i=6;
-  img[i].pxls                   = 500;               // Pixels per dimension                                            
-  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
-  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
-  img[i].phi                    = 0.;            // Azimuthal angle                                                
-  img[i].distance               = 1000*PC;         // source distance in m                                                
-  img[i].source_vel             = 0;              // source velocity in m/s                                        
-  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_faceon_band7_tau.fits";
-  img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
-
   //Line image
-  i=7;
+  i=10;
   img[i].trans                   = 2;            //Line transition
   img[i].molI                   = 0;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -157,7 +193,52 @@ input(inputPars *par, image *img){
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
   img[i].filename               = "img_CO_J3-2_LTE_kelvin_faceon.fits";
+  
+//Line image
+  i=11;
+  img[i].trans                   = 2;            //Line transition
+  img[i].molI                   = 0;            //mol ID
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].nchan                  = 81;
+  img[i].velres                 = 100.;
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_CO_J3-2_LTE_kelvin_edgeon.fits";
+  
+//Line image
+  i=12;
+  img[i].trans                   = 2;            //Line transition
+  img[i].molI                   = 0;            //mol ID
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].nchan                  = 81;
+  img[i].velres                 = 100.;
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = -M_PI/2;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_CO_J3-2_LTE_kelvin_edgeon_phi90.fits";
 
+  //Line image
+  i=13;
+  img[i].trans                   = 2;            //Line transition
+  img[i].molI                   = 0;            //mol ID
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].nchan                  = 81;
+  img[i].velres                 = 100.;
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_CO_J3-2_LTE_tau_faceon.fits";
+  
 }
 
 /******************************************************************************/
@@ -174,8 +255,8 @@ density(double dummy0, double dummy1, double id, double *density){
 void
 temperature(double dummy0, double dummy1, double id, double *temperature){
   int id_int=round(id);
-  temperature[0] = 100.0; //sf3d->temp_gas[id_int];
-  temperature[1] = 100.0; //sf3d->temp_dust[id_int];
+  temperature[0] = sf3d->temp_gas[id_int];
+  temperature[1] = sf3d->temp_dust[id_int];
 }
 
 /******************************************************************************/
@@ -183,8 +264,8 @@ temperature(double dummy0, double dummy1, double id, double *temperature){
 void
 abundance(double dummy0, double dummy1, double id, double *abundance){
   int id_int=round(id);
-  abundance[0] = 1e-4;
-  abundance[1] = 1e-9;
+  abundance[0] = sf3d->abundance[0][id_int];
+  abundance[1] = sf3d->abundance[1][id_int];
 }
 
 /******************************************************************************/
@@ -205,7 +286,7 @@ doppler(double dummy0, double dummy1, double id, double *doppler){
    * Note that *doppler is a pointer, not an array.
    * Remember the * in front of doppler.
    */
-  *doppler = 200.;
+  *doppler = 10.;
 }
 
 /******************************************************************************/

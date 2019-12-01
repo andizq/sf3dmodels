@@ -19,8 +19,8 @@ input(inputPars *par, image *img){
    */
   par->radius                   = 100*AU;
   par->minScale                 = 0.1*AU; // 2 * sizex / Nx / 2
-  par->pIntensity               = 109025;
-  par->sinkPoints               = 10000; 
+  par->pIntensity               = 327021;
+  par->sinkPoints               = 30000; 
   par->dust                     = "../../opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "co.dat";
   
@@ -125,8 +125,8 @@ density(double dummy0, double dummy1, double id, double *density){
 void
 temperature(double dummy0, double dummy1, double id, double *temperature){
   int id_int=round(id);
-  temperature[0] = 100.0; //sf3d->temp_gas[id_int];
-  temperature[1] = 100.0; //sf3d->temp_dust[id_int];
+  temperature[0] = sf3d->temp_gas[id_int];
+  temperature[1] = sf3d->temp_dust[id_int];
 }
 
 /******************************************************************************/
@@ -134,7 +134,7 @@ temperature(double dummy0, double dummy1, double id, double *temperature){
 void
 abundance(double dummy0, double dummy1, double id, double *abundance){
   int id_int=round(id);
-  abundance[0] = 0;
+  abundance[0] = 1e-15;
 }
 
 /******************************************************************************/

@@ -71,22 +71,24 @@ t0 = time.time()
 filename = "grid_temp.dat"
 prop_tags, npoints, data = read_temp(filename)
 
-npoints = npoints#10000
+npoints = npoints
 data['xyz'] = data['xyz'][0:npoints]
 data['props'] = data['props'][0:npoints]
+abund_co = np.where(data['props'][:,2]>19.0, 1e-5, 1e-8)
+
+pre_data = np.loadtxt('pre_datatab.dat')
+
 
 grid = Model.Struct(XYZ = data['xyz'].T, NPoints= npoints)
 prop = {'dens_H2': data['props'][:,0],
         'temp_dust': data['props'][:,1],
         'temp_gas': data['props'][:,2],
+        'vel_x': pre_data[:,1],
+        'vel_y': pre_data[:,2],
+        'vel_z': pre_data[:,3],
+        'abundance_0': abund_co,
+        'abundance_1': np.zeros(npoints)+1e-9
         }
-
-
-fill = fillgrid.Random(grid)
-fill_rand = fill.spherical(prop,
-                           prop_fill = {'dens_H2': 1.0, 'temp_dust': 3.0, 'temp_gas': 3.0},
-                           r_min = 1*u.au, r_max = 100*u.au,
-                           n_dummy = grid.NPoints/10.)
 
 lime = rt.Lime(grid)
 lime.submodel(prop, output='datatab.dat', folder='./', lime_npoints = True, lime_header = True)
@@ -104,7 +106,7 @@ ax_kw = {'projection': '3d', 'xlim': lims, 'ylim': lims, 'zlim': lims, 'azim': 3
 canvas3d = Plot_model.Canvas3d(ax_kw=ax_kw)
 ax = canvas3d.ax
 sp = canvas3d.scatter_random(grid, prop['dens_H2']/1e6,  weight, prop_color=prop['temp_dust'], GRID_unit=u.au, power=0, NRand=10000, prop_min=1.0, #function arguments
-                             marker = '+', cmap = 'jet', s = 3, edgecolors = 'none', vmax=500, norm = colors.Normalize()) #Scatter kwargs
+                             marker = '+', cmap = 'jet', s = 3, edgecolors = 'none', vmax=300, norm = colors.Normalize()) #Scatter kwargs
 cbar = plt.colorbar(sp)
 cbar.ax.set_ylabel(r'Dust temperature [K]')
 ax.set_xlabel('au')
