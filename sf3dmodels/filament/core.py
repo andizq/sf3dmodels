@@ -54,10 +54,10 @@ class DefaultFilamentFunctions(object):
         Parameters
         ----------
         R : array_like, shape(n,)
-           Array of R's with respect to the model long axis.
+           Array of cylindrical R's with respect to the model long axis.
 
         theta : array_like, shape(n,)
-           Array of theta's with respect to the model long axis.
+           Array of azimuthal theta's with respect to the model long axis.
 
         z : array_like, shape(n,)
            Array of z's with respect to the model long axis.
@@ -86,10 +86,10 @@ class DefaultFilamentFunctions(object):
         Parameters
         ----------
         R : array_like, shape(n,)
-           Array of R's with respect to the model long axis.
+           Array of cylindrical R's with respect to the model long axis.
 
         theta : array_like, shape(n,)
-           Array of theta's with respect to the model long axis.
+           Array of azimuthal theta's with respect to the model long axis.
 
         z : array_like, shape(n,)
            Array of z's with respect to the model long axis.
@@ -119,10 +119,10 @@ class DefaultFilamentFunctions(object):
         Parameters
         ----------
         R : array_like, shape(n,)
-           Array of R's with respect to the model long axis.
+           Array of cylindrical R's with respect to the model long axis.
 
         theta : array_like, shape(n,)
-           Array of theta's with respect to the model long axis.
+           Array of azimuthal theta's with respect to the model long axis.
 
         z : array_like, shape(n,)
            Array of z's with respect to the model long axis.
@@ -151,10 +151,10 @@ class DefaultFilamentFunctions(object):
         Parameters
         ----------
         R : array_like, shape(n,)
-           Array of R's with respect to the model long axis.
+           Array of cylindrical R's with respect to the model long axis.
 
         theta : array_like, shape(n,)
-           Array of theta's with respect to the model long axis.
+           Array of azimuthal theta's with respect to the model long axis.
 
         z : array_like, shape(n,)
            Array of z's with respect to the model long axis.
@@ -187,13 +187,13 @@ class DefaultFilamentFunctions(object):
         Parameters
         ----------
         R : array_like, shape(n,1)
-           Array of R's with respect to the model long axis.
+           Array of cylindrical R's with respect to the model long axis.
 
         R_dir : array_like, shape(n,3)
            Unit radial vectors with respect to the model long axis.
 
         theta : array_like, shape(n,1)
-           Array of theta's with respect to the model long axis.
+           Array of azimuthal theta's with respect to the model long axis.
 
         theta_dir : array_like, shape(n,3)
            Unit angular vectors with respect to the model long axis.
@@ -292,11 +292,11 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
         """
         Filament Model from `Smith+2014b`_.
         
-           - See the **Section 2.4** and the **Tables 2,5 and 6** on `Smith+2014b`_ for examples on the combination of parameters.
+           - See **Section 2.4** and **Tables 2,5 and 6** of `Smith+2014b`_ for examples on different combination of parameters.
            - See the model equations and a sketch of the cylinder geometry in the **Notes** section below.        
            - See the model functions on `DefaultFilamentFunctions`.
            - It is possible to customise the model functions in order to control the filament geometry, density, etc. See the **example** section below.
-           - The resulting **Attributes** depend on which parameters were set different to None.
+           - The object **Attributes** depend on which physical parameters were set different to None.
 
         Input and output units: SI (metres, kilograms, seconds).
 
@@ -435,7 +435,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
            import sf3dmodels.Plot_model as pm
            from sf3dmodels.utils.units import pc
 
-           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc) # Invoke the class with the filament axis geometry
+           f1 = sf.FilamentModel([0,0,0], [0,0,1], -0.2*pc, 0.2*pc, 0.01*pc) # Instantiate the FilamentModel class with geometrical parameters for the grid construction
            f1.cylinder(0.1*pc, 1e-3*pc, temp_pars = [500, 0.02*pc, -0.3], abund_pars = 1e-4) # Specify the method and the physical parameters
            
            lims=np.array([-0.3,0.3])*pc
@@ -653,7 +653,7 @@ class FilamentModel(RandomGridAroundAxis, DefaultFilamentFunctions):
             if isinstance(pars[key], (float,int,complex)):
                 pars[key] = [pars[key]]
 
-        self._grid(self.func_width, pars['width'], R_min=R_min, dummy_frac=dummy_frac)
+        self._grid(self.func_width, pars['width'], R_min=R_min, dummy_frac=dummy_frac) #from RandomGridAroundAxis
         if self.ndummies > 0: self.GRID = Struct( **{'XYZ': np.append(self.grid, self.grid_dummy, axis=0).T, 'NPoints': self.NPoints})
         else: self.GRID = Struct( **{'XYZ': self.grid.T, 'NPoints': self.NPoints})
 

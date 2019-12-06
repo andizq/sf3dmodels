@@ -71,6 +71,7 @@ examples/*.inp
 *.fits
 *.png
 *.tab
+*.ascii
 
 # Specific files
 rt-lime.c

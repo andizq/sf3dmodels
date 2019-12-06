@@ -7,17 +7,46 @@ real cells and the border of an eventual radiative transfer domain.
 import numpy as np
 from ..tools.transform import spherical2cartesian
 from .core import Build_r
+from copy import copy, deepcopy
 
 __all__ = ['Random']
 #******************
 #Useful TOOLS
 #******************
+class SmartRejectionDummies(object):
+    def __init__(self, pregrid, n_real, n_dummy, delaunay=False):
+        tri = delaunay
+        if not delaunay:
+            from scipy.spatial import Delaunay
+            tri = Delaunay(pregrid.T)
 
-class Random(Build_r): 
+        self.n_real = n_real
+        self.n_dummy = n_dummy
+        self.indices, self.indptr = tri.vertex_neighbor_vertices
+        self.accepted_dummies = [] #np.zeros(n_dummy, dtype=bool)
+        self.inspect_dummies()
+        self.accepted_dummies = np.asarray(self.accepted_dummies)
+        self.n_accepted_dummies = len(self.accepted_dummies)
+
+    def find_dummy_neighs(self, k):
+        ind_neighs = self.indptr[self.indices[k]:self.indices[k+1]]
+        if np.sum(ind_neighs >= self.n_real) < 2: pass #If there is just one neighbour dummy, then reject the k-th dummy.
+        else: self.accepted_dummies.append(k)
+        
+    def inspect_dummies(self):
+        for k in range(self.n_real, self.n_real+self.n_dummy):
+            self.find_dummy_neighs(k)
+        
+class Random(Build_r, SmartRejectionDummies): 
     """    
-    Contains methods for filling the grid in randomly.
+    Methods for filling in the grid randomly with (non-physical) dummy points.
     """
     __doc__ += Build_r._pars + Build_r._returns
+    
+    def __init__(self, grid, smart=True):
+        self._smart = smart
+        self.grid_orig = copy(grid)
+        super(Random, self).__init__(grid)
 
     def by_density(self, density, mass_fraction = 0.5, r_max = None, n_dummy = None, r_steps = 100):
         r"""
@@ -122,16 +151,28 @@ class Random(Build_r):
         x_rand, y_rand, z_rand = spherical2cartesian(r = r_rand,
                                                      theta = th_rand,
                                                      phi = phi_rand)  
-        self.GRID.XYZ = np.hstack((self.GRID.XYZ,[x_rand,y_rand,z_rand]))
+        
+        self.pregrid = np.hstack((self.GRID.XYZ,[x_rand,y_rand,z_rand]))
+        if self._smart: 
+            SmartRejectionDummies.__init__(self, self.pregrid, self.GRID.NPoints, n_dummy) 
+            n_dummy = self.n_accepted_dummies
+            accepted_dummies_ids = self.accepted_dummies - self.GRID.NPoints
+            self.GRID.XYZ = np.hstack((self.GRID.XYZ,[x_rand[accepted_dummies_ids],
+                                                      y_rand[accepted_dummies_ids],
+                                                      z_rand[accepted_dummies_ids]]))
+        else: self.GRID.XYZ = self.pregrid
+
         self.GRID.NPoints = self.GRID.NPoints + n_dummy
+
         print("New number of grid points:", self.GRID.NPoints)
 
         dummies = np.zeros(n_dummy)
+        
         fill = {}
         for p in prop: fill[p] = 0.0
         fill.update(prop_fill)
         for p in prop: prop[p] = np.append(prop[p], dummies+fill[p]) 
-
+                
         return {"r_rand": r_rand, "n_dummy": n_dummy}
 
 
@@ -222,3 +263,6 @@ class Random(Build_r):
         rand_spher = self.spherical(prop, prop_fill=prop_fill, r_min=r_min, r_max=r_max, n_dummy=n_dummy)
         return {"r_rand": rand_spher["r_rand"], "r_min": r_min, "r_max": r_max, 
                 "comp_fraction": comp_fraction, "n_dummy": rand_spher["n_dummy"]}
+
+
+
