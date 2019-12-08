@@ -30,7 +30,7 @@ class SmartRejectionDummies(object):
 
     def find_dummy_neighs(self, k):
         ind_neighs = self.indptr[self.indices[k]:self.indices[k+1]]
-        if np.sum(ind_neighs >= self.n_real) < 2: pass #If there is just one neighbour dummy, then reject the k-th dummy.
+        if np.sum(ind_neighs >= self.n_real) < 3: pass #If there is just one neighbour dummy, then reject the k-th dummy.
         else: self.accepted_dummies.append(k)
         
     def inspect_dummies(self):
@@ -153,6 +153,7 @@ class Random(Build_r, SmartRejectionDummies):
                                                      phi = phi_rand)  
         
         self.pregrid = np.hstack((self.GRID.XYZ,[x_rand,y_rand,z_rand]))
+        print (n_dummy)
         if self._smart: 
             SmartRejectionDummies.__init__(self, self.pregrid, self.GRID.NPoints, n_dummy) 
             n_dummy = self.n_accepted_dummies
@@ -161,6 +162,7 @@ class Random(Build_r, SmartRejectionDummies):
                                                       y_rand[accepted_dummies_ids],
                                                       z_rand[accepted_dummies_ids]]))
         else: self.GRID.XYZ = self.pregrid
+        print (n_dummy)
 
         self.GRID.NPoints = self.GRID.NPoints + n_dummy
 
