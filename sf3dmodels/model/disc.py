@@ -19,17 +19,18 @@ class Transition(object):
     
     def __init__(self):
         self.flags = {'disc': True, 'env': False}
-        func_1d = {'powerlaw_cavity': self._powerlaw_cavity1d}
+        func_scalar = {'powerlaw_cavity': self._powerlaw_cavity_scalar}
 
     def constant_profile(self, x): return x
     def gaussian_profile(self, x, x_mean, stddev):
         return np.exp(-0.5*((x-x_mean)/stddev)**2)
 
-    def _powerlaw_cavity1d(self, n_cav=1e16, power=-1.0, dn_cav=1e-4,
-                           R_cav=30*au, #Radial cavity, must be > 0 
-                           z_mean=0, z_stddev=5*au, #Gaussian mean and standard deviation for the disc scale-height
-                           phi_mean=0, phi_stddev=None,
-                           grid=None, coord=None, func_1d=False):
+    def _powerlaw_cavity_scalar(self, 
+                                n_cav=1e16, power=-1.0, dn_cav=1e-4,
+                                R_cav=30*au, #Radial cavity, must be > 0 
+                                z_mean=0, z_stddev=5*au, #Gaussian mean and standard deviation for the disc scale-height
+                                phi_mean=0, phi_stddev=None,
+                                grid=None, coord=None, func_scalar=False):
         R = coord['R']
         z = coord['z']
         a_cav = n_cav
@@ -42,12 +43,13 @@ class Transition(object):
         val = a_cav*(R/R_cav)**power * self.gaussian_profile(z, z_mean, z_stddev) * phi_val
         return val
 
-    def powerlaw_cavity(self, n_cav=1e16, power=-1.0, dn_cav=1e-4,
+    def powerlaw_cavity(self, 
+                        n_cav=1e16, power=-1.0, dn_cav=1e-4,
                         R_cav=30*au, #Radial cavity, must be > 0 
                         z_mean=0, z_stddev=5*au, #Gaussian mean and standard deviation for the disc scale-height
                         phi_mean=0, phi_stddev=None,
-                        grid=None, coord=None, func_1d=False):
-        if func_1d: return self._powerlaw_cavity1d #If the coord input is scalar
+                        grid=None, coord=None, func_scalar=False):
+        if func_scalar: return self._powerlaw_cavity_scalar #If the coord input is scalar
         if coord is not None:
             R = np.asarray(coord['R'])
             z = np.asarray(coord['z'])
