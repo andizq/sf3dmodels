@@ -32,8 +32,8 @@ class Grid(object):
 
     def random(self, func=None, r_size=100*au, normalization=1e16, power=0.5, npoints=50000, kwargs_func={}):
         #Make the user able to define a certain r on which the normalization will be computed.
-        func_1d = func(func_1d=True)
-        kwargs_func_cp = copy.copy(kwargs_func) #prevents modifying user-defined dicts
+        func_scalar = func(func_scalar=True)
+        kwargs_func_cp = copy.copy(kwargs_func) #not to modify user-defined dicts
         x,y,z = np.zeros((3,npoints))
         rh,Rh,th,ph = np.zeros((4,npoints))
         n = 0
@@ -46,7 +46,7 @@ class Grid(object):
             R = r * np.sin(theta)
             z_ = r * np.cos(theta)
             kwargs_func_cp.update({'coord': {'r': r, 'R': R, 'theta': theta, 'phi': phi, 'z': z_}})
-            val = func_1d(**kwargs_func_cp)
+            val = func_scalar(**kwargs_func_cp)
             if self._accept_point(val,normalization,power): 
                 x[n] = self._sph_to_cart_x(r, theta, phi)
                 y[n] = self._sph_to_cart_y(r, theta, phi)
