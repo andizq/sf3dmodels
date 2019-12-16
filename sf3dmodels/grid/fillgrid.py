@@ -30,7 +30,9 @@ class SmartRejectionDummies(object):
 
     def find_dummy_neighs(self, k):
         ind_neighs = self.indptr[self.indices[k]:self.indices[k+1]]
-        if np.sum(ind_neighs >= self.n_real) < 3: pass #If there is just one neighbour dummy, then reject the k-th dummy.
+        n_neighs = len(ind_neighs)
+        if np.sum(ind_neighs >= self.n_real) < int(round(0.5*n_neighs)): pass 
+        #if np.sum(ind_neighs >= self.n_real) < 3: pass #If there is just two neighbours dummies, then reject the k-th dummy.
         else: self.accepted_dummies.append(k)
         
     def inspect_dummies(self):
