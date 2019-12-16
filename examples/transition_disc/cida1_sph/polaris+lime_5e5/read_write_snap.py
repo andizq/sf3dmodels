@@ -45,10 +45,11 @@ P = 2*np.pi*a0**1.5/mu**0.5 #Orbital period
 data_gas = data[data[:,11]==1]
 ngas = len(data_gas)
 
-if nfrac: 
-    ids_rand = np.random.choice(np.arange(0,ngas), size=nfrac)
+if nfrac and nfrac<ngas: 
+    ids_rand = np.random.choice(np.arange(0,ngas), size=nfrac, replace=False)
     data_gas = data_gas[ids_rand]
 
+print (data_gas.shape)
 data_gas[:,0:3] *= u.au #a0
 data_r = np.linalg.norm(data_gas[:,0:3], axis=1)
 data_gas = data_gas[data_r <= 100*u.au]
