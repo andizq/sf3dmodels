@@ -6,6 +6,28 @@ Classes: Transition, (missing: Keplerian --> Burgers, Pringle+1981, Keto+2010)
 
 from ..utils.units import au
 import numpy as np
+"""
+class TransitionDiscFunctions(object):
+    pass
+
+class PringleDiscFunctions(object):
+    #Default: Pringle disc? --> similar to the filaments approach
+    #Hamburgers
+    #Keto's
+    #Transition discs --> class with its own functions
+    #
+    pass
+
+class HamburgerDiscFunctions(object):
+    pass
+
+class DiscModel(DefaultDiscFunctions, HamburgerFunctions):
+    #def pringle
+    #def default = pringle
+    #def hamburger
+    pass
+"""
+
 
 #****************
 #TRANSITION DISCS
