@@ -118,7 +118,7 @@ class OutflowModel(RandomGrid):
     def _get_classname(cls):
         return cls.__name__
     
-    def reynolds86(self, width_pars, dens_pars=None, ionfrac_pars=None, temp_pars=None, z0=None, v0=None, abund_pars=None, gtdratio=None, vsys=[0,0,0]):
+    def reynolds86(self, width_pars, dens_pars=None, ionfrac_pars=None, temp_pars=None, v0=None, abund_pars=None, gtdratio=None, vsys=[0,0,0], z0=None):
         """
         Outflow Model from `Reynolds+1986`_.
         

@@ -564,7 +564,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
             f.write('%d\n'%self.nn)                                 # Nr of cells
             #data = dens_ion.ravel(order='F') # Create a 1-D view, fortran-style indexing
             dens_ion.tofile(f, sep='\n', format=fmt)
-            f.closeo()
+            f.close()
 
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
