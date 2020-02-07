@@ -833,7 +833,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
 
 class Radmc3dDefaults(Radmc3d):
     """
-    Hosts default radiative transfer modes for `RADMC-3D`_: freefree, recombination lines.
+    Hosts predefined radiative transfer modes for `RADMC-3D`_: freefree, recombination lines.
     
     Parameters
     ----------
