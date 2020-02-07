@@ -733,10 +733,10 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         Parameters
         ----------
         lam : list or array_like,  
-           Wavelength intervals, in microns.
+           Boundaries of the wavelength grid, in microns.
         
         nxx : list or array_like, length: len(lam)-1 
-           Number of wavelengths in each interval 
+           Number of wavelengths within each pair of boundaries. 
 
         fmt : str
            Format string for numbers in the output file.
@@ -892,7 +892,7 @@ class Radmc3dDefaults(Radmc3d):
            Have a look at the `RADMC-3D`_ docs for all the available control commands.  
 
         kwargs_wavelength : {'nxx': array_like, 'lam': array_like}, optional
-           Optional dictionary containing the desired range of wavelengths to be written into file.
+           Optional dictionary containing the number of points and boundaries for the grid of wavelengths to consider.
            For further information and default values take a look at the method `~sf3dmodels.Model.Radmc3d.write_wavelength_micron`.
         
         Examples
