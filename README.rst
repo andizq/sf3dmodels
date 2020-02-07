@@ -13,6 +13,10 @@ sf3dmodels
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
+.. image:: https://img.shields.io/badge/ascl-2001.003-blue.svg?colorB=262255
+    :target: http://ascl.net/2001.003
+    :alt: ASCL Code Record
+
 sf3dmodels is a star forming region(s) modelling package that brings together
 analytical models in order to compute their physical properties in a 3-Dimensional grid. 
 The package can couple different models in a single grid to recreate complex star
