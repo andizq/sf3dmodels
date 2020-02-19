@@ -164,7 +164,7 @@ class Random(Build_r, SmartRejectionDummies):
                                                       y_rand[accepted_dummies_ids],
                                                       z_rand[accepted_dummies_ids]]))
         else: self.GRID.XYZ = self.pregrid
-        print ("Final number of dummies":, n_dummy)
+        print ("Final number of dummies:", n_dummy)
 
         self.GRID.NPoints = self.GRID.NPoints + n_dummy
 
