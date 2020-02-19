@@ -155,7 +155,7 @@ class Random(Build_r, SmartRejectionDummies):
                                                      phi = phi_rand)  
         
         self.pregrid = np.hstack((self.GRID.XYZ,[x_rand,y_rand,z_rand]))
-        print (n_dummy)
+        print ("Dummies before smart-rejection algorithm:", n_dummy)
         if self._smart: 
             SmartRejectionDummies.__init__(self, self.pregrid, self.GRID.NPoints, n_dummy) 
             n_dummy = self.n_accepted_dummies
@@ -164,7 +164,7 @@ class Random(Build_r, SmartRejectionDummies):
                                                       y_rand[accepted_dummies_ids],
                                                       z_rand[accepted_dummies_ids]]))
         else: self.GRID.XYZ = self.pregrid
-        print (n_dummy)
+        print ("Final number of dummies":, n_dummy)
 
         self.GRID.NPoints = self.GRID.NPoints + n_dummy
 
