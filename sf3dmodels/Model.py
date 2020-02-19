@@ -366,7 +366,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
 #------------------------------
 
 def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID, 
-                       p = 2.25, q = 0.5, rho_thres = 10.0, rho_min = 0.0, 
+                       p = 2.25, q = 0.5, rho_thres = 10.0, rho_min = 1.0, 
                        Rt = False, discFlag=True, rdisc_max = False):
 
 #RStar: stellar radius
