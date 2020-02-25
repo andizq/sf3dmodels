@@ -26,6 +26,7 @@ if not _ASTROPY_SETUP_:
     from . import tools
     from . import utils
     from . import arepo
+    from . import model
     U = Utils
     Res = Resolution
 
