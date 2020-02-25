@@ -1,0 +1,167 @@
+/*
+ *  model.c
+ *  This file is part of LIME, the versatile line modeling engine
+ *
+ *  Copyright (C) 2006-2014 Christian Brinch
+ *  Copyright (C) 2015 The LIME development team
+ *
+ */
+
+#include "lime.h"
+
+/******************************************************************************/
+
+void
+input(inputPars *par, image *img){
+  int i;
+  /*
+   * Basic parameters. See cheat sheet for details.
+   */
+  par->radius                   = 65*AU;
+  par->minScale                 = 1*AU; // 2 * sizex / Nx / 2
+  par->pIntensity               = 50000; 
+  par->sinkPoints               = 20000; 
+  par->dust                     = "../opacities_k05_230GHz_B_1_7.tab";
+  par->moldatfile[0]            = "co.dat";
+  //par->antialias                = 1;
+  par->sampling                 = 1; // if 0: log distr. for radius, directions distr. uniformly on a sphere.
+  // par->samplingAlgorithm                 = 1; //This option allows the user to build their own gridDensity (fracdensity) function to reject or accept points.
+
+  par->lte_only = 1;
+  par->gridfile                 = "grid.vtk";
+
+  /* If required, in the next line you can set manually the normalization density (density^0.2) 
+     for Lime to accept or reject pintensity points. 0.2 is the default normalization exponent.
+     It can be modified in the pars file lime.h */
+  
+  par->gridDensMaxValues[0] = 700.; 
+
+  /*
+  par->collPartIds[0]           = CP_H2;
+  par->nMolWeights[0]           = 1.0;
+  par->dustWeights[0]           = 1.0;
+  */
+
+  char *lamdaNames[] = {"H2","p-H2","o-H2","electrons","H","He","H+"};
+  double lamdaMolWeights[] = {2.0159,2.0159,2.0159,5.486e-4,1.00794,4.0026,1.00739};
+
+  par->collPartMolWeights[0] = lamdaMolWeights[0];  //H2 
+  par->collPartMolWeights[1] = lamdaMolWeights[6];  //H+ 
+
+  par->collPartNames[0] = lamdaNames[0];  //H2 
+  par->collPartNames[1] = lamdaNames[6];  //H+ 
+ 
+  par->nMolWeights[0]           = 1.0; //Abundance refered to H2
+  par->nMolWeights[1]           = 0.5;
+
+
+  /*
+   * Definitions for image #0. Add blocks with successive values of i for additional images.
+   */
+
+
+  //Line image
+  i=0;
+  img[i].nchan                  = 50;             // Number of channels
+  img[i].velres                 = 200.;           // Channel resolution in m/s
+  img[i].trans                  = 0;              // zero-indexed J quantum number
+  img[i].pxls                   = 140;               // Pixels per dimension
+  img[i].imgres                 = 0.001;           // Resolution in arc seconds
+  img[i].theta                  = M_PI/2;            // 0: face-on, pi/2: edge-on
+  img[i].phi                    = 0.;            // Azimuthal angle
+  img[i].distance               = 1000*PC;         // source distance in m
+  img[i].source_vel             = 0;              // source velocity in m/s
+  img[i].unit                   = 1;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau
+  img[i].filename               = "img_COJ1-0_edgeon.fits"; //Output file
+
+  //Line image
+  i=1;
+  img[i].nchan                  = 50;             // Number of channels
+  img[i].velres                 = 200.;           // Channel resolution in m/s
+  img[i].trans                  = 0;              // zero-indexed J quantum number
+  img[i].pxls                   = 140;               // Pixels per dimension
+  img[i].imgres                 = 0.001;           // Resolution in arc seconds
+  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on
+  img[i].phi                    = 0.;            // Azimuthal angle
+  img[i].distance               = 1000*PC;         // source distance in m
+  img[i].source_vel             = 0;              // source velocity in m/s
+  img[i].unit                   = 1;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau
+  img[i].filename               = "img_COJ1-0_faceon.fits"; //Output file
+
+
+  //1st continuum image
+  i=2;
+  img[i].freq                   = 342.76e9; //K4         //Continuum central frequency                                     
+  img[i].pxls                   = 140;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.001;           // Resolution in arc seconds                                        
+  img[i].theta                  = M_PI/2;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 1;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_cont342ghz_edgeon.fits";
+
+  //2nd continuum image
+  i=3;
+  img[i].freq                   = 342.76e9;          //Continuum central frequency                                     
+  img[i].pxls                   = 140;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.001;           // Resolution in arc seconds                                        
+  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 1;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_cont342ghz_faceon.fits";
+
+}
+
+/******************************************************************************/
+
+
+void
+density(double dummy0, double dummy1, double id, double *density){
+  int id_int=round(id);
+  density[0] = sf3d->dens_H2[id_int]; 
+  density[1] = sf3d->dens_Hplus[id_int]; 
+}
+
+/******************************************************************************/
+
+void
+temperature(double dummy0, double dummy1, double id, double *temperature){
+  int id_int=round(id);
+  temperature[0] = sf3d->temp_gas[id_int];
+}
+
+/******************************************************************************/
+
+void
+abundance(double dummy0, double dummy1, double id, double *abundance){
+  int id_int=round(id);
+  abundance[0] = sf3d->abundance[0][id_int];
+}
+
+/******************************************************************************/
+
+void
+doppler(double dummy0, double dummy1, double id, double *doppler){
+  /*
+   * 200 m/s as the doppler b-parameter. This
+   * can be a function of (x,y,z) as well.
+   * Note that *doppler is a pointer, not an array.
+   * Remember the * in front of doppler.
+   */
+  *doppler = 200.;
+}
+
+/******************************************************************************/
+
+void
+velocity(double dummy0, double dummy1, double id, double *vel){
+  int id_int=round(id);
+  vel[0] = sf3d->vel_x[id_int];
+  vel[1] = sf3d->vel_y[id_int];
+  vel[2] = sf3d->vel_z[id_int]; 
+}
+
+/******************************************************************************/
