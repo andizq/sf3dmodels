@@ -6,6 +6,6 @@ Type the following commands:
 python make_outflow.py
 python make_disc.py
 python overlap_models.py
-curl https://home.strw.leidenuniv.nl/~moldata/datafiles/ch3cn.dat -o ch3cn.dat
+curl https://home.strw.leidenuniv.nl/~moldata/datafiles/co.dat -o co.dat
 lime -nS -p 8 rt-lime19.c
 ```
