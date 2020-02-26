@@ -16,7 +16,7 @@ class Struct:
 #SPATIAL (Spherical-)GRID
 #------------------------
  
-def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
+def grid(XYZmax, NP, rt_code = 'lime', include_zero = True, indexing='ij'):
     """
     Computes the hosting grid for the model(s).
     
@@ -62,28 +62,30 @@ def grid(XYZmax, NP, rt_code = 'lime', include_zero = True):
     print ('Computing Grid...')
     
     Xmax,Ymax,Zmax = XYZmax    
-    step = 2. * XYZmax / (NP-1)
     #epsilon = [RSun / 1.] * 3
+    step = [2. * XYZmax[i] / (NP[i]-1) if NP[i]>1 else 0 for i in range(3)]
+
     if rt_code == 'radmc3d': 
         step = 2. * XYZmax / (NP)
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i] + 1) for i in range(3)]
         #XYZgrid = [np.append( np.linspace(-XYZmax[i], XYZmax[i], NP[i]), (XYZmax[i] + step[i]) ) for i in range(3)]
-        X, Y ,Z = XYZgrid #The grid must contain the cell corners, but the properties are computed in the centres. 
+        X, Y ,Z = XYZgrid #The grid must contain the cell corners, but the properties are computed at the cell centres. 
         X = 0.5 * ( X[0:NP[0]] + X[1:NP[0]+1] ) #Moving the node from the corner to the center of the boxel. length = lengthofcorners - 1
         Y = 0.5 * ( Y[0:NP[1]] + Y[1:NP[1]+1] )  
         Z = 0.5 * ( Z[0:NP[2]] + Z[1:NP[2]+1] )
         XYZcentres = [X,Y,Z]
 
-        ZYX = np.meshgrid(Z,Y,X, indexing='ij')
+        ZYX = np.meshgrid(Z,Y,X, indexing=indexing)
         zList, yList, xList = [zyx.flatten() for zyx in ZYX]
         #X = X[:-1]; Y = Y[:-1]; Z = Z[:-1] #...the calculations must be done w/o that node 
 
     elif rt_code == 'lime': #lime
         XYZgrid = [np.linspace(-XYZmax[i], XYZmax[i], NP[i]) for i in range(3)]
+        print (step)
         X, Y, Z = XYZgrid
         XYZcentres = XYZgrid
 
-        XYZ = np.meshgrid(X,Y,Z, indexing='ij')
+        XYZ = np.meshgrid(X,Y,Z, indexing=indexing)
         xList, yList, zList = [xyz.flatten() for xyz in XYZ]
 
     #--------------------------------------

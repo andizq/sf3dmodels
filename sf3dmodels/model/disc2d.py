@@ -46,7 +46,7 @@ class Rosenfeld2d(object):
                 self.velocity2d[side] = self.convert_array_to_matrix(self.velocity[side])
         
     def convert_array_to_matrix(self, vec):
-        matrix = np.zeros(self.grid.Nodes)
+        matrix = np.zeros(self.grid.Nodes[self.grid.Nodes>1])
         k = 0
         for j in range(self.grid.Nodes[1]):
             for i in range(self.grid.Nodes[0]):
@@ -57,8 +57,8 @@ class Rosenfeld2d(object):
     def solve_quadratic(self):
         fac = -2*np.sin(self.psi)**2
         A = np.cos(2*self.incl) + np.cos(2*self.psi)
-        B = fac * 2*np.tan(self.incl) * self.grid.XY[1]
-        C = fac * (self.grid.XY[0]**2 + (self.grid.XY[1] / np.cos(self.incl))**2)
+        B = fac * 2*np.tan(self.incl) * self.grid.XYZ[1]
+        C = fac * (self.grid.XYZ[0]**2 + (self.grid.XYZ[1] / np.cos(self.incl))**2)
         t = []
         for i in range(self.n):
             p = [A, B[i], C[i]]
@@ -74,18 +74,18 @@ class Rosenfeld2d(object):
             r = np.linalg.norm([x,y], axis=0)
             phi = np.arctan2(y, x)
             ang_fac = np.sin(self.incl) * np.cos(phi)
-            vel[side] = np.sqrt(G * self.Mstar/r) * ang_fac
+            vel[side] = -np.sqrt(G * self.Mstar/r) * ang_fac #Positive vel means positive along z, which means approaching to the observer, for that reason imposed a (-) factor.
         return vel
             
     def cone_to_2d(self):
         t = self.solve_quadratic().T
         print (t)
-        x_true_near = self.grid.XY[0]
-        y_true_near = self.grid.XY[1] / np.cos(self.incl) + t[1]*np.sin(self.incl)
+        x_true_near = self.grid.XYZ[0]
+        y_true_near = self.grid.XYZ[1] / np.cos(self.incl) + t[1]*np.sin(self.incl)
         z_true_near = t[1] * np.cos(self.incl) 
     
-        x_true_far = self.grid.XY[0]
-        y_true_far = self.grid.XY[1] / np.cos(self.incl) + t[0]*np.sin(self.incl)
+        x_true_far = self.grid.XYZ[0]
+        y_true_far = self.grid.XYZ[1] / np.cos(self.incl) + t[0]*np.sin(self.incl)
         z_true_far = t[0] * np.cos(self.incl) 
     
         return {'near': [x_true_near, y_true_near, z_true_near], 
