@@ -38,17 +38,18 @@ class Rosenfeld2d(object):
 
     """
 
-    def __init__(self, grid, Mstar, incl, psi, get2d = True, velocity='keplerian', z_func=False):
+    def __init__(self, grid, Mstar, incl, psi, get2d = True, velocity='keplerian', z_func=False, PA=0.0):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         self.n = self.grid.NPoints
         self.Mstar = Mstar
         self.incl = incl
         if not z_func: self.psi = psi
-        else: self.psi = np.arctan(z_func(self.grid.rRTP[1]) / self.grid.rRTP[1])
-        print (self.psi)
+        else: 
+            self.psi = np.arctan(z_func(self.grid.rRTP[1]) / self.grid.rRTP[1])
+            print (self.psi[self.psi != psi], psi)
         self.z_func = z_func
-        print (incl, psi)
+        self.PA = PA
         self.grid_true = self.cone_to_2d() #(x,y,z) grid as a function of the x'y' plane coordinates.
         velocity_func = {'keplerian': self.velocity_keplerian, 'keplerian_vertical': self.velocity_keplerian_vertical}
         self.velocity = velocity_func[velocity]()
@@ -78,56 +79,81 @@ class Rosenfeld2d(object):
                 t.append(np.sort(np.roots(p)))
         return np.array(t)
             
-    def solve_quadratic(self):
+    def solve_quadratic(self, x, y):
         fac = -2*np.sin(self.psi)**2
         A = np.cos(2*self.incl) + np.cos(2*self.psi)
-        B = fac * 2*np.tan(self.incl) * self.grid.XYZ[1]
-        C = fac * (self.grid.XYZ[0]**2 + (self.grid.XYZ[1] / np.cos(self.incl))**2)
+        B = fac * 2*np.tan(self.incl) * y
+        C = fac * (x**2 + (y / np.cos(self.incl))**2)
         return self._get_t(A,B,C)
 
     def velocity_keplerian(self):
         vel = {}
         for side in ['near', 'far']:
-            x = self.grid_true[side][0]
-            y = self.grid_true[side][1]
-            r = np.linalg.norm([x,y], axis=0)
+            x, y, z, R = self.grid_true[side]
             phi = np.arctan2(y, x)
             ang_fac = np.sin(self.incl) * np.cos(phi)
-            vel[side] = -np.sqrt(G * self.Mstar/r) * ang_fac #Positive vel means positive along z, which means approaching to the observer, for that reason imposed a (-) factor.
+            vel[side] = -np.sqrt(G * self.Mstar/R) * ang_fac #Positive vel means positive along z, which means approaching to the observer, for that reason imposed a (-) factor.
         return vel
 
     def velocity_keplerian_vertical(self):
         vel = {}
         for side in ['near', 'far']:
-            x = self.grid_true[side][0]
-            y = self.grid_true[side][1]
-            z = self.grid_true[side][2]
-            R = np.linalg.norm([x,y], axis=0)
+            x, y, z, R = self.grid_true[side]
             r = np.linalg.norm([R,z], axis=0)
-            phi = np.arctan2(y, x)
+            phi = np.arctan2(y, x) 
             ang_fac = np.sin(self.incl) * np.cos(phi)
             vel[side] = -np.sqrt(G * self.Mstar/r**3) * R * ang_fac #Positive vel means positive along z, which means approaching to the observer, for that reason imposed a (-) factor.
+
+        #z_near = self.grid_true['near'][2]
+        #z_far = self.grid_true['far'][2]
+        
+        #vel['near'] = np.ma.masked_where(z_near>1800*u.au, vel['near'])
+        #vel['far'] = np.ma.masked_where(np.logical_or(z_far>1800*u.au, ~vel['near'].mask), vel['far'])
+        
         return vel
             
+    def rotate_sky_plane(self, x, y, ang):
+        xy = np.array([x,y])
+        cos_ang = np.cos(ang)
+        sin_ang = np.sin(ang)
+        rot = np.array([[cos_ang, -sin_ang],
+                        [sin_ang, cos_ang]])
+        return np.dot(rot, xy)
+
     def cone_to_2d(self):
-        t = self.solve_quadratic().T
-        print (t)
-        x_true_near = self.grid.XYZ[0]
-        y_true_near = self.grid.XYZ[1] / np.cos(self.incl) + t[1]*np.sin(self.incl)
+        if self.PA != 0.0: 
+            x_plane, y_plane = self.rotate_sky_plane(self.grid.XYZ[0], self.grid.XYZ[1], -self.PA)
+        else:
+            x_plane, y_plane = self.grid.XYZ[:2]
+
+        """
+        if self.z_func:
+            z_true_near = self.z_func(R_true_near)
+            z_true_far = self.z_func(R_true_far)
             
-        x_true_far = self.grid.XYZ[0]
-        y_true_far = self.grid.XYZ[1] / np.cos(self.incl) + t[0]*np.sin(self.incl)
+        """ 
+            
+        t = self.solve_quadratic(x_plane,y_plane).T        
+
+        x_true_near = x_plane
+        y_true_near = y_plane / np.cos(self.incl) + t[1]*np.sin(self.incl)
+            
+        x_true_far = x_plane
+        y_true_far = y_plane / np.cos(self.incl) + t[0]*np.sin(self.incl)
+
+        R_true_near = np.linalg.norm([x_true_near, y_true_near], axis=0)
+        R_true_far = np.linalg.norm([x_true_far, y_true_far], axis=0)
         
         if not self.z_func: 
             z_true_near = t[1] * np.cos(self.incl) 
             z_true_far = t[0] * np.cos(self.incl) 
         else: 
-            z_true_near = self.z_func(self.grid.rRTP[1])
-            z_true_far = -z_true_near
-            print (z_true_near/u.au)
-
-    
-        return {'near': [x_true_near, y_true_near, z_true_near], 
-                'far': [x_true_far, y_true_far, z_true_far]}
+            z_true_near = self.z_func(R_true_near)
+            z_true_far = self.z_func(R_true_far) 
+            #z_true_near = self.z_func(self.grid.rRTP[1])
+            #z_true_far = -z_true_near
+            
+        return {'near': [x_true_near, y_true_near, z_true_near, R_true_near], 
+                'far': [x_true_far, y_true_far, z_true_far, R_true_far]}
         
         
