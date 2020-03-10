@@ -177,7 +177,8 @@ class Rosenfeld2d(Velocity):
             coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
             vel[side] = -self.velocity_func(coord, **vel_kwargs)*ang_fac #Positive vel means positive along z, which means approaching to the observer, for that reason imposed a (-) factor.
 
-        if get_vel2d: self.velocity2d = {side: vel[side].reshape((*self.grid.Nodes[:2])) for side in ['near', 'far']}
+        #if get_vel2d: self.velocity2d = {side: vel[side].reshape((*self.grid.Nodes[:2])) for side in ['near', 'far']}
+        if get_vel2d: self.velocity2d = {side: vel[side].reshape((self.grid.Nodes[0], self.grid.Nodes[1])) for side in ['near', 'far']}
         self.velocity = vel
 
     def make_model(self, incl, psi, PA=0.0, get_vel2d=True, **vel_kwargs):
