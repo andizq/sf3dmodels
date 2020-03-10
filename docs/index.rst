@@ -43,7 +43,7 @@ to carry out radiative transfer calculations of the model.
 Requirements
 ============
 
-* Python 2.7.x or Python 3.5.x (or later)
+* Python 2.7.x or 3.5.x (or later)
 * `Astropy <http://docs.astropy.org/en/stable/install.html>`__
 * `Numpy <https://www.scipy.org/install.html>`_
 * `Matplotlib <https://matplotlib.org/users/installing.html>`_
