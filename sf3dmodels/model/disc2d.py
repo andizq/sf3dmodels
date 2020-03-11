@@ -10,6 +10,7 @@ import numpy as np
 import numbers
 import warnings
 from scipy.interpolate import griddata
+import os
 
 #warnings.filterwarnings("error")
 
@@ -76,7 +77,6 @@ class Tools:
         if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
         else: int2d = intensity2d
     
-        print (int2d, temp2d, vel2d)
         v_near = Tools._line_profile(v_chan, vel2d['near'], temp2d['near'], mmol=28.0101*u.amu) #12CO
         v_far = Tools._line_profile(v_chan, vel2d['far'], temp2d['far'], mmol=28.0101*u.amu) #12CO
 
@@ -92,6 +92,34 @@ class Tools:
 
         return int2d_full
 
+    @staticmethod
+    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchans=30, folder='./movie_channels/', **kwargs):
+        import matplotlib.pyplot as plt
+        vchannels = np.linspace(vchan0, vchan1, num=nchans)
+        int2d_cube = []
+        for i, vchan in enumerate(vchannels):
+            int2d = Tools.get_channel(velocity2d, intensity2d, temperature2d, vchan, **kwargs)
+            int2d_cube.append(int2d)
+            extent = [-600, 600, -600, 600]
+            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower left', vmax=np.max(temperature2d['near']))
+            plt.xlabel('au')
+            plt.ylabel('au')
+            plt.text(200, 500, '%.1f km/s'%vchan)
+            cbar = plt.colorbar()
+            cbar.set_label(r'Brightness Temperature [K]')
+            plt.contour(velocity2d['near'], levels=[vchan], colors='red', linestyles='--', linewidths=1.3, extent = extent)
+            plt.contour(velocity2d['far'], levels=[vchan], colors='red', linestyles=':', linewidths=1.3, extent = extent)
+            plt.plot([None],[None], color='red', linestyle='--', linewidth=2, label='Near side') 
+            plt.plot([None],[None], color='red', linestyle=':', linewidth=2, label='Far side') 
+            plt.legend(loc='upper left')
+            plt.savefig(folder+'int2d_chan%04d'%i)
+            print ('Saved channel %d'%i)
+            plt.close()
+
+        os.chdir(folder)
+        print ('Making channels movie...')
+        os.system('convert -delay 10 *int2d* cube_channels.gif')
+        return np.array(int2d_cube)
 
 class Velocity:
     @property
@@ -144,7 +172,6 @@ class Intensity:
         else: R = coord['R'] 
         z = coord['z']        
         A = I0*R0**-p*z0**-q
-        print (z,R)
         return A*R**p*abs(z)**q
         
     @staticmethod
@@ -187,7 +214,6 @@ class General2d(Velocity, Intensity, Tools):
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
         prop_kwargs = [kwarg for i, kwarg in enumerate(avai_kwargs) if true_kwargs[i]]
         prop_funcs = [func for i, func in enumerate(avai_funcs) if true_kwargs[i]]
-        print (prop_kwargs, prop_funcs)
         props = self._compute_prop(grid_true, prop_funcs, prop_kwargs)
         #Positive vel is positive along z, i.e. pointing to the observer, for that reason imposed a (-) factor to convert to the standard convention: (+) receding  
         if true_kwargs[0]:
@@ -302,8 +328,6 @@ class Rosenfeld2d(Velocity, Intensity, Tools):
         phi_true_near = np.arctan2(y_true_near, x_true_near)        
         phi_true_far = np.arctan2(y_true_far, x_true_far)        
 
-        print (R_true_near, R_true_far)
-        print (phi_true_near, phi_true_far)
         #****************************
             
         grid_true =  {'near': [x_true_near, y_true_near, z_true_near, R_true_near, phi_true_near], 
