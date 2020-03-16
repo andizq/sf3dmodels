@@ -170,6 +170,7 @@ New on sf3dmodels
 .. toctree::
    :maxdepth: 1   
    
+   model/model.rst
    filament/filament.rst
    outflow/outflow.rst
    radiativetransfer/rt.rst
