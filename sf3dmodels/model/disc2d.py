@@ -1,7 +1,7 @@
 """
 2D Disc models
 ==============
-Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube
+Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
 
 from ..utils.constants import G, kb
@@ -13,7 +13,7 @@ import numbers
 import warnings
 
 #warnings.filterwarnings("error")
-__all__ = ['Cube', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
+__all__ = ['Cube', 'Tools', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
 
 matplotlib.rcParams['font.family'] = 'monospace'
 matplotlib.rcParams['font.weight'] = 'normal'
@@ -448,9 +448,9 @@ class General2d(Velocity, Intensity, Tools):
     
 class Rosenfeld2d(Velocity, Intensity, Tools):
     """
-    Host class for Rosenfeld+2013 model to describe the velocity field of a flared disc in 2D. 
+    Host class for the Rosenfeld+2013 model which describes the velocity field of a flared disc in 2D. 
     This model assumes a (Keplerian) double cone to account for the near and far sides of the disc 
-    and solves analytical equations to find the line-of-sight velocity v_obs projected on the sky-plane. 
+    and solves analytical equations to find the line-of-sight velocity v_obs projected on the sky-plane from both sides. 
     
     Parameters
     ----------
@@ -461,7 +461,7 @@ class Rosenfeld2d(Velocity, Intensity, Tools):
     ----------
     velocity_func : function(coord, **kwargs) 
        Velocity function describing the kinematics of the disc. The argument coord is a dictionary
-       of coordinates (e.g. 'x', 'y', 'z', 'r', 'R', 'theta', 'phi') at which the function will be evaluated. 
+       of coordinates (e.g. 'x', 'y', 'z', 'r', 'R', 'theta', 'phi') where the function will be evaluated. 
        Additional arguments are optional and depend upon the function definition, e.g. Mstar=1.0*u.Msun
     """
 
