@@ -1,7 +1,7 @@
 """
 2D Disc models
 ==============
-Classes: Rosenfeld2d, General2d, Velocity, Intensity
+Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube
 """
 
 from ..utils.constants import G, kb
@@ -13,6 +13,7 @@ import numbers
 import warnings
 
 #warnings.filterwarnings("error")
+__all__ = ['Cube', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
 
 matplotlib.rcParams['font.family'] = 'monospace'
 matplotlib.rcParams['font.weight'] = 'normal'
