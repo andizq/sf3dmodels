@@ -6,13 +6,193 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity
 
 from ..utils.constants import G, kb
 from ..utils import units as u
+import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
 import numbers
 import warnings
-from scipy.interpolate import griddata
-import os
 
 #warnings.filterwarnings("error")
+
+matplotlib.rcParams['font.family'] = 'monospace'
+matplotlib.rcParams['font.weight'] = 'normal'
+matplotlib.rcParams['lines.linewidth'] = 1.5
+matplotlib.rcParams['axes.linewidth'] = 3.0
+matplotlib.rcParams['xtick.major.width']=1.6
+matplotlib.rcParams['ytick.major.width']=1.6
+
+SMALL_SIZE = 10
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 22
+
+matplotlib.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
+matplotlib.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+matplotlib.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+matplotlib.rc('xtick', labelsize=MEDIUM_SIZE-2)    # fontsize of the tick labels
+matplotlib.rc('ytick', labelsize=MEDIUM_SIZE-2)    # fontsize of the tick labels
+matplotlib.rc('legend', fontsize=SMALL_SIZE-1)    # legend fontsize
+matplotlib.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+params = {'xtick.major.size': 6.5,
+          'ytick.major.size': 6.5
+          }
+
+matplotlib.rcParams.update(params)
+
+
+class Cube(object):
+
+    def __init__(self, nchan, channels, data):
+        self.nchan = nchan
+        self.channels = channels
+        self.data = data
+        self._interactive = self.cursor
+
+    @property
+    def interactive(self): 
+        return self._interactive
+          
+    @interactive.setter 
+    def interactive(self, func): 
+        print('Setting interactive function to', func) 
+        self._interactive = func
+
+    @interactive.deleter 
+    def interactive(self): 
+        print('Deleting interactive function') 
+        del self._interactive
+    
+    def plot_spectrum(self, x, y, ax, extent=None):
+        def get_ji(x,y):
+            pass
+        if extent is None:
+            j, i = int(x), int(y)
+        else: 
+            nz, ny, nx = np.shape(self.data)
+            dx = extent[1] - extent[0]
+            dy = extent[3] - extent[2]
+            j = int(nx*(x-extent[0])/dx)
+            i = int(ny*(y-extent[2])/dy)
+            
+        spectrum = self.data[:,i,j]
+        v0, v1 = self.channels[0], self.channels[-1]
+        if np.logical_or(np.isinf(spectrum), np.isnan(spectrum)).all(): return False
+        else:
+            ax.fill_between(self.channels, spectrum, alpha=0.1)
+            return ax.step(self.channels, spectrum, where='mid', linewidth=2.5, label=r'%d,%d'%(x,y))
+        
+    def cursor(self, fig, ax, extent=None):
+
+        def onclick(event):
+            if event.button==3: 
+                print ('Right click. Disconnecting click event...')
+                fig.canvas.mpl_disconnect(cid)
+            elif event.inaxes is ax[0]:
+                plot_spec = self.plot_spectrum(event.xdata, event.ydata, ax[1], extent=extent) 
+                if plot_spec:
+                    print('%s click: button=%d, xdata=%f, ydata=%f' %
+                          ('double' if event.dblclick else 'single', event.button,
+                           event.xdata, event.ydata))
+                    ax[0].scatter(event.xdata, event.ydata)#, color=plot_spec[0].get_color())
+                    ax[1].legend()
+                    fig.canvas.draw()
+                    fig.canvas.flush_events()
+
+        cid = fig.canvas.mpl_connect('button_press_event', onclick)
+
+    def box(self):
+        pass
+    
+    def show(self, extent=None, chan_init=20, cursor_grid=True, 
+             int_unit=r'Brightness Temperature [K]', pos_unit='au', vel_unit=r'km s$^{-1}$'):
+        from matplotlib.widgets import Slider, Cursor
+        fig, ax = plt.subplots(ncols=2, figsize=(12,5))
+        axchan = plt.axes([0.2, 0.9, 0.24, 0.05], facecolor='0.7')
+        
+        y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
+        axcbar = plt.axes([0.48, y0, 0.03, y1-y0])
+        max_data = np.max(self.data)
+        ax[0].set_xlabel(pos_unit)
+        ax[0].set_ylabel(pos_unit)
+        ax[1].set_xlabel('l.o.s velocity [%s]'%vel_unit)
+        ax[1].tick_params(direction='in', right=True, labelright=False, labelleft=False)
+        axcbar.tick_params(direction='out')
+        ax[1].set_ylabel(int_unit, labelpad=15)
+        ax[1].yaxis.set_label_position('right')
+        ax[1].set_xlim(self.channels[0]-0.1, self.channels[-1]+0.1)
+        ax[1].set_ylim(-1, max_data)
+        ax[1].grid(lw=1.5, ls=':')
+        cmap = plt.get_cmap('hot')
+        cmap.set_bad(color=(0.9,0.9,0.9))
+
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=-1, vmax=max_data)
+        cbar = plt.colorbar(img, cax=axcbar)
+        current_chan = ax[1].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
+        self.interactive(fig, ax, extent=extent)
+
+        if cursor_grid: cg=Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
+        
+        
+
+        slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
+                             valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
+
+        def update(val):
+            chan = int(val)
+            img.set_data(self.data[chan])
+            current_chan.set_xdata(self.channels[chan])
+            fig.canvas.draw_idle()
+            
+        slider_chan.on_changed(update)
+        plt.show()
+
+    def make_fits(self, header={}):
+        pass
+    
+    def make_gif(self, folder='./movie/', extent=None, velocity2d=None, 
+                 unit=r'Brightness Temperature [K]',
+                 gif_command='convert -delay 10 *int2d* cube_channels.gif'):
+        import os
+        import matplotlib.pyplot as plt
+        cwd = os.getcwd()
+        if folder[-1] != '/': folder+='/'
+        os.system('mkdir %s'%folder)
+        max_data = np.max(self.data)
+
+        clear_list, coll_list = [], []
+        fig, ax = plt.subplots()
+        contour_color = 'red'
+        cmap = plt.get_cmap('binary')
+        cmap.set_bad(color=(0.9,0.9,0.9))
+        ax.plot([None],[None], color=contour_color, linestyle='--', linewidth=2, label='Near side') 
+        ax.plot([None],[None], color=contour_color, linestyle=':', linewidth=2, label='Far side') 
+        ax.set_xlabel('au')
+        ax.set_ylabel('au')
+        for i in range(self.nchan):
+            vchan = self.channels[i]
+            int2d = ax.imshow(self.data[i], cmap=cmap, extent=extent, origin='lower left', vmax=max_data)
+            cbar = plt.colorbar(int2d)
+            cbar.set_label(unit)
+            if velocity2d is not None:
+                vel_near=ax.contour(velocity2d['near'], levels=[vchan], colors=contour_color, linestyles='--', linewidths=1.3, extent = extent)
+                vel_far=ax.contour(velocity2d['far'], levels=[vchan], colors=contour_color, linestyles=':', linewidths=1.3, extent = extent)
+                coll_list = [vel_near, vel_far]
+            text_chan = ax.text(0.7, 1.02, '%4.1f km/s'%vchan, color='black', transform=ax.transAxes)
+            ax.legend(loc='upper left')
+            plt.savefig(folder+'int2d_chan%04d'%i)
+            #print ('Saved channel %d'%i)
+            #plt.cla()
+            clear_list = [cbar, int2d, text_chan]
+            for obj in clear_list: obj.remove()
+            for obj in coll_list: 
+                for coll in obj.collections:
+                    coll.remove()
+        plt.close()
+        os.chdir(folder)
+        print ('Making movie...')
+        os.system(gif_command)
+        os.chdir(cwd)
+
 
 class Tools:
     @staticmethod
@@ -60,66 +240,6 @@ class Tools:
             coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
-
-    @staticmethod
-    def _line_profile(v_chan, v, T, v_turb=0, mmol=2*u.amu):
-        v_sigma = np.sqrt(2*kb*T/mmol + v_turb**2) * 1e-3 #in km/s
-        return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
-
-    @staticmethod
-    def get_channel(velocity2d, intensity2d, temperature2d, v_chan, 
-                    v_turb=0.0, mmol=2*u.amu):
-
-        vel2d, temp2d, int2d = velocity2d, {}, {}
-        if isinstance(temperature2d, numbers.Number): temp2d['near'] = temp2d['far'] = temperature2d
-        else: temp2d = temperature2d
-
-        if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
-        else: int2d = intensity2d
-    
-        v_near = Tools._line_profile(v_chan, vel2d['near'], temp2d['near'], mmol=28.0101*u.amu) #12CO
-        v_far = Tools._line_profile(v_chan, vel2d['far'], temp2d['far'], mmol=28.0101*u.amu) #12CO
-
-        v_near_clean = np.where(np.isnan(v_near), -np.inf, v_near)
-        v_far_clean = np.where(np.isnan(v_far), -np.inf, v_far)
-        
-        #int2d_near = int2d['near'] * v_near_clean / v_near_clean.max()
-        int2d_near = np.where(np.isnan(int2d['near']), -np.inf, int2d['near'] * v_near_clean / v_near_clean.max())
-        int2d_far = np.where(np.isnan(int2d['far']), -np.inf, int2d['far'] * v_far_clean / v_far_clean.max())
-        
-        vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
-        int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
-
-        return int2d_full
-
-    @staticmethod
-    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchans=30, folder='./movie_channels/', **kwargs):
-        import matplotlib.pyplot as plt
-        vchannels = np.linspace(vchan0, vchan1, num=nchans)
-        int2d_cube = []
-        for i, vchan in enumerate(vchannels):
-            int2d = Tools.get_channel(velocity2d, intensity2d, temperature2d, vchan, **kwargs)
-            int2d_cube.append(int2d)
-            extent = [-600, 600, -600, 600]
-            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower left', vmax=np.max(temperature2d['near']))
-            plt.xlabel('au')
-            plt.ylabel('au')
-            plt.text(200, 500, '%.1f km/s'%vchan)
-            cbar = plt.colorbar()
-            cbar.set_label(r'Brightness Temperature [K]')
-            plt.contour(velocity2d['near'], levels=[vchan], colors='red', linestyles='--', linewidths=1.3, extent = extent)
-            plt.contour(velocity2d['far'], levels=[vchan], colors='red', linestyles=':', linewidths=1.3, extent = extent)
-            plt.plot([None],[None], color='red', linestyle='--', linewidth=2, label='Near side') 
-            plt.plot([None],[None], color='red', linestyle=':', linewidth=2, label='Far side') 
-            plt.legend(loc='upper left')
-            plt.savefig(folder+'int2d_chan%04d'%i)
-            print ('Saved channel %d'%i)
-            plt.close()
-
-        os.chdir(folder)
-        print ('Making channels movie...')
-        os.system('convert -delay 10 *int2d* cube_channels.gif')
-        return np.array(int2d_cube)
 
 class Velocity:
     @property
@@ -181,6 +301,95 @@ class Intensity:
         A = I0*Rt**gamma
         return A*(R**-gamma) * (1+(R/Rt)**alpha)**((gamma-beta)/alpha)
 
+    @staticmethod
+    def _line_profile(v_chan, v, T, v_turb=0.0, mmol=2*u.amu):
+        v_sigma = np.sqrt(2*kb*T/mmol + v_turb**2) * 1e-3 #in km/s
+        return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
+
+    @staticmethod
+    def get_channel(velocity2d, intensity2d, temperature2d, v_chan, **kwargs):                    
+        vel2d, temp2d, int2d = velocity2d, {}, {}
+        if isinstance(temperature2d, numbers.Number): temp2d['near'] = temp2d['far'] = temperature2d
+        else: temp2d = temperature2d
+        if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
+        else: int2d = intensity2d
+    
+        v_near = Intensity._line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
+        v_far = Intensity._line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
+
+        v_near_clean = np.where(np.isnan(v_near), -np.inf, v_near)
+        v_far_clean = np.where(np.isnan(v_far), -np.inf, v_far)
+        
+        #int2d_near = int2d['near'] * v_near_clean / v_near_clean.max()
+        int2d_near = np.where(np.isnan(int2d['near']), -np.inf, int2d['near'] * v_near_clean / v_near_clean.max())
+        int2d_far = np.where(np.isnan(int2d['far']), -np.inf, int2d['far'] * v_far_clean / v_far_clean.max())
+        
+        vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
+        int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
+
+        return int2d_full
+
+    @staticmethod
+    def get_cube(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', **kwargs):
+        vel2d, temp2d, int2d = velocity2d, {}, {}
+        line_profile = Intensity._line_profile
+        channels = np.linspace(vchan0, vchan1, num=nchan)
+        cube = []
+
+        if isinstance(temperature2d, numbers.Number): temp2d['near'] = temp2d['far'] = temperature2d
+        else: temp2d = temperature2d
+        if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
+        else: int2d = intensity2d
+
+        int2d_near_nan = np.isnan(int2d['near'])
+        int2d_far_nan = np.isnan(int2d['far'])
+        vel2d_near_nan = np.isnan(vel2d['near']) 
+        vel2d_far_nan = np.isnan(vel2d['far'])
+
+        for i, v_chan in enumerate(channels):    
+            v_near = line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
+            v_far = line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
+            v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
+            v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
+            
+            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['near'] * v_near_clean / v_near_clean.max())
+            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['far'] * v_far_clean / v_far_clean.max())        
+            #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
+            int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
+
+            cube.append(int2d_full)
+
+        return Cube(nchan, channels, np.array(cube))
+
+    @staticmethod
+    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchans=30, folder='./movie_channels/', **kwargs):
+        import matplotlib.pyplot as plt
+        channels = np.linspace(vchan0, vchan1, num=nchans)
+        int2d_cube = []
+        for i, vchan in enumerate(channels):
+            int2d = Intensity.get_channel(velocity2d, intensity2d, temperature2d, vchan, **kwargs)
+            int2d_cube.append(int2d)
+            extent = [-600, 600, -600, 600]
+            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower left', vmax=np.max(temperature2d['near']))
+            plt.xlabel('au')
+            plt.ylabel('au')
+            plt.text(200, 500, '%.1f km/s'%vchan)
+            cbar = plt.colorbar()
+            cbar.set_label(r'Brightness Temperature [K]')
+            plt.contour(velocity2d['near'], levels=[vchan], colors='red', linestyles='--', linewidths=1.3, extent = extent)
+            plt.contour(velocity2d['far'], levels=[vchan], colors='red', linestyles=':', linewidths=1.3, extent = extent)
+            plt.plot([None],[None], color='red', linestyle='--', linewidth=2, label='Near side') 
+            plt.plot([None],[None], color='red', linestyle=':', linewidth=2, label='Far side') 
+            plt.legend(loc='upper left')
+            plt.savefig(folder+'int2d_chan%04d'%i)
+            print ('Saved channel %d'%i)
+            plt.close()
+
+        os.chdir(folder)
+        print ('Making channels movie...')
+        os.system('convert -delay 10 *int2d* cube_channels.gif')
+        return np.array(int2d_cube)
+
    
 class General2d(Velocity, Intensity, Tools):
     def __init__(self, grid):
@@ -190,7 +399,7 @@ class General2d(Velocity, Intensity, Tools):
         self._intensity_func = General2d.powerlaw
         
     def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, int_kwargs={}, vel_kwargs={}):
-
+        from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
