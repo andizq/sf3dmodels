@@ -1,6 +1,6 @@
-*********************************
-Model module (`sf3dmodels.model`)
-*********************************
+**********************************
+Model objects (`sf3dmodels.model`)
+**********************************
 
 .. automodapi:: sf3dmodels.model.envelope
 
