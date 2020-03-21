@@ -103,7 +103,34 @@ class Cube(object):
 
     def box(self):
         pass
+        """
+        from matplotlib.widgets import RectangleSelector
+
+        def onselect(eclick, erelease):
+            "eclick and erelease are matplotlib events at press and release."
+            print('startposition: (%f, %f)' % (eclick.xdata, eclick.ydata))
+            print('endposition  : (%f, %f)' % (erelease.xdata, erelease.ydata))
+            print('used button  : ', eclick.button)
     
+        def toggle_selector(event):
+            print('Key pressed.')
+            if event.key in ['Q', 'q'] and toggle_selector.RS.active:
+                print('RectangleSelector deactivated.')
+                toggle_selector.RS.set_active(False)
+            if event.key in ['A', 'a'] and not toggle_selector.RS.active:
+                print('RectangleSelector activated.')
+                toggle_selector.RS.set_active(True)
+
+        x = np.arange(100.) / 99
+        y = np.sin(x)
+        fig, ax = plt.subplots()
+        ax.plot(x, y)
+
+        toggle_selector.RS = RectangleSelector(ax, onselect, drawtype='line')
+        fig.canvas.mpl_connect('key_press_event', toggle_selector)
+        plt.show()
+        """
+
     def show(self, extent=None, chan_init=20, cursor_grid=True, 
              int_unit=r'Brightness Temperature [K]', pos_unit='au', vel_unit=r'km s$^{-1}$'):
         from matplotlib.widgets import Slider, Cursor
@@ -288,11 +315,11 @@ class Intensity:
         del self._intensity_func
 
     @staticmethod
-    def powerlaw(coord, I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3):
+    def powerlaw(coord, A=600.0, p=-0.4, q=0.3): #I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
-        A = I0*R0**-p*z0**-q
+        #A = I0*R0**-p*z0**-q
         return A*R**p*abs(z)**q
         
     @staticmethod
@@ -427,7 +454,7 @@ class General2d(Velocity, Intensity, Tools):
         props = self._compute_prop(grid_true, prop_funcs, prop_kwargs)
         #Positive vel is positive along z, i.e. pointing to the observer, for that reason imposed a (-) factor to convert to the standard convention: (+) receding  
         if true_kwargs[0]:
-            ang_fac = -sin_incl * np.cos(phi_true)
+            ang_fac = -np.sin(incl+0*np.pi/2)*np.cos(phi_true) #sin_incl * np.cos(phi_true)
             props[0]['near'] *= ang_fac 
             props[0]['far'] *= ang_fac
 
