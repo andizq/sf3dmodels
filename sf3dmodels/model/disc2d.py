@@ -315,11 +315,11 @@ class Intensity:
         del self._intensity_func
 
     @staticmethod
-    def powerlaw(coord, A=600.0, p=-0.4, q=0.3): #I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3): #
+    def powerlaw(coord, I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
-        #A = I0*R0**-p*z0**-q
+        A = I0*R0**-p*z0**-q
         return A*R**p*abs(z)**q
         
     @staticmethod
