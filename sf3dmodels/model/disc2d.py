@@ -63,7 +63,70 @@ class Cube(object):
         print('Deleting interactive function') 
         del self._interactive
     
-    def plot_spectrum(self, x, y, ax, extent=None):
+    def _plot_region(self, x0, x1, y0, y1, ax, extent=None, stat_func=np.mean):
+        print (x0,x1,y0,y1)
+        def get_ji(x,y):
+            pass
+        if extent is None:
+            j0, i0 = int(x0), int(y0)
+            j1, i1 = int(x1), int(y1)
+        else: 
+            nz, ny, nx = np.shape(self.data)
+            dx = extent[1] - extent[0]
+            dy = extent[3] - extent[2]
+            j0 = int(nx*(x0-extent[0])/dx)
+            i0 = int(ny*(y0-extent[2])/dy)
+            j1 = int(nx*(x1-extent[0])/dx)
+            i1 = int(ny*(y1-extent[2])/dy)
+
+        slice_cube = self.data[:,i0:i1,j0:j1]
+        spectrum = np.array([stat_func(chan) for chan in slice_cube])
+
+        v0, v1 = self.channels[0], self.channels[-1]
+        if np.logical_or(np.isinf(spectrum), np.isnan(spectrum)).all(): return False
+        else:
+            ax.fill_between(self.channels, spectrum, alpha=0.1)
+            return ax.step(self.channels, spectrum, where='mid', linewidth=2.5, label=r'%d,%d'%(x0,x1))
+   
+    def box(self, fig, ax, extent=None, stat_func=np.mean):
+        from matplotlib.widgets import RectangleSelector
+
+        def onselect(eclick, erelease):
+            if eclick.button==3: 
+                print ('Right click. Disconnecting click event...')
+                fig.canvas.mpl_disconnect(cid)
+            elif eclick.inaxes is ax[0]:
+                plot_spec = self._plot_region(eclick.xdata, erelease.xdata, eclick.ydata, erelease.ydata, 
+                                              ax[1], extent=extent, stat_func=stat_func) 
+                if plot_spec:
+                    print('startposition: (%f, %f)' % (eclick.xdata, eclick.ydata))
+                    print('endposition  : (%f, %f)' % (erelease.xdata, erelease.ydata))
+                    print('used button  : ', eclick.button)
+
+                    #ax[0].scatter(event.xdata, event.ydata)#, color=plot_spec[0].get_color())
+                    ax[1].legend()
+                    fig.canvas.draw()
+                    fig.canvas.flush_events()
+
+        def toggle_selector(event):
+            print('Key pressed.')
+            if event.key in ['Q', 'q'] and toggle_selector.RS.active:
+                print('RectangleSelector deactivated.')
+                toggle_selector.RS.set_active(False)
+            if event.key in ['A', 'a'] and not toggle_selector.RS.active:
+                print('RectangleSelector activated.')
+                toggle_selector.RS.set_active(True)
+
+        rectprops = dict(facecolor='none', edgecolor = 'white',
+                         alpha=0.8, fill=False)
+
+        lineprops = dict(color='white', linestyle='-',
+                         linewidth=3, alpha=0.8)
+
+        toggle_selector.RS = RectangleSelector(ax[0], onselect, drawtype='box', rectprops=rectprops, lineprops=lineprops)
+        cid = fig.canvas.mpl_connect('key_press_event', toggle_selector)
+     
+    def _plot_spectrum(self, x, y, ax, extent=None):
         def get_ji(x,y):
             pass
         if extent is None:
@@ -89,7 +152,7 @@ class Cube(object):
                 print ('Right click. Disconnecting click event...')
                 fig.canvas.mpl_disconnect(cid)
             elif event.inaxes is ax[0]:
-                plot_spec = self.plot_spectrum(event.xdata, event.ydata, ax[1], extent=extent) 
+                plot_spec = self._plot_spectrum(event.xdata, event.ydata, ax[1], extent=extent) 
                 if plot_spec:
                     print('%s click: button=%d, xdata=%f, ydata=%f' %
                           ('double' if event.dblclick else 'single', event.button,
@@ -100,36 +163,6 @@ class Cube(object):
                     fig.canvas.flush_events()
 
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
-
-    def box(self):
-        pass
-        """
-        from matplotlib.widgets import RectangleSelector
-
-        def onselect(eclick, erelease):
-            "eclick and erelease are matplotlib events at press and release."
-            print('startposition: (%f, %f)' % (eclick.xdata, eclick.ydata))
-            print('endposition  : (%f, %f)' % (erelease.xdata, erelease.ydata))
-            print('used button  : ', eclick.button)
-    
-        def toggle_selector(event):
-            print('Key pressed.')
-            if event.key in ['Q', 'q'] and toggle_selector.RS.active:
-                print('RectangleSelector deactivated.')
-                toggle_selector.RS.set_active(False)
-            if event.key in ['A', 'a'] and not toggle_selector.RS.active:
-                print('RectangleSelector activated.')
-                toggle_selector.RS.set_active(True)
-
-        x = np.arange(100.) / 99
-        y = np.sin(x)
-        fig, ax = plt.subplots()
-        ax.plot(x, y)
-
-        toggle_selector.RS = RectangleSelector(ax, onselect, drawtype='line')
-        fig.canvas.mpl_connect('key_press_event', toggle_selector)
-        plt.show()
-        """
 
     def show(self, extent=None, chan_init=20, cursor_grid=True, 
              int_unit=r'Brightness Temperature [K]', pos_unit='au', vel_unit=r'km s$^{-1}$'):
@@ -508,6 +541,8 @@ class Rosenfeld2d(Velocity, Intensity, Tools):
     def make_model(self, incl, psi, PA=0.0, get_2d=True, int_kwargs={}, vel_kwargs={}):
         """
         Executes the Rosenfeld+2013 model.
+        The sum of incl+psi must be < 90, otherwise the quadratic equation will have imaginary roots as some portions of the cone (which has finite extent)
+        do not intersect with the sky plane.  
 
         Parameters
         ----------
