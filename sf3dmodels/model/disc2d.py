@@ -487,7 +487,7 @@ class General2d(Velocity, Intensity, Tools):
         props = self._compute_prop(grid_true, prop_funcs, prop_kwargs)
         #Positive vel is positive along z, i.e. pointing to the observer, for that reason imposed a (-) factor to convert to the standard convention: (+) receding  
         if true_kwargs[0]:
-            ang_fac = -np.sin(incl+0*np.pi/2)*np.cos(phi_true) #sin_incl * np.cos(phi_true)
+            ang_fac = sin_incl * np.cos(phi_true) #np.sin(incl+0*np.pi/2)*np.cos(phi_true) 
             props[0]['near'] *= ang_fac 
             props[0]['far'] *= ang_fac
 
