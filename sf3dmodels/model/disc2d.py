@@ -94,10 +94,7 @@ class Cube(object):
         import matplotlib.patches as patches
         
         def onselect(eclick, erelease):
-            if eclick.button==3: 
-                print ('Right click. Disconnecting click event...')
-                fig.canvas.mpl_disconnect(cid)
-            elif eclick.inaxes is ax[0]:
+            if eclick.inaxes is ax[0]:
                 plot_spec = self._plot_region(eclick.xdata, erelease.xdata, eclick.ydata, erelease.ydata, 
                                               ax[1], extent=extent, stat_func=stat_func) 
                 if plot_spec:
