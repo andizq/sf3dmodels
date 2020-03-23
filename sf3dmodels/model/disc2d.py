@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib
 import numbers
 import warnings
+import os
 
 #warnings.filterwarnings("error")
 __all__ = ['Cube', 'Tools', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
@@ -90,7 +91,8 @@ class Cube(object):
    
     def box(self, fig, ax, extent=None, stat_func=np.mean):
         from matplotlib.widgets import RectangleSelector
-
+        import matplotlib.patches as patches
+        
         def onselect(eclick, erelease):
             if eclick.button==3: 
                 print ('Right click. Disconnecting click event...')
@@ -102,8 +104,10 @@ class Cube(object):
                     print('startposition: (%f, %f)' % (eclick.xdata, eclick.ydata))
                     print('endposition  : (%f, %f)' % (erelease.xdata, erelease.ydata))
                     print('used button  : ', eclick.button)
-
-                    #ax[0].scatter(event.xdata, event.ydata)#, color=plot_spec[0].get_color())
+                    xc, yc = eclick.xdata, eclick.ydata #Left, bottom corner
+                    dx, dy = erelease.xdata-eclick.xdata, erelease.ydata-eclick.ydata
+                    rect = patches.Rectangle((xc,yc), dx, dy, lw=2, edgecolor=plot_spec[0].get_color(), facecolor='none')
+                    ax[0].add_patch(rect)
                     ax[1].legend()
                     fig.canvas.draw()
                     fig.canvas.flush_events()
@@ -125,7 +129,13 @@ class Cube(object):
 
         toggle_selector.RS = RectangleSelector(ax[0], onselect, drawtype='box', rectprops=rectprops, lineprops=lineprops)
         cid = fig.canvas.mpl_connect('key_press_event', toggle_selector)
-     
+
+    def ellipse(self):
+        pass
+
+    def convolve(self, kernel=None):
+        pass
+
     def _plot_spectrum(self, x, y, ax, extent=None):
         def get_ji(x,y):
             pass
@@ -165,8 +175,11 @@ class Cube(object):
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
     def show(self, extent=None, chan_init=20, cursor_grid=True, 
-             int_unit=r'Brightness Temperature [K]', pos_unit='au', vel_unit=r'km s$^{-1}$'):
+             int_unit=r'Brightness Temperature [K]', pos_unit='au', vel_unit=r'km s$^{-1}$',
+             **kwargs):
         from matplotlib.widgets import Slider, Cursor
+        v0, v1 = self.channels[0], self.channels[-1]
+        dv = v1-v0
         fig, ax = plt.subplots(ncols=2, figsize=(12,5))
         axchan = plt.axes([0.2, 0.9, 0.24, 0.05], facecolor='0.7')
         
@@ -180,7 +193,7 @@ class Cube(object):
         axcbar.tick_params(direction='out')
         ax[1].set_ylabel(int_unit, labelpad=15)
         ax[1].yaxis.set_label_position('right')
-        ax[1].set_xlim(self.channels[0]-0.1, self.channels[-1]+0.1)
+        ax[1].set_xlim(v0-0.1, v1+0.1)
         ax[1].set_ylim(-1, max_data)
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap('hot')
@@ -189,7 +202,11 @@ class Cube(object):
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=-1, vmax=max_data)
         cbar = plt.colorbar(img, cax=axcbar)
         current_chan = ax[1].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
-        self.interactive(fig, ax, extent=extent)
+        text_chan = ax[1].text((self.channels[chan_init]-v0)/dv, 1.02, #Converting xdata coords to Axes coords 
+                               '%4.1f km/s'%self.channels[chan_init], ha='center', 
+                               color='black', transform=ax[1].transAxes)
+
+        self.interactive(fig, ax, extent=extent, **kwargs)
 
         if cursor_grid: cg=Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
         
@@ -200,21 +217,26 @@ class Cube(object):
 
         def update(val):
             chan = int(val)
+            vchan = self.channels[chan]
             img.set_data(self.data[chan])
-            current_chan.set_xdata(self.channels[chan])
+            current_chan.set_xdata(vchan)
+            text_chan.set_x((vchan-v0)/dv)
+            text_chan.set_text('%4.1f km/s'%vchan)
             fig.canvas.draw_idle()
             
         slider_chan.on_changed(update)
         plt.show()
 
-    def make_fits(self, header={}):
-        pass
+    def make_fits(self, output, **kw_header):
+        from astropy.io import fits
+        hdr = fits.Header()
+        hdr.update(**kw_header)
+        data = np.where(np.isfinite(self.data), self.data, 0)
+        fits.writeto(output, data, hdr, overwrite=True)
     
     def make_gif(self, folder='./movie/', extent=None, velocity2d=None, 
                  unit=r'Brightness Temperature [K]',
                  gif_command='convert -delay 10 *int2d* cube_channels.gif'):
-        import os
-        import matplotlib.pyplot as plt
         cwd = os.getcwd()
         if folder[-1] != '/': folder+='/'
         os.system('mkdir %s'%folder)
