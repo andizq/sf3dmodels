@@ -3,7 +3,8 @@
 ==============
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
-
+#TODO in show(): Scroll over channels, 2nd slidder for several cubes
+#TODO in Cube: Add convolve() function  
 from ..utils.constants import G, kb
 from ..utils import units as u
 import matplotlib.pyplot as plt
@@ -43,7 +44,6 @@ matplotlib.rcParams.update(params)
 
 
 class Cube(object):
-
     def __init__(self, nchan, channels, data):
         self.nchan = nchan
         self.channels = channels
@@ -321,6 +321,31 @@ class Tools:
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
 
+
+class Linewidth:
+    @property
+    def linewidth_func(self): 
+        return self._linewidth_func
+          
+    @linewidth_func.setter 
+    def linewidth_func(self, linewidth): 
+        print('Setting linewidth function to', linewidth) 
+        self._linewidth_func = linewidth
+
+    @linewidth_func.deleter 
+    def linewidth_func(self): 
+        print('Deleting linewidth function') 
+        del self._linewidth_func
+
+    @staticmethod
+    def linewidth_powerlaw(coord, L0=0.1, p=-0.4, q=0.3, R0=100*u.au, z0=100*u.au): #A=600.0, p=-0.4, q=0.3): #
+        if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        z = coord['z']        
+        A = L0*R0**-p*z0**-q
+        return A*R**p*abs(z)**q
+
+
 class Velocity:
     @property
     def velocity_func(self): 
@@ -351,7 +376,38 @@ class Velocity:
         return np.sqrt(G*Mstar/r**3)*R
 
 
-class Intensity:
+class Intensity:        
+    @property
+    def use_temperature(self):
+        return self._use_temperature
+
+    @use_temperature.setter 
+    def use_temperature(self, use): 
+        use = bool(use)
+        print('Setting use_temperature var to', use)
+        if use: self.line_profile = self.line_profile_temp
+        else: self.line_profile = self.line_profile_v_sigma
+        self._use_temperature = use
+
+    @use_temperature.deleter 
+    def use_temperature(self): 
+        print('Deleting use_temperature var') 
+        del self._use_temperature
+
+    @property
+    def line_profile(self): 
+        return self._line_profile
+          
+    @line_profile.setter 
+    def line_profile(self, profile): 
+        print('Setting line profile function to', profile) 
+        self._line_profile = profile
+
+    @line_profile.deleter 
+    def line_profile(self): 
+        print('Deleting intensity function') 
+        del self._line_profile
+    
     @property
     def intensity_func(self): 
         return self._intensity_func
@@ -367,7 +423,7 @@ class Intensity:
         del self._intensity_func
 
     @staticmethod
-    def powerlaw(coord, I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
+    def intensity_powerlaw(coord, I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
@@ -382,20 +438,23 @@ class Intensity:
         return A*(R**-gamma) * (1+(R/Rt)**alpha)**((gamma-beta)/alpha)
 
     @staticmethod
-    def _line_profile(v_chan, v, T, v_turb=0.0, mmol=2*u.amu):
+    def line_profile_temp(v_chan, v, T, v_turb=0.0, mmol=2*u.amu):
         v_sigma = np.sqrt(2*kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
 
     @staticmethod
-    def get_channel(velocity2d, intensity2d, temperature2d, v_chan, **kwargs):                    
+    def line_profile_v_sigma(v_chan, v, v_sigma, mmol=2*u.amu):
+        return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
+
+    def get_channel(self, velocity2d, intensity2d, temperature2d, v_chan, **kwargs):                    
         vel2d, temp2d, int2d = velocity2d, {}, {}
         if isinstance(temperature2d, numbers.Number): temp2d['near'] = temp2d['far'] = temperature2d
         else: temp2d = temperature2d
         if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
         else: int2d = intensity2d
     
-        v_near = Intensity._line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
-        v_far = Intensity._line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
+        v_near = self.line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
+        v_far = self.line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
 
         v_near_clean = np.where(np.isnan(v_near), -np.inf, v_near)
         v_far_clean = np.where(np.isnan(v_far), -np.inf, v_far)
@@ -409,10 +468,9 @@ class Intensity:
 
         return int2d_full
 
-    @staticmethod
-    def get_cube(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', **kwargs):
+    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', **kwargs):
         vel2d, temp2d, int2d = velocity2d, {}, {}
-        line_profile = Intensity._line_profile
+        line_profile = self.line_profile
         channels = np.linspace(vchan0, vchan1, num=nchan)
         cube = []
 
@@ -471,14 +529,17 @@ class Intensity:
         return np.array(int2d_cube)
 
    
-class General2d(Velocity, Intensity, Tools):
+class General2d(Velocity, Intensity, Linewidth, Tools):
     def __init__(self, grid):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         self._velocity_func = General2d.keplerian
-        self._intensity_func = General2d.powerlaw
-        
-    def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, int_kwargs={}, vel_kwargs={}):
+        self._intensity_func = General2d.intensity_powerlaw
+        self._linewidth_func = General2d.linewidth_powerlaw
+        self._line_profile = General2d.line_profile_temp
+        self._use_temperature = True
+
+    def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
@@ -498,8 +559,8 @@ class General2d(Velocity, Intensity, Tools):
 
         #*******************************
         #COMPUTE PROPERTIES ON TRUE GRID
-        avai_kwargs = [vel_kwargs, int_kwargs]
-        avai_funcs = [self.velocity_func, self.intensity_func]
+        avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs]
+        avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func]
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
         prop_kwargs = [kwarg for i, kwarg in enumerate(avai_kwargs) if true_kwargs[i]]
         prop_funcs = [func for i, func in enumerate(avai_funcs) if true_kwargs[i]]
@@ -525,7 +586,7 @@ class General2d(Velocity, Intensity, Tools):
 
         return props
     
-class Rosenfeld2d(Velocity, Intensity, Tools):
+class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
     """
     Host class for the Rosenfeld+2013 model which describes the velocity field of a flared disc in 2D. 
     This model assumes a (Keplerian) double cone to account for the near and far sides of the disc 
@@ -548,7 +609,10 @@ class Rosenfeld2d(Velocity, Intensity, Tools):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         self._velocity_func = Rosenfeld2d.keplerian
-        self._intensity_func = Rosenfeld2d.powerlaw
+        self._intensity_func = Rosenfeld2d.intensity_powerlaw
+        self._linewidth_func = Rosenfeld2d.linewidth_powerlaw
+        self._line_profile = General2d.line_profile_temp
+        self._use_temperature = True
 
     def _get_t(self, A, B, C):
         t = []
@@ -557,7 +621,7 @@ class Rosenfeld2d(Velocity, Intensity, Tools):
             t.append(np.sort(np.roots(p)))
         return np.array(t)
 
-    def make_model(self, incl, psi, PA=0.0, get_2d=True, int_kwargs={}, vel_kwargs={}):
+    def make_model(self, incl, psi, PA=0.0, get_2d=True, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
         """
         Executes the Rosenfeld+2013 model.
         The sum of incl+psi must be < 90, otherwise the quadratic equation will have imaginary roots as some portions of the cone (which has finite extent)
@@ -626,8 +690,8 @@ class Rosenfeld2d(Velocity, Intensity, Tools):
 
         #*******************************
         #COMPUTE PROPERTIES ON TRUE GRID
-        avai_kwargs = [vel_kwargs, int_kwargs]
-        avai_funcs = [self.velocity_func, self.intensity_func]
+        avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs]
+        avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func]
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
         prop_kwargs = [kwarg for i, kwarg in enumerate(avai_kwargs) if true_kwargs[i]]
         prop_funcs = [func for i, func in enumerate(avai_funcs) if true_kwargs[i]]
