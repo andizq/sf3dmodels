@@ -385,8 +385,8 @@ class Intensity:
     def use_temperature(self, use): 
         use = bool(use)
         print('Setting use_temperature var to', use)
-        if use: self.line_profile = self.line_profile_temp
-        else: self.line_profile = self.line_profile_v_sigma
+        if use: self.line_profile = self.line_profile_temp_full
+        else: self.line_profile = self.line_profile_v_sigma_full
         self._use_temperature = use
 
     @use_temperature.deleter 
@@ -449,11 +449,25 @@ class Intensity:
         return np.exp(-((v-v_chan)/v_sigma)**2)
 
     @staticmethod
-    def line_profile_full(v_chan, v, v_sigma, channel_width):
+    def line_profile_temp_full(v_chan, v, T, v_turb=0.0, mmol=2*u.amu, channel_width=0.1):
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
         v1 = v_chan + half_chan
-        nsub = 100
+        nsub = 10
+        vsub = np.linspace(v0, v1, nsub)
+        dvsub = vsub[1]-vsub[0]
+        J = 0
+        for vs in vsub:
+            J += np.exp(-((v-vs)/v_sigma)**2)
+        J = J * dvsub/channel_width
+        return J
+
+    @staticmethod
+    def line_profile_v_sigma_full(v_chan, v, v_sigma, mmol=2*u.amu, channel_width=0.1):
+        half_chan = 0.5*channel_width
+        v0 = v_chan - half_chan
+        v1 = v_chan + half_chan
+        nsub = 10
         vsub = np.linspace(v0, v1, nsub)
         dvsub = vsub[1]-vsub[0]
         J = 0
@@ -506,8 +520,8 @@ class Intensity:
             v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
             v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
             
-            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['near'] * v_near_clean / v_near_clean.max())
-            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['far'] * v_far_clean / v_far_clean.max())        
+            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['near'] * v_near_clean)# / v_near_clean.max())
+            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['far'] * v_far_clean)# / v_far_clean.max())        
             #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
             int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
 
@@ -552,7 +566,7 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
         self._velocity_func = General2d.keplerian
         self._intensity_func = General2d.intensity_powerlaw
         self._linewidth_func = General2d.linewidth_powerlaw
-        self._line_profile = General2d.line_profile_temp
+        self._line_profile = General2d.line_profile_temp#_full
         self._use_temperature = True
 
     def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
@@ -627,7 +641,7 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
         self._velocity_func = Rosenfeld2d.keplerian
         self._intensity_func = Rosenfeld2d.intensity_powerlaw
         self._linewidth_func = Rosenfeld2d.linewidth_powerlaw
-        self._line_profile = General2d.line_profile_temp
+        self._line_profile = General2d.line_profile_temp_full
         self._use_temperature = True
 
     def _get_t(self, A, B, C):
