@@ -385,14 +385,35 @@ class Intensity:
     def use_temperature(self, use): 
         use = bool(use)
         print('Setting use_temperature var to', use)
-        if use: self.line_profile = self.line_profile_temp_full
-        else: self.line_profile = self.line_profile_v_sigma_full
+        if use: self.line_profile = self.line_profile_temp
+        else: self.line_profile = self.line_profile_v_sigma
         self._use_temperature = use
 
     @use_temperature.deleter 
     def use_temperature(self): 
         print('Deleting use_temperature var') 
         del self._use_temperature
+
+    @property
+    def use_full_channel(self):
+        return self._use_full_channel
+
+    @use_full_channel.setter 
+    def use_full_channel(self, use): 
+        use = bool(use)
+        print('Setting use_full_channel var to', use)
+        if use: 
+            if self.use_temperature: self.line_profile = self.line_profile_temp_full
+            else: self.line_profile = self.line_profile_v_sigma_full
+        else: 
+            if self.use_temperature: self.line_profile = self.line_profile_temp
+            else: self.line_profile = self.line_profile_v_sigma
+        self._use_full_channel = use
+
+    @use_full_channel.deleter 
+    def use_full_channel(self): 
+        print('Deleting use_full_channel var') 
+        del self._use_full_channel
 
     @property
     def line_profile(self): 
@@ -509,10 +530,10 @@ class Intensity:
         if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
         else: int2d = intensity2d
 
-        int2d_near_nan = np.isnan(int2d['near'])
-        int2d_far_nan = np.isnan(int2d['far'])
-        vel2d_near_nan = np.isnan(vel2d['near']) 
-        vel2d_far_nan = np.isnan(vel2d['far'])
+        int2d_near_nan = np.isnan(int2d['near'])#~int2d['near'].mask#
+        int2d_far_nan = np.isnan(int2d['far'])#~int2d['far'].mask#
+        vel2d_near_nan = np.isnan(vel2d['near'])#~vel2d['near'].mask#
+        vel2d_far_nan = np.isnan(vel2d['far'])#~vel2d['far'].mask#
 
         for i, v_chan in enumerate(channels):    
             v_near = line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
@@ -566,10 +587,12 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
         self._velocity_func = General2d.keplerian
         self._intensity_func = General2d.intensity_powerlaw
         self._linewidth_func = General2d.linewidth_powerlaw
-        self._line_profile = General2d.line_profile_temp#_full
         self._use_temperature = True
+        self._use_full_channel = False
+        self._line_profile = General2d.line_profile_temp
 
-    def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
+    def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, 
+                   int_kwargs={}, vel_kwargs={}, lw_kwargs=None, R_disc=None):
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
@@ -606,14 +629,31 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
         #grid_axes = np.meshgrid(*self.grid.XYZgrid[:2]) #Avoiding this to keep backward compatibility with python2
         grid_axes = np.meshgrid(self.grid.XYZgrid[0], self.grid.XYZgrid[1]) 
         
+        x_pro_dict = {}
+        y_pro_dict = {}
+        z_pro_dict = {}
         for side in ['near', 'far']:
             xt, yt, zt = grid_true[side][:3]
             x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
             if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
-            for prop in props: 
-                prop[side] = griddata((x_pro, y_pro), prop[side], (grid_axes[0], grid_axes[1]))
-        #*************************************
+            if R_disc is not None: R_grid = griddata((x_pro, y_pro), R_true, (grid_axes[0], grid_axes[1]), method='linear')
+            x_pro_dict[side] = x_pro
+            y_pro_dict[side] = y_pro
+            z_pro_dict[side] = z_pro
+            for prop in props:
+                prop[side] = griddata((x_pro, y_pro), prop[side], (grid_axes[0], grid_axes[1]), method='linear')
+                if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*u.au), prop[side], np.nan)
 
+        """
+        grid_axes_3d = np.meshgrid(self.grid.XYZgrid[0], self.grid.XYZgrid[1], self.grid.XYZgrid[0])
+        from functools import reduce  
+        x_full = np.array(reduce(np.append, list(x_pro_dict.values())))
+        y_full = np.array(reduce(np.append, list(y_pro_dict.values())))
+        z_full = np.array(reduce(np.append, list(z_pro_dict.values())))
+        z_grid = griddata((x_full, y_full, z_full), z_full, (grid_axes_3d[0], grid_axes_3d[1], grid_axes_3d[2]), method='linear') 
+        """
+        #*************************************
+                
         return props
     
 class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
@@ -641,8 +681,9 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
         self._velocity_func = Rosenfeld2d.keplerian
         self._intensity_func = Rosenfeld2d.intensity_powerlaw
         self._linewidth_func = Rosenfeld2d.linewidth_powerlaw
-        self._line_profile = General2d.line_profile_temp_full
         self._use_temperature = True
+        self._use_full_channel = False
+        self._line_profile = General2d.line_profile_temp
 
     def _get_t(self, A, B, C):
         t = []
