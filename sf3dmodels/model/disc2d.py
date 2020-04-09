@@ -334,8 +334,8 @@ class Tools:
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value
         print (x_stddev)
         angle = (90*u.deg+beam.pa).to(u.radian).value
-        gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
-        #gauss_kern = beam.as_kernel(pix_scale) #as_kernel is slowing down the run when acting as kernel in astropy.convolve, not sure why 
+        #gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
+        gauss_kern = beam.as_kernel(pix_scale) #as_kernel is slowing down the run when acting as kernel in astropy.convolve, not sure why 
         return beam, gauss_kern
     
 
