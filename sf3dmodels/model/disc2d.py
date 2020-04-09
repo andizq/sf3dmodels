@@ -7,6 +7,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in Cube: Add convolve() function  
 from ..utils.constants import G, kb
 from ..utils import units as u
+from astropy.convolution import Gaussian2DKernel, convolve
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -41,7 +42,7 @@ params = {'xtick.major.size': 6.5,
           }
 
 matplotlib.rcParams.update(params)
-
+sigma2fwhm = np.sqrt(8*np.log(2))
 
 class Cube(object):
     def __init__(self, nchan, channels, data):
@@ -321,6 +322,17 @@ class Tools:
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
 
+    @staticmethod
+    def _get_beam_from(file):
+        from radio_beam import Beam
+        from astropy.io import fits
+        from astropy import units as u
+        header = fits.getheader(file)
+        beam = Beam.from_fits_header(header)
+        pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
+        gauss_kern = beam.as_kernel(pix_scale)
+        return beam, gauss_kern
+    
 
 class Linewidth:
     @property
@@ -376,7 +388,54 @@ class Velocity:
         return np.sqrt(G*Mstar/r**3)*R
 
 
-class Intensity:        
+class Intensity:   
+    @property
+    def beam_info(self):
+        return self._beam_info
+
+    @beam_info.setter 
+    def beam_info(self, beam_info): 
+        print('Setting beam_info var to', beam_info)
+        self._beam_info = beam_info
+
+    @beam_info.deleter 
+    def beam_info(self): 
+        print('Deleting beam_info var') 
+        del self._beam_info     
+
+    @property
+    def beam_kernel(self):
+        return self._beam_kernel
+
+    @beam_kernel.setter 
+    def beam_kernel(self, beam_kernel): 
+        print('Setting beam_kernel var to', beam_kernel)
+        beam_kernel.model.x_stddev.value
+        x_stddev = beam_kernel.model.x_stddev.value
+        y_stddev = beam_kernel.model.y_stddev.value
+        self._beam_area = 2*np.pi*x_stddev*y_stddev
+        self._beam_kernel = beam_kernel
+
+    @beam_kernel.deleter 
+    def beam_kernel(self): 
+        print('Deleting beam_kernel var') 
+        del self._beam_kernel     
+
+    @property
+    def beam_from(self):
+        return self._beam_from
+
+    @beam_from.setter 
+    def beam_from(self, file): 
+        print('Setting beam_from var to', file)
+        if file: self.beam_info, self.beam_kernel = Tools._get_beam_from(file)
+        self._beam_from = file
+
+    @beam_from.deleter 
+    def beam_from(self): 
+        print('Deleting beam_from var') 
+        del self._beam_from     
+
     @property
     def use_temperature(self):
         return self._use_temperature
@@ -449,7 +508,7 @@ class Intensity:
         else: R = coord['R'] 
         z = coord['z']        
         A = I0*R0**-p*z0**-q
-        return A*R**p*abs(z)**q
+        return A*R**p*np.abs(z)**q
         
     @staticmethod
     def nuker(coord, I0=30.0, Rt=100*u.au, alpha=-0.5, gamma=0.1, beta=0.2):
@@ -516,7 +575,11 @@ class Intensity:
         
         vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
         int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
-
+        
+        if self.beam_kernel:
+            inf_mask = np.isinf(int2d_full)
+            int2d_full = np.where(inf_mask, 0.0, int2d_full) 
+            int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
         return int2d_full
 
     def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', **kwargs):
@@ -545,6 +608,11 @@ class Intensity:
             int2d_far = np.where(int2d_far_nan, -np.inf, int2d['far'] * v_far_clean)# / v_far_clean.max())        
             #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
             int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
+
+            if self.beam_kernel:
+                inf_mask = np.isinf(int2d_full)
+                int2d_full = np.where(inf_mask, 0.0, int2d_full) 
+                int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
 
             cube.append(int2d_full)
 
@@ -584,6 +652,10 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
     def __init__(self, grid):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
+        self._beam_from = False
+        self._beam_info = False
+        self._beam_kernel = False
+        self._beam_area = False
         self._velocity_func = General2d.keplerian
         self._intensity_func = General2d.intensity_powerlaw
         self._linewidth_func = General2d.linewidth_powerlaw
