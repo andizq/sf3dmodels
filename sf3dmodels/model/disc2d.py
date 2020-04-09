@@ -330,7 +330,12 @@ class Tools:
         header = fits.getheader(file)
         beam = Beam.from_fits_header(header)
         pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
-        gauss_kern = beam.as_kernel(pix_scale)
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value
+        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value
+        print (x_stddev)
+        angle = (90*u.deg+beam.pa).to(u.radian).value
+        gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
+        #gauss_kern = beam.as_kernel(pix_scale) #as_kernel is slowing down the run when acting as kernel in astropy.convolve, not sure why 
         return beam, gauss_kern
     
 
@@ -579,8 +584,8 @@ class Intensity:
         if self.beam_kernel:
             inf_mask = np.isinf(int2d_full)
             int2d_full = np.where(inf_mask, 0.0, int2d_full) 
-            kernel = Gaussian2DKernel(x_stddev=5, y_stddev=5)
-            #int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
+            #kernel = Gaussian2DKernel(x_stddev=5, y_stddev=5)
+            int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
             int2d_full = self._beam_area*convolve(int2d_full, kernel, preserve_nan=False)
         return int2d_full
 
@@ -615,7 +620,7 @@ class Intensity:
                 inf_mask = np.isinf(int2d_full)
                 int2d_full = np.where(inf_mask, 0.0, int2d_full)
                 kernel = Gaussian2DKernel(x_stddev=5, y_stddev=5) 
-                #int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
+                int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
                 int2d_full = self._beam_area*convolve(int2d_full, kernel, preserve_nan=False)
             cube.append(int2d_full)
 
