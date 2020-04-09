@@ -584,9 +584,8 @@ class Intensity:
         if self.beam_kernel:
             inf_mask = np.isinf(int2d_full)
             int2d_full = np.where(inf_mask, 0.0, int2d_full) 
-            #kernel = Gaussian2DKernel(x_stddev=5, y_stddev=5)
             int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
-            int2d_full = self._beam_area*convolve(int2d_full, kernel, preserve_nan=False)
+
         return int2d_full
 
     def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', **kwargs):
@@ -619,9 +618,8 @@ class Intensity:
             if self.beam_kernel:
                 inf_mask = np.isinf(int2d_full)
                 int2d_full = np.where(inf_mask, 0.0, int2d_full)
-                kernel = Gaussian2DKernel(x_stddev=5, y_stddev=5) 
                 int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
-                int2d_full = self._beam_area*convolve(int2d_full, kernel, preserve_nan=False)
+
             cube.append(int2d_full)
 
         return Cube(nchan, channels, np.array(cube))
