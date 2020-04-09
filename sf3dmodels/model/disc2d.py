@@ -330,12 +330,13 @@ class Tools:
         header = fits.getheader(file)
         beam = Beam.from_fits_header(header)
         pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
+        
         x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value
-        print (x_stddev)
         angle = (90*u.deg+beam.pa).to(u.radian).value
-        #gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
-        gauss_kern = beam.as_kernel(pix_scale) #as_kernel is slowing down the run when acting as kernel in astropy.convolve, not sure why 
+        gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
+        
+        #gauss_kern = beam.as_kernel(pix_scale) #as_kernel() is slowing down the run when used in astropy.convolve
         return beam, gauss_kern
     
 
