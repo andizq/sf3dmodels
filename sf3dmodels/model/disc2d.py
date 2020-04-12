@@ -90,7 +90,7 @@ class Cube(object):
             ax.fill_between(self.channels, spectrum, alpha=0.1)
             return ax.step(self.channels, spectrum, where='mid', linewidth=2.5, label=r'%d,%d'%(x0,x1))
    
-    def box(self, fig, ax, extent=None, stat_func=np.mean):
+    def box(self, fig, ax, extent=None, compare_cubes=[], stat_func=np.mean, **kwargs):
         from matplotlib.widgets import RectangleSelector
         import matplotlib.patches as patches
         
@@ -131,10 +131,9 @@ class Cube(object):
     def ellipse(self):
         pass
 
-    def convolve(self, kernel=None):
-        pass
-
-    def _plot_spectrum(self, x, y, ax, extent=None):
+    def _plot_spectrum(self, x, y, ax, extent=None, compare_cubes=[], **kwargs):
+        kwargs_spec = dict(where='mid', linewidth=2.5, label=r'%d,%d'%(x,y))
+        kwargs_spec.update(kwargs)
         def get_ji(x,y):
             pass
         if extent is None:
@@ -150,17 +149,25 @@ class Cube(object):
         v0, v1 = self.channels[0], self.channels[-1]
         if np.logical_or(np.isinf(spectrum), np.isnan(spectrum)).all(): return False
         else:
-            ax.fill_between(self.channels, spectrum, alpha=0.1)
-            return ax.step(self.channels, spectrum, where='mid', linewidth=2.5, label=r'%d,%d'%(x,y))
+            #plot_fill = ax.fill_between(self.channels, spectrum, alpha=0.1)
+            plot_spec = ax.step(self.channels, spectrum, **kwargs_spec)
+            ncubes = len(compare_cubes)
+            if ncubes > 0:
+                alpha = 0.2
+                dalpha = -alpha/ncubes
+                for cube in compare_cubes: 
+                    ax.fill_between(self.channels, cube.data[:,i,j], color=plot_spec[0].get_color(), step='mid', alpha=alpha)
+                    alpha+=dalpha
+            return plot_spec
         
-    def cursor(self, fig, ax, extent=None):
-
+    def cursor(self, fig, ax, extent=None, compare_cubes=[], **kwargs):
         def onclick(event):
             if event.button==3: 
                 print ('Right click. Disconnecting click event...')
                 fig.canvas.mpl_disconnect(cid)
             elif event.inaxes is ax[0]:
-                plot_spec = self._plot_spectrum(event.xdata, event.ydata, ax[1], extent=extent) 
+                plot_spec = self._plot_spectrum(event.xdata, event.ydata, ax[1], extent=extent, 
+                                                compare_cubes=compare_cubes, **kwargs) 
                 if plot_spec:
                     print('%s click: button=%d, xdata=%f, ydata=%f' %
                           ('double' if event.dblclick else 'single', event.button,
@@ -172,14 +179,13 @@ class Cube(object):
 
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
-    def show(self, extent=None, chan_init=20, cursor_grid=True, 
-             int_unit=r'Brightness Temperature [K]', pos_unit='au', vel_unit=r'km s$^{-1}$',
+    def show(self, extent=None, chan_init=20, cursor_grid=True, compare_cubes=[],
+             int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
              **kwargs):
         from matplotlib.widgets import Slider, Cursor
         v0, v1 = self.channels[0], self.channels[-1]
         dv = v1-v0
         fig, ax = plt.subplots(ncols=2, figsize=(12,5))
-        axchan = plt.axes([0.2, 0.9, 0.24, 0.05], facecolor='0.7')
         
         y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
         axcbar = plt.axes([0.48, y0, 0.03, y1-y0])
@@ -204,16 +210,14 @@ class Cube(object):
                                '%4.1f km/s'%self.channels[chan_init], ha='center', 
                                color='black', transform=ax[1].transAxes)
 
-        self.interactive(fig, ax, extent=extent, **kwargs)
+        self.interactive(fig, ax, extent=extent, compare_cubes=compare_cubes, **kwargs)
 
         if cursor_grid: cg=Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
         
-        
-
-        slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
-                             valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
-
-        def update(val):
+        #***************
+        #SLIDERS
+        #***************
+        def update_chan(val):
             chan = int(val)
             vchan = self.channels[chan]
             img.set_data(self.data[chan])
@@ -221,8 +225,34 @@ class Cube(object):
             text_chan.set_x((vchan-v0)/dv)
             text_chan.set_text('%4.1f km/s'%vchan)
             fig.canvas.draw_idle()
-            
-        slider_chan.on_changed(update)
+
+        def update_cubes(val):
+            i = int(slider_cubes.val)
+            chan = int(slider_chan.val)
+            vchan = self.channels[chan]
+            if i==0: img.set_data(self.data[chan])
+            else: img.set_data(compare_cubes[i-1].data[chan])
+            current_chan.set_xdata(vchan)
+            text_chan.set_x((vchan-v0)/dv)
+            text_chan.set_text('%4.1f km/s'%vchan)
+            fig.canvas.draw_idle()
+
+        ncubes = len(compare_cubes)
+        if ncubes>0:
+            axcubes = plt.axes([0.2, 0.90, 0.24, 0.025], facecolor='0.7')
+            axchan = plt.axes([0.2, 0.95, 0.24, 0.025], facecolor='0.7')
+            slider_cubes = Slider(axcubes, 'Cube id', 0, ncubes, 
+                                  valstep=1, valinit=0, valfmt='%1d', color='dodgerblue')                                  
+            slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
+                                 valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
+            slider_cubes.on_changed(update_cubes)
+            slider_chan.on_changed(update_cubes)
+        else: 
+            axchan = plt.axes([0.2, 0.9, 0.24, 0.05], facecolor='0.7')
+            slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
+                                 valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
+            slider_chan.on_changed(update_chan)
+
         plt.show()
 
     def make_fits(self, output, **kw_header):
@@ -331,8 +361,8 @@ class Tools:
         beam = Beam.from_fits_header(header)
         pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
         
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value
-        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / 4.0
+        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / 4.0
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
         
@@ -856,4 +886,3 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
         #*************************************
 
         return [{side: prop[side].reshape(self.grid.Nodes[:2]) for side in ['near', 'far']} for prop in props]
-
