@@ -17,6 +17,7 @@ import os
 
 #warnings.filterwarnings("error")
 __all__ = ['Cube', 'Tools', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
+path_file = os.path.dirname(os.path.realpath(__file__))+'/'
 
 matplotlib.rcParams['font.family'] = 'monospace'
 matplotlib.rcParams['font.weight'] = 'normal'
@@ -24,6 +25,7 @@ matplotlib.rcParams['lines.linewidth'] = 1.5
 matplotlib.rcParams['axes.linewidth'] = 3.0
 matplotlib.rcParams['xtick.major.width']=1.6
 matplotlib.rcParams['ytick.major.width']=1.6
+
 
 SMALL_SIZE = 10
 MEDIUM_SIZE = 15
@@ -49,7 +51,9 @@ class Cube(object):
         self.nchan = nchan
         self.channels = channels
         self.data = data
+        self.point = self.cursor
         self._interactive = self.cursor
+        self._interactive_path = self.curve
 
     @property
     def interactive(self): 
@@ -64,9 +68,28 @@ class Cube(object):
     def interactive(self): 
         print('Deleting interactive function') 
         del self._interactive
+
+    @property
+    def interactive_path(self): 
+        return self._interactive_path
+          
+    @interactive_path.setter 
+    def interactive_path(self, func): 
+        print('Setting interactive_path function to', func) 
+        self._interactive_path = func
+
+    @interactive_path.deleter 
+    def interactive_path(self): 
+        print('Deleting interactive_path function') 
+        del self._interactive_path
+
+    def ellipse(self):
+        pass
     
-    def _plot_region(self, x0, x1, y0, y1, ax, extent=None, stat_func=np.mean):
-        print (x0,x1,y0,y1)
+    def _plot_spectrum_region(self, x0, x1, y0, y1, ax, extent=None, compare_cubes=[], stat_func=np.mean, **kwargs):
+        kwargs_spec = dict(where='mid', linewidth=2.5, label=r'x0:%d,x1:%d'%(x0,x1))
+        kwargs_spec.update(kwargs)
+        v0, v1 = self.channels[0], self.channels[-1]
         def get_ji(x,y):
             pass
         if extent is None:
@@ -83,12 +106,22 @@ class Cube(object):
 
         slice_cube = self.data[:,i0:i1,j0:j1]
         spectrum = np.array([stat_func(chan) for chan in slice_cube])
+        ncubes = len(compare_cubes)
+        if ncubes > 0: 
+            slice_comp = [compare_cubes[i].data[:,i0:i1,j0:j1] for i in range(ncubes)]
+            cubes_spec = [np.array([stat_func(chan) for chan in slice_comp[i]]) for i in range(ncubes)]
 
-        v0, v1 = self.channels[0], self.channels[-1]
         if np.logical_or(np.isinf(spectrum), np.isnan(spectrum)).all(): return False
         else:
-            ax.fill_between(self.channels, spectrum, alpha=0.1)
-            return ax.step(self.channels, spectrum, where='mid', linewidth=2.5, label=r'%d,%d'%(x0,x1))
+            plot_spec = ax.step(self.channels, spectrum, **kwargs_spec)
+            if ncubes > 0:
+                alpha = 0.2
+                dalpha = -alpha/ncubes
+                for i in range(ncubes):
+                    ax.fill_between(self.channels, cubes_spec[i], color=plot_spec[0].get_color(), step='mid', alpha=alpha)
+                    alpha+=dalpha
+            else: ax.fill_between(self.channels, spectrum, color=plot_spec[0].get_color(), step='mid', alpha=0.2)
+            return plot_spec
    
     def box(self, fig, ax, extent=None, compare_cubes=[], stat_func=np.mean, **kwargs):
         from matplotlib.widgets import RectangleSelector
@@ -96,8 +129,10 @@ class Cube(object):
         
         def onselect(eclick, erelease):
             if eclick.inaxes is ax[0]:
-                plot_spec = self._plot_region(eclick.xdata, erelease.xdata, eclick.ydata, erelease.ydata, 
-                                              ax[1], extent=extent, stat_func=stat_func) 
+                plot_spec = self._plot_spectrum_region(eclick.xdata, erelease.xdata, eclick.ydata, erelease.ydata, 
+                                                       ax[1], extent=extent, compare_cubes=compare_cubes, 
+                                                       stat_func=stat_func, **kwargs) 
+                                                       
                 if plot_spec:
                     print('startposition: (%f, %f)' % (eclick.xdata, eclick.ydata))
                     print('endposition  : (%f, %f)' % (erelease.xdata, erelease.ydata))
@@ -127,11 +162,9 @@ class Cube(object):
 
         toggle_selector.RS = RectangleSelector(ax[0], onselect, drawtype='box', rectprops=rectprops, lineprops=lineprops)
         cid = fig.canvas.mpl_connect('key_press_event', toggle_selector)
+        return toggle_selector.RS
 
-    def ellipse(self):
-        pass
-
-    def _plot_spectrum(self, x, y, ax, extent=None, compare_cubes=[], **kwargs):
+    def _plot_spectrum_cursor(self, x, y, ax, extent=None, compare_cubes=[], **kwargs):
         kwargs_spec = dict(where='mid', linewidth=2.5, label=r'%d,%d'%(x,y))
         kwargs_spec.update(kwargs)
         def get_ji(x,y):
@@ -158,31 +191,36 @@ class Cube(object):
                 for cube in compare_cubes: 
                     ax.fill_between(self.channels, cube.data[:,i,j], color=plot_spec[0].get_color(), step='mid', alpha=alpha)
                     alpha+=dalpha
+            else: ax.fill_between(self.channels, spectrum, color=plot_spec[0].get_color(), step='mid', alpha=0.2)
             return plot_spec
         
+    #def point(self, *args, **kwargs):
+     #   return self.cursor(*args, **kwargs)
+
     def cursor(self, fig, ax, extent=None, compare_cubes=[], **kwargs):
         def onclick(event):
             if event.button==3: 
                 print ('Right click. Disconnecting click event...')
                 fig.canvas.mpl_disconnect(cid)
             elif event.inaxes is ax[0]:
-                plot_spec = self._plot_spectrum(event.xdata, event.ydata, ax[1], extent=extent, 
-                                                compare_cubes=compare_cubes, **kwargs) 
+                plot_spec = self._plot_spectrum_cursor(event.xdata, event.ydata, ax[1], extent=extent, 
+                                                       compare_cubes=compare_cubes, **kwargs) 
                 if plot_spec:
                     print('%s click: button=%d, xdata=%f, ydata=%f' %
                           ('double' if event.dblclick else 'single', event.button,
                            event.xdata, event.ydata))
-                    ax[0].scatter(event.xdata, event.ydata)#, color=plot_spec[0].get_color())
+                    ax[0].scatter(event.xdata, event.ydata, color=plot_spec[0].get_color())
                     ax[1].legend()
                     fig.canvas.draw()
                     fig.canvas.flush_events()
 
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
-
-    def show(self, extent=None, chan_init=20, cursor_grid=True, compare_cubes=[],
+        return cid
+        
+    def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True,
              int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
              **kwargs):
-        from matplotlib.widgets import Slider, Cursor
+        from matplotlib.widgets import Slider, Cursor, Button
         v0, v1 = self.channels[0], self.channels[-1]
         dv = v1-v0
         fig, ax = plt.subplots(ncols=2, figsize=(12,5))
@@ -207,13 +245,34 @@ class Cube(object):
         cbar = plt.colorbar(img, cax=axcbar)
         current_chan = ax[1].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
         text_chan = ax[1].text((self.channels[chan_init]-v0)/dv, 1.02, #Converting xdata coords to Axes coords 
-                               '%4.1f km/s'%self.channels[chan_init], ha='center', 
+                               '%4.1f %s'%(self.channels[chan_init], vel_unit), ha='center', 
                                color='black', transform=ax[1].transAxes)
 
-        self.interactive(fig, ax, extent=extent, compare_cubes=compare_cubes, **kwargs)
-
-        if cursor_grid: cg=Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
+        if cursor_grid: cg = Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
+        box_img = plt.imread(path_file+'button_box.png')
+        cursor_img = plt.imread(path_file+'button_cursor.jpeg')
+        def get_interactive(func):
+            return func(fig, ax, extent=extent, compare_cubes=compare_cubes, **kwargs)
         
+        interactive_obj = [get_interactive(self.interactive)]
+        def go2cursor(event):
+            if self.interactive == self.cursor or self.interactive == self.point: return 0
+            interactive_obj[0].set_active(False)
+            self.interactive = self.cursor
+            interactive_obj[0] = get_interactive(self.interactive)
+
+        def go2box(event):
+            if self.interactive == self.box: return 0
+            fig.canvas.mpl_disconnect(interactive_obj[0])
+            self.interactive = self.box
+            interactive_obj[0] = get_interactive(self.interactive)
+
+        axbcursor = plt.axes([0.05, 0.71, 0.05, 0.05])
+        axbbox = plt.axes([0.05, 0.65, 0.05, 0.05])
+        bcursor = Button(axbcursor, '', image=cursor_img)
+        bcursor.on_clicked(go2cursor)
+        bbox = Button(axbbox, '', image=box_img)
+        bbox.on_clicked(go2box)
         #***************
         #SLIDERS
         #***************
@@ -223,7 +282,7 @@ class Cube(object):
             img.set_data(self.data[chan])
             current_chan.set_xdata(vchan)
             text_chan.set_x((vchan-v0)/dv)
-            text_chan.set_text('%4.1f km/s'%vchan)
+            text_chan.set_text('%4.1f %s'%(vchan, vel_unit))
             fig.canvas.draw_idle()
 
         def update_cubes(val):
@@ -254,6 +313,198 @@ class Cube(object):
             slider_chan.on_changed(update_chan)
 
         plt.show()
+
+    """
+    #Lasso functions under development
+    def _plot_lasso(self, ax, x, y, chan, color=False, show_path=True, extent=None, compare_cubes=[], **kwargs): 
+        if len(self._lasso_path) == 0: return
+        #for i in range(len(self.lasso_path))
+        if extent is None:
+            j = x.astype(np.int)
+            i = y.astype(np.int)
+        else: 
+            nz, ny, nx = np.shape(self.data)
+            dx = extent[1] - extent[0]
+            dy = extent[3] - extent[2]
+            j = (nx*(x-extent[0])/dx).astype(np.int)
+            i = (ny*(y-extent[2])/dy).astype(np.int)
+        
+        if color: self._plot_path = ax[1].step(np.arange(len(i)), self.data[chan,i,j], color=color)
+        else: self._plot_path = ax[1].step(np.arange(len(i)), self.data[chan,i,j])
+        self._plot_color = self._plot_path[0].get_color()
+        if show_path: self._path_on_cube = ax[0].plot(x,y, color=self._plot_color)
+        else: self._path_on_cube = None
+
+    def lasso(self, fig, ax, chan, color=False, show_path=True, extent=None, compare_cubes=[], **kwargs): 
+        from matplotlib.widgets import LassoSelector
+        canvas = ax[0].figure.canvas        
+        def onselect(verts):
+            #path = Path(verts)
+            canvas.draw_idle()
+            self._lasso_path.append(np.array(verts).T)
+            self._plot_lasso(ax, *np.array(verts).T, chan, color, show_path, extent, compare_cubes, **kwargs)
+            print (verts)
+        def disconnect():
+            self._lasso_obj.disconnect_events()
+            canvas.draw_idle()
+        self._lasso_obj = LassoSelector(ax[0], onselect, lineprops={'color': 'lime'})
+        def onclick(event):
+            if event.button == 3:
+                print ('Right click. Disconnecting click event...')
+                disconnect()
+                fig.canvas.draw()
+        cid = fig.canvas.mpl_connect('button_press_event', onclick) 
+    """
+
+    def curve(self, ax, x, y, chan, color=False, show_path=True, extent=None, compare_cubes=[], **kwargs): 
+        kwargs_curve = dict(linewidth=2.5)#, label=r'x0:%d,x1:%d'%(x0,x1))
+        kwargs_curve.update(kwargs)
+
+        if extent is None:
+            j = x.astype(np.int)
+            i = y.astype(np.int)
+        else: 
+            nz, ny, nx = np.shape(self.data)
+            dx = extent[1] - extent[0]
+            dy = extent[3] - extent[2]
+            j = (nx*(x-extent[0])/dx).astype(np.int)
+            i = (ny*(y-extent[2])/dy).astype(np.int)
+
+        pix_ids = np.arange(len(i))
+        path_val = self.data[chan,i,j]
+        if color: plot_path = ax[1].step(pix_ids, path_val, where='mid', color=color, **kwargs_curve)
+        else: plot_path = ax[1].step(pix_ids, path_val, where='mid', **kwargs_curve)
+        plot_color = plot_path[0].get_color()
+        if show_path: path_on_cube = ax[0].plot(x, y, color=plot_color, **kwargs_curve)
+        else: path_on_cube = None
+
+        cube_fill = []
+        plot_fill = None
+        ncubes = len(compare_cubes)        
+        if ncubes > 0:
+            alpha = 0.2
+            dalpha = -alpha/ncubes
+            for cube in compare_cubes: 
+                cube_fill.append(ax[1].fill_between(pix_ids, cube.data[chan,i,j], color=plot_color, step='mid', alpha=alpha))
+                alpha+=dalpha
+        else: plot_fill = ax[1].fill_between(pix_ids, path_val, color=plot_color, step='mid', alpha=0.2)
+
+        return path_on_cube, plot_path, plot_color, plot_fill, cube_fill
+
+    def show_path(self, x, y, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True,
+                  int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
+                  **kwargs):
+        from matplotlib.widgets import Slider, Cursor, Button
+        v0, v1 = self.channels[0], self.channels[-1]
+        dv = v1-v0
+        fig, ax = plt.subplots(ncols=2, figsize=(12,5))
+        
+        y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
+        axcbar = plt.axes([0.48, y0, 0.03, y1-y0])
+        max_data = np.max(self.data)
+        ax[0].set_xlabel(pos_unit)
+        ax[0].set_ylabel(pos_unit)
+        ax[1].set_xlabel('Pixel id along path')
+        ax[1].tick_params(direction='in', right=True, labelright=False, labelleft=False)
+        axcbar.tick_params(direction='out')
+        ax[1].set_ylabel(int_unit, labelpad=15)
+        ax[1].yaxis.set_label_position('right')
+        #ax[1].set_xlim(v0-0.1, v1+0.1)
+        ax[1].set_ylim(-1, max_data)
+        ax[1].grid(lw=1.5, ls=':')
+        cmap = plt.get_cmap('hot')
+        cmap.set_bad(color=(0.9,0.9,0.9))
+
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=-1, vmax=max_data)
+        cbar = plt.colorbar(img, cax=axcbar)
+        text_chan = ax[1].text(0.15, 1.04, #Converting xdata coords to Axes coords 
+                               r'v$_{\rmchan}$=%4.1f %s'%(self.channels[chan_init], vel_unit), ha='center', 
+                               color='black', transform=ax[1].transAxes)
+
+        if cursor_grid: cg = Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
+        box_img = plt.imread(path_file+'button_box.png')
+        cursor_img = plt.imread(path_file+'button_cursor.jpeg')
+
+        def get_interactive(func, chan=chan_init, color=False, show_path=True):
+            return func(ax, x, y, chan, color=color, show_path=show_path, extent=extent, compare_cubes=compare_cubes, **kwargs)
+
+        interactive_obj = [get_interactive(self.interactive_path)]
+        #***************
+        #SLIDERS
+        #***************
+        def update_chan(val):
+            chan = int(val)
+            vchan = self.channels[chan]
+            img.set_data(self.data[chan])
+            text_chan.set_text(r'v$_{\rmchan}$=%4.1f %s'%(vchan, vel_unit))
+            path_on_cube, plot_path, plot_color, plot_fill, cube_fill = interactive_obj[0]
+            plot_path[0].remove()
+            if plot_fill is not None: plot_fill.remove()
+            for cbfill in cube_fill: cbfill.remove()
+            interactive_obj[0] = get_interactive(self.interactive_path, chan, color=plot_color, show_path=False)
+            fig.canvas.draw_idle()
+
+        def update_cubes(val):
+            i = int(slider_cubes.val)
+            chan = int(slider_chan.val)
+            vchan = self.channels[chan]
+            if i==0: img.set_data(self.data[chan])
+            else: img.set_data(compare_cubes[i-1].data[chan])
+            text_chan.set_text(r'v$_{\rmchan}$=%4.1f %s'%(vchan, vel_unit))
+            path_on_cube, plot_path, plot_color, plot_fill, cube_fill = interactive_obj[0]
+            plot_path[0].remove()
+            if plot_fill is not None: plot_fill.remove()
+            for cbfill in cube_fill: cbfill.remove()
+            interactive_obj[0] = get_interactive(self.interactive_path, chan, color=plot_color, show_path=False)
+            fig.canvas.draw_idle()
+
+        ncubes = len(compare_cubes)
+        if ncubes>0:
+            axcubes = plt.axes([0.2, 0.90, 0.24, 0.025], facecolor='0.7')
+            axchan = plt.axes([0.2, 0.95, 0.24, 0.025], facecolor='0.7')
+            slider_cubes = Slider(axcubes, 'Cube id', 0, ncubes, 
+                                  valstep=1, valinit=0, valfmt='%1d', color='dodgerblue')                                  
+            slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
+                                 valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
+            slider_cubes.on_changed(update_cubes)
+            slider_chan.on_changed(update_cubes)
+        else: 
+            axchan = plt.axes([0.2, 0.9, 0.24, 0.05], facecolor='0.7')
+            slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
+                                 valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
+            slider_chan.on_changed(update_chan)
+
+        plt.show()
+
+        """
+        self._path_on_cube, self._plot_path, self._plot_color = None, None, None
+        self._lasso_path = []
+        self.interactive_path(fig, ax, chan_init, color=False, show_path=True, extent=extent, compare_cubes=compare_cubes, **kwargs)
+
+        def get_interactive(func, chan=chan_init, color=False, show_path=True):
+            #func(fig, ax, chan, color=color, show_path=show_path, extent=extent, compare_cubes=compare_cubes, **kwargs)
+            if func == self.lasso:
+                return self._plot_lasso(ax, True, True, chan, color=color, show_path=show_path, extent=extent, compare_cubes=compare_cubes, **kwargs)
+        
+        #interactive_obj = [get_interactive(self.interactive_path)]
+        #print (interactive_obj)
+        #***************
+        #SLIDERS
+        #***************
+        def update_chan(val):
+            chan = int(val)
+            vchan = self.channels[chan]
+            img.set_data(self.data[chan])
+            current_chan.set_xdata(vchan)
+            text_chan.set_x((vchan-v0)/dv)
+            text_chan.set_text('%4.1f km/s'%vchan)
+            #path_on_cube, plot_path, plot_color = interactive_obj[0]
+            if self._path_on_cube is not None: 
+                self._plot_path[0].remove()
+                get_interactive(self.interactive_path, chan, color=self._plot_color, show_path=False)
+            fig.canvas.draw_idle()
+        """
+
 
     def make_fits(self, output, **kw_header):
         from astropy.io import fits
