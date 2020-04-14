@@ -46,14 +46,92 @@ params = {'xtick.major.size': 6.5,
 matplotlib.rcParams.update(params)
 sigma2fwhm = np.sqrt(8*np.log(2))
 
+
+class Tools:
+    @staticmethod
+    def _rotate_sky_plane(x, y, ang):
+        xy = np.array([x,y])
+        cos_ang = np.cos(ang)
+        sin_ang = np.sin(ang)
+        rot = np.array([[cos_ang, -sin_ang],
+                        [sin_ang, cos_ang]])
+        return np.dot(rot, xy)
+
+    @staticmethod
+    def _rotate_sky_plane3d(x, y, z, ang, axis='z'):
+        xyz = np.array([x,y,z])
+        cos_ang = np.cos(ang)
+        sin_ang = np.sin(ang)
+        if axis == 'x':
+            rot = np.array([[1, 0, 0],
+                            [0, cos_ang, -sin_ang],
+                            [0, sin_ang, cos_ang]])
+        if axis == 'y':
+            rot = np.array([[cos_ang, 0, -sin_ang],
+                            [0, 1, 0],
+                            [sin_ang, 0, cos_ang]])
+            
+        if axis == 'z':
+            rot = np.array([[cos_ang, -sin_ang , 0],
+                            [sin_ang, cos_ang, 0], 
+                            [0, 0, 1]])
+        return np.dot(rot, xyz)
+
+    @staticmethod
+    def _project_on_skyplane(x, y, z, cos_incl, sin_incl):
+        x_pro = x
+        y_pro = y * cos_incl - z * sin_incl
+        z_pro = y * sin_incl + z * cos_incl
+        return x_pro, y_pro, z_pro
+
+    @staticmethod
+    def _compute_prop(grid, prop_funcs, prop_kwargs):
+        n_funcs = len(prop_funcs)
+        props = [{} for i in range(n_funcs)]
+        for side in ['near', 'far']:
+            x, y, z, R, phi = grid[side]
+            coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
+            for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
+        return props
+
+    @staticmethod
+    def _get_beam_from(file):
+        from radio_beam import Beam
+        from astropy.io import fits
+        from astropy import units as u
+        header = fits.getheader(file)
+        beam = Beam.from_fits_header(header)
+        pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
+        
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / 4.0
+        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / 4.0
+        angle = (90*u.deg+beam.pa).to(u.radian).value
+        gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
+        
+        #gauss_kern = beam.as_kernel(pix_scale) #as_kernel() is slowing down the run when used in astropy.convolve
+        return beam, gauss_kern
+    
+    @staticmethod
+    def _get_tb(I, nu, beam):
+        """
+        nu in GHz
+        Intensity in mJy/beam
+        beam from radio_beam
+        """
+        from astropy import units as u
+        return (1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value
+
+
 class Cube(object):
-    def __init__(self, nchan, channels, data):
+    def __init__(self, nchan, channels, data, beam=False, tb={'nu': False, 'beam': False}):
         self.nchan = nchan
         self.channels = channels
         self.data = data
         self.point = self.cursor
         self._interactive = self.cursor
         self._interactive_path = self.curve
+        if beam: self.beam = beam
+        if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'])
 
     @property
     def interactive(self): 
@@ -249,30 +327,11 @@ class Cube(object):
                                color='black', transform=ax[1].transAxes)
 
         if cursor_grid: cg = Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
-        box_img = plt.imread(path_file+'button_box.png')
-        cursor_img = plt.imread(path_file+'button_cursor.jpeg')
+
         def get_interactive(func):
             return func(fig, ax, extent=extent, compare_cubes=compare_cubes, **kwargs)
         
         interactive_obj = [get_interactive(self.interactive)]
-        def go2cursor(event):
-            if self.interactive == self.cursor or self.interactive == self.point: return 0
-            interactive_obj[0].set_active(False)
-            self.interactive = self.cursor
-            interactive_obj[0] = get_interactive(self.interactive)
-
-        def go2box(event):
-            if self.interactive == self.box: return 0
-            fig.canvas.mpl_disconnect(interactive_obj[0])
-            self.interactive = self.box
-            interactive_obj[0] = get_interactive(self.interactive)
-
-        axbcursor = plt.axes([0.05, 0.71, 0.05, 0.05])
-        axbbox = plt.axes([0.05, 0.65, 0.05, 0.05])
-        bcursor = Button(axbcursor, '', image=cursor_img)
-        bcursor.on_clicked(go2cursor)
-        bbox = Button(axbbox, '', image=box_img)
-        bbox.on_clicked(go2box)
         #***************
         #SLIDERS
         #***************
@@ -311,9 +370,43 @@ class Cube(object):
             slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
                                  valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
             slider_chan.on_changed(update_chan)
+    
+        #*************
+        #BUTTONS
+        #*************
+        def go2cursor(event):
+            if self.interactive == self.cursor or self.interactive == self.point: return 0
+            interactive_obj[0].set_active(False)
+            self.interactive = self.cursor
+            interactive_obj[0] = get_interactive(self.interactive)
+        def go2box(event):
+            if self.interactive == self.box: return 0
+            fig.canvas.mpl_disconnect(interactive_obj[0])
+            self.interactive = self.box
+            interactive_obj[0] = get_interactive(self.interactive)
+        def go2trash(event):
+            print ('Cleaning interactive figure...')
+            plt.close()
+            chan = int(slider_chan.val)
+            self.show(extent, chan, compare_cubes, cursor_grid, int_unit, pos_unit, vel_unit, **kwargs)
 
+        
+        box_img = plt.imread(path_file+'button_box.png')
+        cursor_img = plt.imread(path_file+'button_cursor.jpeg')
+        trash_img = plt.imread(path_file+'button_trash.jpg') 
+        axbcursor = plt.axes([0.05, 0.709, 0.05, 0.05])
+        axbbox = plt.axes([0.05, 0.65, 0.05, 0.05])
+        axbtrash = plt.axes([0.05, 0.591, 0.05, 0.05], frameon=True, aspect='equal')
+        bcursor = Button(axbcursor, '', image=cursor_img)
+        bcursor.on_clicked(go2cursor)
+        bbox = Button(axbbox, '', image=box_img)
+        bbox.on_clicked(go2box)
+        btrash = Button(axbtrash, '', image=trash_img, color='white', hovercolor='lime')
+        btrash.on_clicked(go2trash)
+        
         plt.show()
-
+        return btrash
+        
     """
     #Lasso functions under development
     def _plot_lasso(self, ax, x, y, chan, color=False, show_path=True, extent=None, compare_cubes=[], **kwargs): 
@@ -555,71 +648,6 @@ class Cube(object):
         os.system(gif_command)
         os.chdir(cwd)
 
-
-class Tools:
-    @staticmethod
-    def _rotate_sky_plane(x, y, ang):
-        xy = np.array([x,y])
-        cos_ang = np.cos(ang)
-        sin_ang = np.sin(ang)
-        rot = np.array([[cos_ang, -sin_ang],
-                        [sin_ang, cos_ang]])
-        return np.dot(rot, xy)
-
-    @staticmethod
-    def _rotate_sky_plane3d(x, y, z, ang, axis='z'):
-        xyz = np.array([x,y,z])
-        cos_ang = np.cos(ang)
-        sin_ang = np.sin(ang)
-        if axis == 'x':
-            rot = np.array([[1, 0, 0],
-                            [0, cos_ang, -sin_ang],
-                            [0, sin_ang, cos_ang]])
-        if axis == 'y':
-            rot = np.array([[cos_ang, 0, -sin_ang],
-                            [0, 1, 0],
-                            [sin_ang, 0, cos_ang]])
-            
-        if axis == 'z':
-            rot = np.array([[cos_ang, -sin_ang , 0],
-                            [sin_ang, cos_ang, 0], 
-                            [0, 0, 1]])
-        return np.dot(rot, xyz)
-
-    @staticmethod
-    def _project_on_skyplane(x, y, z, cos_incl, sin_incl):
-        x_pro = x
-        y_pro = y * cos_incl - z * sin_incl
-        z_pro = y * sin_incl + z * cos_incl
-        return x_pro, y_pro, z_pro
-
-    @staticmethod
-    def _compute_prop(grid, prop_funcs, prop_kwargs):
-        n_funcs = len(prop_funcs)
-        props = [{} for i in range(n_funcs)]
-        for side in ['near', 'far']:
-            x, y, z, R, phi = grid[side]
-            coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
-            for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
-        return props
-
-    @staticmethod
-    def _get_beam_from(file):
-        from radio_beam import Beam
-        from astropy.io import fits
-        from astropy import units as u
-        header = fits.getheader(file)
-        beam = Beam.from_fits_header(header)
-        pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
-        
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / 4.0
-        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / 4.0
-        angle = (90*u.deg+beam.pa).to(u.radian).value
-        gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
-        
-        #gauss_kern = beam.as_kernel(pix_scale) #as_kernel() is slowing down the run when used in astropy.convolve
-        return beam, gauss_kern
-    
 
 class Linewidth:
     @property
@@ -870,7 +898,7 @@ class Intensity:
 
         return int2d_full
 
-    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', **kwargs):
+    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', tb={'nu': False, 'beam': False}, **kwargs):
         vel2d, temp2d, int2d = velocity2d, {}, {}
         line_profile = self.line_profile
         channels = np.linspace(vchan0, vchan1, num=nchan)
@@ -904,7 +932,7 @@ class Intensity:
 
             cube.append(int2d_full)
 
-        return Cube(nchan, channels, np.array(cube))
+        return Cube(nchan, channels, np.array(cube), beam=self.beam_info, tb=tb)
 
     @staticmethod
     def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchans=30, folder='./movie_channels/', **kwargs):
