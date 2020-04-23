@@ -74,7 +74,7 @@ prop_tags, npoints, data = read_temp(filename)
 npoints = npoints
 data['xyz'] = data['xyz'][0:npoints]
 data['props'] = data['props'][0:npoints]
-abund_co = np.where(data['props'][:,2]>19.0, 1e-5, 1e-9)
+abund_co = np.where(data['props'][:,2]>10.0, 1e-5, 1e-9)
 
 pre_data = np.loadtxt('pre_datatab.dat')
 
@@ -89,6 +89,8 @@ prop = {'dens_H2': data['props'][:,0],
         'abundance_1': np.zeros(npoints)+1e-8
         }
 prop['abundance_0'][239098:] = 1e-9
+prop['temp_gas'][239098:] = 2.725
+prop['temp_dust'][239098:] = 2.725
 
 lime = rt.Lime(grid)
 lime.submodel(prop, output='datatab.dat', folder='./', lime_npoints = True, lime_header = True)

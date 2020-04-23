@@ -19,7 +19,7 @@ input(inputPars *par, image *img){
    */
   par->radius                   = 100*AU;
   par->minScale                 = 0.1*AU; // 2 * sizex / Nx / 2
-  par->pIntensity               = 239098;//273775;
+  par->pIntensity               = 273775;
   par->sinkPoints               = 60000; 
   par->dust                     = "../../../opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "co.dat";
@@ -50,6 +50,24 @@ input(inputPars *par, image *img){
    * Definitions for image #0. Add blocks with successive values of i for additional images.
    */  
 
+
+  //Line image
+  i=0;
+  img[i].trans                  = 2;                  //Line transition
+  img[i].molI                   = 0;                  //mol ID
+  img[i].pxls                   = 500;                // Pixels per dimension                                            
+  img[i].nchan                  = 81;
+  img[i].velres                 = 100.;
+  img[i].imgres                 = 0.0029;             // Resolution in arc seconds                                        
+  img[i].azimuth                = 0;                  // Azimuth                                      
+  img[i].incl                   = 0.651;              // Inclination     
+  img[i].posang                 = 0.21;               // Position angle                                                
+  img[i].distance               = 140*PC;             // source distance in m                                                
+  img[i].source_vel             = 0;                  // source velocity in m/s                                        
+  img[i].unit                   = 1;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_CO_J3-2_LTE_kelvin_T10+dummies0.fits";
+
+  /*
   //Dust continuum image
   i=0;
   img[i].pxls                   = 500;                // Pixels per dimension                                            
@@ -60,7 +78,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 140*PC;             // source distance in m                                                
   img[i].source_vel             = 0;                  // source velocity in m/s                                        
   img[i].unit                   = 1;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_nodummies_band7.fits";
+  img[i].filename               = "img_cont_T10+dummies0_band7.fits";
   img[i].freq                   = 345.7959899e9;      //Continuum central frequency 
 
 
@@ -74,7 +92,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 140*PC;             // source distance in m                                                 
   img[i].source_vel             = 0;                  // source velocity in m/s                                        
   img[i].unit                   = 4;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_nodummies_band7_tau.fits";
+  img[i].filename               = "img_cont_T10+dummies0_band7_tau.fits";
   img[i].freq                   = 345.7959899e9;      //Continuum central frequency                                    
 
 
@@ -88,7 +106,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 140*PC;             // source distance in m                                                
   img[i].source_vel             = 0;                  // source velocity in m/s                                        
   img[i].unit                   = 1;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_nodummies_band6.fits";
+  img[i].filename               = "img_cont_T10+dummies0_band6.fits";
   img[i].freq                   = 230.0e9;            //Continuum central frequency                                                       
 
                                        
@@ -106,24 +124,8 @@ input(inputPars *par, image *img){
   img[i].distance               = 140*PC;             // source distance in m                                               
   img[i].source_vel             = 0;                  // source velocity in m/s                                        
   img[i].unit                   = 1;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_nodummies.fits";
-
+  img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_T10+dummies0.fits";
   
-  //Line image
-  i=4;
-  img[i].trans                  = 2;                  //Line transition
-  img[i].molI                   = 0;                  //mol ID
-  img[i].pxls                   = 500;                // Pixels per dimension                                            
-  img[i].nchan                  = 81;
-  img[i].velres                 = 100.;
-  img[i].imgres                 = 0.0029;             // Resolution in arc seconds                                        
-  img[i].azimuth                = 0;                  // Azimuth                                      
-  img[i].incl                   = 0.651;              // Inclination     
-  img[i].posang                 = 0.21;               // Position angle                                                
-  img[i].distance               = 140*PC;             // source distance in m                                                
-  img[i].source_vel             = 0;                  // source velocity in m/s                                        
-  img[i].unit                   = 1;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CO_J3-2_LTE_kelvin_nodummies.fits";
   
   //Line image
   i=5;
@@ -139,8 +141,8 @@ input(inputPars *par, image *img){
   img[i].distance               = 140*PC;             // source distance in m                                                
   img[i].source_vel             = 0;                  // source velocity in m/s                                        
   img[i].unit                   = 4;                  // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CO_J3-2_LTE_tau_nodummies.fits";
-  
+  img[i].filename               = "img_CO_J3-2_LTE_tau_T10+dummies0.fits";
+  */  
 }
 
 /******************************************************************************/

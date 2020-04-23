@@ -7,6 +7,7 @@ import sf3dmodels.utils.constants as ct
 import sf3dmodels.rt as rt
 from sf3dmodels.model import disc
 from sf3dmodels.grid import Grid, fillgrid
+from sf3dmodels.arepo import UniqueCells
 #******************
 #External libraries
 #******************
@@ -65,7 +66,14 @@ prop = {'dens_H2': data_gas[:,5],
         'vel_y': data_gas[:,7],
         'vel_z': data_gas[:,8]}
 
-fill = fillgrid.Random(grid)
+unique_cells = UniqueCells(prop, None)
+id_pos = unique_cells.getuniques(grid).astype(np.int)
+
+grid.XYZ = grid.XYZ.T[id_pos].T
+grid.NPoints = len(id_pos)
+for key in prop: prop[key] = prop[key][id_pos]
+
+fill = fillgrid.Random(grid, smart=False)
 fill_rand = fill.spherical(prop,
                            prop_fill = {'dens_H2': 1.0, 'temp_dust': 3.0, 'temp_gas': 3.0},
                            r_min = 1*u.au, r_max = 100*u.au,
@@ -87,6 +95,7 @@ canvas3d = Plot_model.Canvas3d(ax_kw=ax_kw)
 ax = canvas3d.ax
 sp = canvas3d.scatter_random(grid, prop['dens_H2']/1e6, weight, GRID_unit=u.au, power=0, NRand=10000, prop_min=1.0, #function arguments
                              marker = '+', cmap = 'jet', s = 3, edgecolors = 'none', vmin=1e7, norm = colors.LogNorm()) #Scatter kwargs
+
 cbar = plt.colorbar(sp)
 cbar.ax.set_ylabel(r'H$_2$ density [cm$^{-3}$]')
 ax.set_xlabel('au')

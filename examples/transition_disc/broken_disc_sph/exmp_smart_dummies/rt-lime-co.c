@@ -50,6 +50,7 @@ input(inputPars *par, image *img){
    * Definitions for image #0. Add blocks with successive values of i for additional images.
    */  
 
+  /*
   //Dust continuum image
   i=0;
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -59,7 +60,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_faceon_band7.fits";
+  img[i].filename               = "img_T150_cont_faceon_band7.fits";
   img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
 
   //Dust continuum image
@@ -71,7 +72,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_edgeon_band7.fits";
+  img[i].filename               = "img_T150_cont_edgeon_phi0_band7.fits";
   img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
 
   //Dust continuum image
@@ -83,7 +84,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_edgeon_phi90_band7.fits";
+  img[i].filename               = "img_T150_cont_edgeon_phi90_band7.fits";
   img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
 
   //Dust continuum image
@@ -94,20 +95,20 @@ input(inputPars *par, image *img){
   img[i].phi                    = 0.;            // Azimuthal angle                                                
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
-  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_faceon_band7_tau.fits";
-  img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
+  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_T150_cont_faceon_band6.fits";
+  img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
 
   //Dust continuum image
   i=4;
   img[i].pxls                   = 500;               // Pixels per dimension                                            
   img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
-  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
+  img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
   img[i].phi                    = 0.;            // Azimuthal angle                                                
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_faceon_band6.fits";
+  img[i].filename               = "img_T150_cont_edgeon_phi0_band6.fits";
   img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
 
   //Dust continuum image
@@ -115,25 +116,53 @@ input(inputPars *par, image *img){
   img[i].pxls                   = 500;               // Pixels per dimension                                            
   img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
   img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
-  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].phi                    = -M_PI/2;            // Azimuthal angle                                                
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_edgeon_band6.fits";
+  img[i].filename               = "img_T150_cont_edgeon_phi90_band6.fits";
   img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
-
+  
   //Dust continuum image
   i=6;
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = 0;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_T150_cont_faceon_band7_tau.fits";
+  img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
+  */
+  
+  /*
+  //Dust continuum image
+  i=0;
+  img[i].pxls                   = 500;               // Pixels per dimension                                            
+  img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
+  img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
+  img[i].phi                    = 0.;            // Azimuthal angle                                                
+  img[i].distance               = 1000*PC;         // source distance in m                                                
+  img[i].source_vel             = 0;              // source velocity in m/s                                        
+  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_T150_cont_edgeon_phi0_band7_tau.fits";
+  img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
+
+  //Dust continuum image
+  i=1;
   img[i].pxls                   = 500;               // Pixels per dimension                                            
   img[i].imgres                 = 0.00042;           // Resolution in arc seconds                                        
   img[i].theta                  = -M_PI/2;            // 0: face-on, pi/2: edge-on                                      
   img[i].phi                    = -M_PI/2;            // Azimuthal angle                                                
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
-  img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_cont_edgeon_phi90_band6.fits";
-  img[i].freq                   = 230.0e9;         //Continuum central frequency                                     
-  
+  img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
+  img[i].filename               = "img_T150_cont_edgeon_phi90_band7_tau.fits";
+  img[i].freq                   = 345.7959899e9;         //Continuum central frequency                                     
+  */
+
+  /*
   //Line image
   i=7;
   img[i].trans                   = 127;            //Line transition
@@ -147,7 +176,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_faceon.fits";
+  img[i].filename               = "img_T150_CH3CN_J19-18K4_LTE_kelvin_faceon.fits";
 
   //Line image
   i=8;
@@ -162,7 +191,7 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_edgeon.fits";
+  img[i].filename               = "img_T150_CH3CN_J19-18K4_LTE_kelvin_edgeon_phi0.fits";
 
   //Line image
   i=9;
@@ -177,10 +206,12 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CH3CN_J19-18K4_LTE_kelvin_edgeon_phi90.fits";
+  img[i].filename               = "img_T150_CH3CN_J19-18K4_LTE_kelvin_edgeon_phi90.fits";
+  */
+
 
   //Line image
-  i=10;
+  i=0;
   img[i].trans                   = 2;            //Line transition
   img[i].molI                   = 0;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -192,10 +223,10 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CO_J3-2_LTE_kelvin_faceon.fits";
+  img[i].filename               = "img_T150_CO_J3-2_LTE_kelvin_faceon.fits";
   
 //Line image
-  i=11;
+  i=1;
   img[i].trans                   = 2;            //Line transition
   img[i].molI                   = 0;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -207,10 +238,10 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CO_J3-2_LTE_kelvin_edgeon.fits";
+  img[i].filename               = "img_T150_CO_J3-2_LTE_kelvin_edgeon_phi0.fits";
   
 //Line image
-  i=12;
+  i=2;
   img[i].trans                   = 2;            //Line transition
   img[i].molI                   = 0;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -222,10 +253,10 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 0;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CO_J3-2_LTE_kelvin_edgeon_phi90.fits";
+  img[i].filename               = "img_T150_CO_J3-2_LTE_kelvin_edgeon_phi90.fits";
 
   //Line image
-  i=13;
+  i=3;
   img[i].trans                   = 2;            //Line transition
   img[i].molI                   = 0;            //mol ID
   img[i].pxls                   = 500;               // Pixels per dimension                                            
@@ -237,8 +268,8 @@ input(inputPars *par, image *img){
   img[i].distance               = 1000*PC;         // source distance in m                                                
   img[i].source_vel             = 0;              // source velocity in m/s                                        
   img[i].unit                   = 4;              // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau                      
-  img[i].filename               = "img_CO_J3-2_LTE_tau_faceon.fits";
-  
+  img[i].filename               = "img_T150_CO_J3-2_LTE_tau_faceon.fits";
+ 
 }
 
 /******************************************************************************/
@@ -255,8 +286,8 @@ density(double dummy0, double dummy1, double id, double *density){
 void
 temperature(double dummy0, double dummy1, double id, double *temperature){
   int id_int=round(id);
-  temperature[0] = sf3d->temp_gas[id_int];
-  temperature[1] = sf3d->temp_dust[id_int];
+  temperature[0] = 150.; //Average temperature of the simulation (weighted by density) //sf3d->temp_gas[id_int]; // 
+  temperature[1] = 150.; //sf3d->temp_dust[id_int]; // 
 }
 
 /******************************************************************************/
@@ -264,8 +295,8 @@ temperature(double dummy0, double dummy1, double id, double *temperature){
 void
 abundance(double dummy0, double dummy1, double id, double *abundance){
   int id_int=round(id);
-  abundance[0] = sf3d->abundance[0][id_int];
-  abundance[1] = sf3d->abundance[1][id_int];
+  abundance[0] = 1e-5;//sf3d->abundance[0][id_int];
+  abundance[1] = 1e-9;//sf3d->abundance[1][id_int];
 }
 
 /******************************************************************************/

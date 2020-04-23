@@ -49,7 +49,7 @@ ax0.set_xlabel('au')
 #CS = ax0.contour(spec_index, levels=[1.3,1.4,1.5,1.6], origin='lower', extent=[-70,70,-70,70], lw=3)
 #ax0.clabel(CS, inline=1, fontsize=10)
 cbar = fig.colorbar(im, ax=ax0, extend='min')
-cbar.ax.set_ylabel(r'Spectral index')
+cbar.ax.set_ylabel(r'Retrieved Opacity indices')
 
 ax1 = fig.add_subplot(122)
 ax1.plot(freq, opacity[:,1], color = 'k', lw=5)
@@ -58,7 +58,8 @@ ax1.tick_params(axis='y', which='both', labelcolor='k', left=True, labelleft=Fal
 ax1.set_xlabel(r'$\nu$ [GHz]')
 ax1.yaxis.set_label_position('right')
 ax1.set_ylabel(r'$\kappa_{\nu}$')
+ax1.set_title(r'Input opacity law', pad=10, fontsize=MEDIUM_SIZE+2)
 ax1.grid()
  
-plt.savefig('img_spectral_index.png')
+plt.savefig('img_spectral_index.png', bbox_inches='tight')
 plt.show()

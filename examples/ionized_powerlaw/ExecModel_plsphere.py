@@ -14,6 +14,8 @@ import sf3dmodels.rt as rt
 #Extra libraries
 #-----------------
 import numpy as np
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
 import time
 
 t0 = time.time()
@@ -75,3 +77,28 @@ Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = densi
 
 Plot_model.scatter3D(GRID, density.total, weight, NRand = 4000, colordim = temperature.total, axisunit = u.au, cmap = 'binary', marker = 'o', s = 4,
                      colorscale = 'uniform', colorlabel = r'$T_{\rm e}$ [Kelvin]', output = '3Dtemp_%s.png'%tag, show = True)
+
+
+
+fig = plt.figure(figsize=(8,6))
+#ax = plt.axes(projection='3d')
+lims = (-3000,3000)
+canvas3d = Plot_model.Canvas3d(fig=fig, axes_kw={'xlim': lims, 'ylim': lims, 'zlim': lims, 'azim': 50, 'elev': 10})
+ax = canvas3d.ax #generated with fig.add_axes from matplotlib, hence all the matplotlib functions are available
+sp = canvas3d.scatter_random(GRID, density.total/1e6, weight/1e6, GRID_norm=u.au, power=0., NRand=4000, prop_color=temperature.total, prop_min=3.0, #function arguments
+                             marker = 'o', cmap = 'jet', s = 4, edgecolors = 'none', vmin = None, vmax = None, norm = colors.LogNorm())#marker='o', s=10, cmap='hot') #Scatter kwargs
+#ax.scatter(3000,0,0, c=[dens_e*1.2/1e6], norm=colors.Normalize(density.total.min()/1e6, vmax=density.total.max()/1e6), cmap=sp.cmap)
+
+cbar = plt.colorbar(sp)
+cbar.ax.set_ylabel(r'$n_{e^-}$ [cm$^{-3}$]')
+
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+
+#plt.tight_layout()
+plt.savefig('3D_%s.png'%tag, dpi = 500, bbox_inches='tight')
+plt.show()
+
+
+
