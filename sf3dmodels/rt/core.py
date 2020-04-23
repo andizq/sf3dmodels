@@ -414,11 +414,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
     Parameters
     ----------
     GRID : `~sf3dmodels.Model.Struct`
-       Grid structure in which the model was computed.
+       Grid structure hosting the model.
        
-    nphot : int, optional
-       Number of photon packages when computing dust temperature via Monte Carlo.
-
     Notes
     -----
     Available grid [0,1,2,3] and physical properties for Radmc3d, their ids and description:
@@ -454,11 +451,12 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
     +---------------+----------+--------------------------+
     """    
 
-    def __init__(self, GRID, nphot = 1000000):
+    def __init__(self, GRID, nphot=None):
         print ('Set RADMC-3D format...')
         self.GRID = GRID
-        self.nphot = nphot
         self._col_ids()
+        nx,ny,nz = self.GRID.Nodes
+        self.nn = nx * ny * nz
         super(Radmc3d, self).__init__(GRID)
 
     def _col_ids(self):
@@ -502,7 +500,6 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
            Defaults to [1,1,1]
         """
         nx,ny,nz = self.GRID.Nodes
-        self.nn = nx * ny * nz
         xi, yi, zi = np.array(self.GRID.XYZgrid) * cm #from m to cm
 
         #if not self.amr_grid:
@@ -696,14 +693,17 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         Parameters
         ----------
         **kwargs : control parameters for radmc3d. 
-           For example: write_radmc3d_control(incl_freefree = 1, incl_dust = 0, setthreads = 4)
-        
+           For example: write_radmc3d_control(nphot=100000, incl_freefree = 1, incl_dust = 0, setthreads = 4)
+           nphot : int, optional
+           Number of photon packages when computing dust temperature via Monte Carlo. Defaults to 1000000
+
         Notes
         -----
         Have a look at the `RADMC-3D`_ manual, section A.1, for a comprehensive list of the available control parameters and their default values.
         """
+        nphot = kwargs.pop('nphot', 1000000)
         with open('radmc3d.inp','w+') as f:
-            f.write('nphot = %d\n'%(self.nphot))
+            f.write('nphot = %d\n'%(nphot))
             for key in kwargs: f.write('{} = {}\n'.format(key, kwargs[key]))
             f.close()
 
@@ -841,10 +841,9 @@ class Radmc3dDefaults(Radmc3d):
        Grid structure in which the model was computed.
     """
 
-    def __init__(self, GRID, nphot = 1000000):
-        super(Radmc3dDefaults, self).__init__(GRID, nphot=nphot)
+    def __init__(self, GRID, nphot=None):
+        super(Radmc3dDefaults, self).__init__(GRID)
         
-
     def _freefree_keys(rstr = False):
         """
         Mandatory and optional prop object keys for the method `freefree`.
