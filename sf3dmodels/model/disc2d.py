@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib
 import numbers
 import warnings
+import copy
 import os
 
 #warnings.filterwarnings("error")
@@ -95,6 +96,39 @@ class Tools:
         return props
 
     @staticmethod
+    def _get_params2fit(params, boundaries):
+        header = []
+        params_indices = {}
+        boundaries_list = []
+        check_param2fit = lambda val: val and isinstance(val, bool)
+        i = 0
+        for key in params:
+            if isinstance(params[key], dict):
+                params_indices[key] = {}
+                for key2 in params[key]: 
+                    if check_param2fit(params[key][key2]):
+                        header.append(key2)
+                        boundaries_list.append(boundaries[key][key2])
+                        params_indices[key][key2] = i
+                        i+=1
+            elif isinstance(params[key], numbers.Number): 
+                if check_param2fit(params[key]):
+                    header.append(key)
+                    boundaries_list.append(boundaries[key])
+                    params_indices[key] = i
+                    i+=1
+        return header, params, params_indices, boundaries_list
+
+    @staticmethod #This should rather go in the optimisation function
+    def _update_params(params, params_indices, new_params): #params_dict, params_indices_dict, params_list_mc
+        params_val = copy.deepcopy(params)
+        for key in params_indices:
+            if isinstance(params[key], dict):
+                for key2 in params_indices[key]: params_val[key][key2] = new_params[params_indices[key][key2]]
+            elif isinstance(params[key], numbers.Number): params_val[key] = new_params[params_indices[key]]
+        return params_val   
+    
+    @staticmethod
     def _get_beam_from(file):
         from radio_beam import Beam
         from astropy.io import fits
@@ -103,7 +137,7 @@ class Tools:
         beam = Beam.from_fits_header(header)
         pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
         
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / 4.0
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / 4.0 #4.0 should rather be an input from the user (averaged pixels on the data to reduce size and time)
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / 4.0
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
@@ -116,7 +150,7 @@ class Tools:
         """
         nu in GHz
         Intensity in mJy/beam
-        beam from radio_beam
+        beam object from radio_beam
         """
         from astropy import units as u
         return (1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value
@@ -403,9 +437,8 @@ class Cube(object):
         bbox.on_clicked(go2box)
         btrash = Button(axbtrash, '', image=trash_img, color='white', hovercolor='lime')
         btrash.on_clicked(go2trash)
-        
         plt.show()
-        return btrash
+
         
     """
     #Lasso functions under development
@@ -968,6 +1001,25 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
     def __init__(self, grid):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
+        
+        self._params = {'velocity': {'Mstar': True},
+                        'incl': True,
+                        'PA': True,
+                        'intensity': {'I0': True, 'p': True, 'q': 0}, #I0, p-->r, q-->z
+                        'linewidth': {'L0': True, 'p': True, 'q': 0}, #L0, p-->r, q-->z
+                        'z_func': {'psi_near': True, 'psi_far': True},
+                        }
+
+        self._boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
+                            'incl': [-np.pi/3, np.pi/3],
+                            'PA': [-np.pi, np.pi],
+                            'intensity': {'I0': [-np.inf, 0], 'p': [-1.0, 1.0], 'q': [0, 1.0]},
+                            'linewidth': {'L0': [0.05, 5.0], 'p': [-1.0, 1.0], 'q': [0, 1.0]},
+                            'z_func': {'psi_near': [0, np.pi/2], 'psi_far': [0, np.pi/2]},
+                            }
+
+
+        self.f = General2d._get_params2fit(self._params, self._boundaries)
         self._beam_from = False
         self._beam_info = False
         self._beam_kernel = False
