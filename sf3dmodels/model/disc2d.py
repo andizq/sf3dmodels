@@ -1084,10 +1084,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
         self._use_full_channel = False
         self._line_profile = General2d.line_profile_temp
 
-    def run_mcmc(self, p0nwalkers=30, nsteps=100, frac_stats=0.5, mirror=False):
+    def run_mcmc(self, p0='optimize', nwalkers=30, nsteps=100, frac_stats=0.5, mirror=False): #p0 from 'optimize', 'min', 'max', list of values.
         nstats = int(frac_stats*nsteps)
         if mirror: self._params['height_far'] = False
-        header, params_indices, boundaries_list = General2d._get_params2fit(self._params, self._boundaries)
+        header, params_indices, boundaries_list = General2d._get_params2fit(self._params, self._boundaries) #This should be done in init so that the user can now the header beforehand
         
 
     def make_model(self, default=False, get_2d=True, mirror=False,
