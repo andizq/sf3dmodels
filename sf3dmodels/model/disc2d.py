@@ -117,7 +117,7 @@ class Tools:
                     boundaries_list.append(boundaries[key])
                     params_indices[key] = i
                     i+=1
-        return header, params, params_indices, boundaries_list
+        return header, params_indices, boundaries_list
 
     @staticmethod #This should rather go in the optimisation function
     def _update_params(params, params_indices, new_params): #params_dict, params_indices_dict, params_list_mc
@@ -682,6 +682,47 @@ class Cube(object):
         os.chdir(cwd)
 
 
+class Height:
+    @property
+    def z_near_func(self): 
+        return self._z_near_func
+          
+    @z_near_func.setter 
+    def z_near_func(self, near): 
+        print('Setting near-side height function to', near) 
+        self._z_near_func = near
+
+    @z_near_func.deleter 
+    def z_near_func(self): 
+        print('Deleting near-side height function') 
+        del self._z_near_func
+
+    @property
+    def z_far_func(self): 
+        return self._z_far_func
+          
+    @z_far_func.setter 
+    def z_far_func(self, far): 
+        print('Setting far-side height function to', far) 
+        self._z_far_func = far
+
+    @z_far_func.deleter 
+    def z_far_func(self): 
+        print('Deleting far-side height function') 
+        del self._z_far_func
+
+    psi0 = 15*np.pi/180
+    @staticmethod
+    def z_cone(coord, psi=psi0):
+        R = coord['R'] 
+        z = np.tan(psi) * R
+        return z
+
+    @staticmethod
+    def z_cone_neg(coord, psi=psi0):
+        return -z_cone(coord, psi)
+
+
 class Linewidth:
     @property
     def linewidth_func(self): 
@@ -997,23 +1038,35 @@ class Intensity:
         return np.array(int2d_cube)
 
    
-class General2d(Velocity, Intensity, Linewidth, Tools):
+class General2d(Height, Velocity, Intensity, Linewidth, Tools):
     def __init__(self, grid):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         
         self._params = {'velocity': {'Mstar': True},
-                        'orientation': {'incl': True, 'PA': True},
-                        'intensity': {'I0': True, 'p': True, 'q': 0}, #I0, p-->r, q-->z
-                        'linewidth': {'L0': True, 'p': True, 'q': 0}, #L0, p-->r, q-->z
-                        'z_func': {'psi_near': True, 'psi_far': True},
+                        'orientation': {'incl': True, 
+                                        'PA': True},
+                        'intensity': {'I0': True, 
+                                      'p': True, #-->r 
+                                      'q': 0},   #-->z
+                        'linewidth': {'L0': True, 
+                                      'p': True, 
+                                      'q': 0}, 
+                        'height_near': {'psi_near': True},
+                        'height_far': {'psi_far': True},
                         }
 
         self._boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
-                            'orientation': {'incl': [-np.pi/3, np.pi/3], 'PA': [-np.pi, np.pi]},
-                            'intensity': {'I0': [-np.inf, 0], 'p': [-1.0, 1.0], 'q': [0, 1.0]},
-                            'linewidth': {'L0': [0.05, 5.0], 'p': [-1.0, 1.0], 'q': [0, 1.0]},
-                            'z_func': {'psi_near': [0, np.pi/2], 'psi_far': [0, np.pi/2]},
+                            'orientation': {'incl': [-np.pi/3, np.pi/3], 
+                                            'PA': [-np.pi, np.pi]},
+                            'intensity': {'I0': [0, 100], 
+                                          'p': [-1.0, 1.0], 
+                                          'q': [0, 1.0]},
+                            'linewidth': {'L0': [0.05, 5.0], 
+                                          'p': [-1.0, 1.0], 
+                                          'q': [0, 1.0]},
+                            'z_func': {'psi_near': [0, np.pi/2], 
+                                       'psi_far': [0, np.pi/2]},
                             }
 
 
@@ -1022,6 +1075,8 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
         self._beam_info = False
         self._beam_kernel = False
         self._beam_area = False
+        self._z_near_func = General2d.z_cone
+        self._z_far_func = General2d.z_cone_neg
         self._velocity_func = General2d.keplerian
         self._intensity_func = General2d.intensity_powerlaw
         self._linewidth_func = General2d.linewidth_powerlaw
@@ -1029,21 +1084,41 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
         self._use_full_channel = False
         self._line_profile = General2d.line_profile_temp
 
-    def make_model(self, incl, z_func, PA=0.0, get_2d=True, z_far=None, 
+    def run_mcmc(self, p0nwalkers=30, nsteps=100, frac_stats=0.5, mirror=False):
+        nstats = int(frac_stats*nsteps)
+        if mirror: self._params['height_far'] = False
+        header, params_indices, boundaries_list = General2d._get_params2fit(self._params, self._boundaries)
+        
+
+    def make_model(self, default=False, get_2d=True, mirror=False,
                    int_kwargs={}, vel_kwargs={}, lw_kwargs=None, R_disc=None):
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
+        
+        if default:
+            incl = np.pi/4
+            PA = 0.0
+            int_kwargs = {}
+            vel_kwargs = {}
+            lw_kwargs = {}
+        else: 
+            incl = self._params_val['orientation']['incl']
+            PA = self._params_val['orientation']['PA']
+            int_kwargs = self._params_val['intensity']
+            vel_kwargs = self._params_val['velocity']
+            lw_kwargs = self._params_val['linewidth']
+
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
         x_init, y_init = self.grid.XYZ[:2]
         x_true, y_true = x_init, y_init
         phi_true = np.arctan2(y_true, x_true)        
         R_true = np.hypot(x_init, y_init)
-        z_true = z_func(R_true)
+        z_true = self.z_near_func(R_true)
 
-        if z_far is not None: z_true_far = z_far(R_true) 
-        else: z_true_far = -z_true
+        if mirror: z_true_far = -z_true
+        else: z_true_far = self.z_far_func(R_true) 
             
         grid_true = {'near': [x_true, y_true, z_true, R_true, phi_true], 
                      'far': [x_true, y_true, z_true_far, R_true, phi_true]}
