@@ -1003,16 +1003,14 @@ class General2d(Velocity, Intensity, Linewidth, Tools):
         self.grid = grid
         
         self._params = {'velocity': {'Mstar': True},
-                        'incl': True,
-                        'PA': True,
+                        'orientation': {'incl': True, 'PA': True},
                         'intensity': {'I0': True, 'p': True, 'q': 0}, #I0, p-->r, q-->z
                         'linewidth': {'L0': True, 'p': True, 'q': 0}, #L0, p-->r, q-->z
                         'z_func': {'psi_near': True, 'psi_far': True},
                         }
 
         self._boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
-                            'incl': [-np.pi/3, np.pi/3],
-                            'PA': [-np.pi, np.pi],
+                            'orientation': {'incl': [-np.pi/3, np.pi/3], 'PA': [-np.pi, np.pi]},
                             'intensity': {'I0': [-np.inf, 0], 'p': [-1.0, 1.0], 'q': [0, 1.0]},
                             'linewidth': {'L0': [0.05, 5.0], 'p': [-1.0, 1.0], 'q': [0, 1.0]},
                             'z_func': {'psi_near': [0, np.pi/2], 'psi_far': [0, np.pi/2]},
