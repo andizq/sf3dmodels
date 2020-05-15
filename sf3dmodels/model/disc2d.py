@@ -723,7 +723,7 @@ class Height:
 
     @staticmethod
     def z_cone_neg(coord, psi=psi0):
-        return -z_cone(coord, psi)
+        return -Height.z_cone(coord, psi)
 
 
 class Linewidth:
@@ -1055,8 +1055,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
                         'linewidth': {'L0': True, 
                                       'p': True, 
                                       'q': 0}, 
-                        'height_near': {'psi_near': True},
-                        'height_far': {'psi_far': True},
+                        'height_near': {'psi': True},
+                        'height_far': {'psi': True},
                         }
 
         self._boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
@@ -1068,15 +1068,19 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
                             'linewidth': {'L0': [0.05, 5.0], 
                                           'p': [-1.0, 1.0], 
                                           'q': [0, 1.0]},
-                            'z_func': {'psi_near': [0, np.pi/2], 
-                                       'psi_far': [0, np.pi/2]},
+                            'height_near': {'psi': [0, np.pi/2]},
+                            'height_far': {'psi': [0, np.pi/2]}
                             }
 
-        General2d._get_params2fit(self._params, self._boundaries)
+        self._get_params2fit(self._params, self._boundaries)
 
         if prototype:
-            params = update_params(self._params, self.params_indices, np.zeros(self.nparams).astype(np.bool)) #Convert all parameters to fit into Falses so that default values are taken
-            General2d._get_params2fit(self._params, self._boundaries)
+            self._params_val = {}
+            #self._params_val = General2d._update_params(self._params, self._params_indices, np.zeros(self.nparams).astype(np.bool)) #Convert fit parameters into Falses so that default values are taken
+            for key in self._params: self._params_val[key] = {}
+            
+            self._get_params2fit(self._params, self._boundaries)
+            print (self._params_val)
 
         self._beam_from = False
         self._beam_info = False
@@ -1091,20 +1095,22 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
         self._use_full_channel = False
         self._line_profile = General2d.line_profile_temp
 
+    @staticmethod
+    def orientation(incl=np.pi/4, PA=0.0):
+        return incl, PA
+
     def run_mcmc(self, p0='optimize', nwalkers=30, nsteps=100, frac_stats=0.5, mirror=False): #p0 from 'optimize', 'min', 'max', list of values.
         nstats = int(frac_stats*nsteps)
         if mirror: self._params['height_far'] = False
         header, params_indices, boundaries_list = General2d._get_params2fit(self._params, self._boundaries) #This should be done in init so that the user can now the header beforehand
         
-
-    def make_model(self, get_2d=True, mirror=False, R_disc):
+    def make_model(self, get_2d=True, mirror=False, R_disc=None):
                    
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
         
-        incl = self._params_val['orientation']['incl']
-        PA = self._params_val['orientation']['PA']
+        incl, PA = General2d.orientation(**self._params_val['orientation'])
         int_kwargs = self._params_val['intensity']
         vel_kwargs = self._params_val['velocity']
         lw_kwargs = self._params_val['linewidth']
@@ -1115,10 +1121,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
         x_true, y_true = x_init, y_init
         phi_true = np.arctan2(y_true, x_true)        
         R_true = np.hypot(x_init, y_init)
-        z_true = self.z_near_func(R_true)
+        z_true = self.z_near_func({'R': R_true}, **self._params_val['height_near'])
 
         if mirror: z_true_far = -z_true
-        else: z_true_far = self.z_far_func(R_true) 
+        else: z_true_far = self.z_far_func({'R': R_true}, **self._params_val['height_far']) 
             
         grid_true = {'near': [x_true, y_true, z_true, R_true, phi_true], 
                      'far': [x_true, y_true, z_true_far, R_true, phi_true]}
