@@ -95,8 +95,7 @@ class Tools:
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
 
-    @staticmethod
-    def _get_params2fit(params, boundaries):
+    def _get_params2fit(self, params, boundaries):
         header = []
         params_indices = {}
         boundaries_list = []
@@ -117,6 +116,10 @@ class Tools:
                     boundaries_list.append(boundaries[key])
                     params_indices[key] = i
                     i+=1
+        self.header = header
+        self.nparams = len(header)
+        self.boundaries_list = boundaries_list
+        self._params_indices = params_indices
         return header, params_indices, boundaries_list
 
     @staticmethod #This should rather go in the optimisation function
@@ -1039,7 +1042,7 @@ class Intensity:
 
    
 class General2d(Height, Velocity, Intensity, Linewidth, Tools):
-    def __init__(self, grid):
+    def __init__(self, grid, prototype=False):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         
@@ -1069,8 +1072,12 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
                                        'psi_far': [0, np.pi/2]},
                             }
 
+        General2d._get_params2fit(self._params, self._boundaries)
 
-        self.f = General2d._get_params2fit(self._params, self._boundaries)
+        if prototype:
+            params = update_params(self._params, self.params_indices, np.zeros(self.nparams).astype(np.bool)) #Convert all parameters to fit into Falses so that default values are taken
+            General2d._get_params2fit(self._params, self._boundaries)
+
         self._beam_from = False
         self._beam_info = False
         self._beam_kernel = False
@@ -1090,24 +1097,17 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
         header, params_indices, boundaries_list = General2d._get_params2fit(self._params, self._boundaries) #This should be done in init so that the user can now the header beforehand
         
 
-    def make_model(self, default=False, get_2d=True, mirror=False,
-                   int_kwargs={}, vel_kwargs={}, lw_kwargs=None, R_disc=None):
+    def make_model(self, get_2d=True, mirror=False, R_disc):
+                   
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
         
-        if default:
-            incl = np.pi/4
-            PA = 0.0
-            int_kwargs = {}
-            vel_kwargs = {}
-            lw_kwargs = {}
-        else: 
-            incl = self._params_val['orientation']['incl']
-            PA = self._params_val['orientation']['PA']
-            int_kwargs = self._params_val['intensity']
-            vel_kwargs = self._params_val['velocity']
-            lw_kwargs = self._params_val['linewidth']
+        incl = self._params_val['orientation']['incl']
+        PA = self._params_val['orientation']['PA']
+        int_kwargs = self._params_val['intensity']
+        vel_kwargs = self._params_val['velocity']
+        lw_kwargs = self._params_val['linewidth']
 
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
