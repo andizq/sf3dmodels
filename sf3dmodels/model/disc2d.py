@@ -8,7 +8,6 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 from ..utils.constants import G, kb
 from ..utils import units as u
 from astropy.convolution import Gaussian2DKernel, convolve
-from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -18,6 +17,9 @@ import emcee
 import copy
 import time
 import os
+
+from multiprocessing import Pool
+os.environ["OMP_NUM_THREADS"] = "1"
 
 #warnings.filterwarnings("error")
 __all__ = ['Cube', 'Tools', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
@@ -61,7 +63,9 @@ class InputError(Exception):
     def __init__(self, expression, message):
         self.expression = expression
         self.message = message
-
+        
+    def __str__(self):
+        return '%s --> %s'%(self.expression, self.message)
 
 class Tools:
     @staticmethod
@@ -1040,15 +1044,9 @@ class Mcmc:
                         boundaries_list.append(boundaries[key][key2])
                         params_indices[key][key2] = i
                         i+=1
-            else: raise InputError('Wrong input parameters. Base keys in mc_params must be categories; parameters of a category must be within a dictionary as well.')
+            else: raise InputError(mc_params, 'Wrong input parameters. Base keys in mc_params must be categories; parameters of a category must be within a dictionary as well.')
 
         return header, kind, len(header), boundaries_list, params_indices
-
-    @staticmethod 
-    def _update_params(params_dict, nparams, kind, header, new_params): #params_dict, params_indices_dict, params_list_mc
-        for i in range(nparams):
-            params_dict[kind[i]][header[i]] = new_params[i]
-        return params_dict
 
     def ln_likelihood(self, new_params, **kwargs):
         for i in range(self.mc_nparams):
@@ -1067,15 +1065,13 @@ class Mcmc:
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
             model = np.where(np.logical_and(mask_data, ~mask_model), 0, model_chan)
             mask = np.logical_or(mask_data, mask_model)
-            lnx =  np.where(mask, np.power((data - model)/self.noise_stddev, 2), 0) #np.power((I_sliced[i] - model_chan), 2) #
+            lnx =  np.where(mask, np.power((data - model)/self.noise_stddev, 2), 0) 
             #lnx = -0.5 * np.sum(lnx2[~np.isnan(lnx2)] * 0.00001)# * self.ivar)
             lnx2 += -0.5 * np.sum(lnx)
         return lnx2 if np.isfinite(lnx2) else -np.inf
 
      
 class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
-    os.environ["OMP_NUM_THREADS"] = "1"
-
     def __init__(self, grid, prototype=False):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
@@ -1151,10 +1147,13 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
 
         print ('Parameter header set for mcmc model fitting:', self.mc_header)
         print ('Parameters to fit and fixed parameters:', self.mc_params)            
-
+        print ('Number of dimensions:', self.mc_nparams)
+        print ('Kind of parameters:', self.mc_kind)
+        print ('Parameters boundaries:', self.mc_boundaries_list)
+        
         if p0_mean == 'optimize': p0_mean = optimize_p0()
         if isinstance(p0_mean, (list, tuple, np.ndarray)): 
-            if len(p0_mean) != self.mc_nparams: raise InputError('Length of input p0 must be equal to number of parameters to fit')
+            if len(p0_mean) != self.mc_nparams: raise InputError(p0_mean, 'Length of input p0_mean must be equal to number of parameters to fit: %d'%self.mc_nparams)
             else: pass
         print ('Mean for initial guess p0:', p0_mean)
 
@@ -1166,7 +1165,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
                               scale=p0_stddev,
                               size=(nwalkers, ndim)
                               )
-            
+
         with Pool() as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
             start = time.time()
