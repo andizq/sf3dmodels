@@ -8,12 +8,15 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 from ..utils.constants import G, kb
 from ..utils import units as u
 from astropy.convolution import Gaussian2DKernel, convolve
+from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
-import numbers
 import warnings
+import numbers
+import emcee
 import copy
+import time
 import os
 
 #warnings.filterwarnings("error")
@@ -26,7 +29,6 @@ matplotlib.rcParams['lines.linewidth'] = 1.5
 matplotlib.rcParams['axes.linewidth'] = 3.0
 matplotlib.rcParams['xtick.major.width']=1.6
 matplotlib.rcParams['ytick.major.width']=1.6
-
 
 SMALL_SIZE = 10
 MEDIUM_SIZE = 15
@@ -46,6 +48,19 @@ params = {'xtick.major.size': 6.5,
 
 matplotlib.rcParams.update(params)
 sigma2fwhm = np.sqrt(8*np.log(2))
+
+
+class InputError(Exception):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
 
 
 class Tools:
@@ -94,43 +109,7 @@ class Tools:
             coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
-
-    def _get_params2fit(self, params, boundaries):
-        header = []
-        params_indices = {}
-        boundaries_list = []
-        check_param2fit = lambda val: val and isinstance(val, bool)
-        i = 0
-        for key in params:
-            if isinstance(params[key], dict):
-                params_indices[key] = {}
-                for key2 in params[key]: 
-                    if check_param2fit(params[key][key2]):
-                        header.append(key2)
-                        boundaries_list.append(boundaries[key][key2])
-                        params_indices[key][key2] = i
-                        i+=1
-            elif isinstance(params[key], numbers.Number): 
-                if check_param2fit(params[key]):
-                    header.append(key)
-                    boundaries_list.append(boundaries[key])
-                    params_indices[key] = i
-                    i+=1
-        self.header = header
-        self.nparams = len(header)
-        self.boundaries_list = boundaries_list
-        self._params_indices = params_indices
-        return header, params_indices, boundaries_list
-
-    @staticmethod #This should rather go in the optimisation function
-    def _update_params(params, params_indices, new_params): #params_dict, params_indices_dict, params_list_mc
-        params_val = copy.deepcopy(params)
-        for key in params_indices:
-            if isinstance(params[key], dict):
-                for key2 in params_indices[key]: params_val[key][key2] = new_params[params_indices[key][key2]]
-            elif isinstance(params[key], numbers.Number): params_val[key] = new_params[params_indices[key]]
-        return params_val   
-    
+  
     @staticmethod
     def _get_beam_from(file):
         from radio_beam import Beam
@@ -634,7 +613,6 @@ class Cube(object):
             fig.canvas.draw_idle()
         """
 
-
     def make_fits(self, output, **kw_header):
         from astropy.io import fits
         hdr = fits.Header()
@@ -766,13 +744,15 @@ class Velocity:
         del self._velocity_func
 
     @staticmethod
-    def keplerian(coord, Mstar=u.Msun):
+    def keplerian(coord, Mstar=1.0):
+        Mstar *= u.MSun
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         return np.sqrt(G*Mstar/R) 
     
     @staticmethod
-    def keplerian_vertical(coord, Mstar=u.Msun):
+    def keplerian_vertical(coord, Mstar=1.0):
+        Mstar *= u.MSun
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = np.hypot(R, coord['z'])
@@ -975,7 +955,7 @@ class Intensity:
 
         return int2d_full
 
-    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, folder='./movie_channels/', tb={'nu': False, 'beam': False}, **kwargs):
+    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
         vel2d, temp2d, int2d = velocity2d, {}, {}
         line_profile = self.line_profile
         channels = np.linspace(vchan0, vchan1, num=nchan)
@@ -1040,47 +1020,66 @@ class Intensity:
         os.system('convert -delay 10 *int2d* cube_channels.gif')
         return np.array(int2d_cube)
 
-   
-class General2d(Height, Velocity, Intensity, Linewidth, Tools):
+
+class Mcmc:
+    @staticmethod
+    def _get_params2fit(mc_params, boundaries):
+        header = []
+        kind = []
+        params_indices = {}
+        boundaries_list = []
+        check_param2fit = lambda val: val and isinstance(val, bool)
+        i = 0
+        for key in mc_params:
+            if isinstance(mc_params[key], dict):
+                params_indices[key] = {}
+                for key2 in mc_params[key]: 
+                    if check_param2fit(mc_params[key][key2]):
+                        header.append(key2)
+                        kind.append(key)
+                        boundaries_list.append(boundaries[key][key2])
+                        params_indices[key][key2] = i
+                        i+=1
+            else: raise InputError('Wrong input parameters. Base keys in mc_params must be categories; parameters of a category must be within a dictionary as well.')
+
+        return header, kind, len(header), boundaries_list, params_indices
+
+    @staticmethod 
+    def _update_params(params_dict, nparams, kind, header, new_params): #params_dict, params_indices_dict, params_list_mc
+        for i in range(nparams):
+            params_dict[kind[i]][header[i]] = new_params[i]
+        return params_dict
+
+    def ln_likelihood(self, new_params, **kwargs):
+        for i in range(self.mc_nparams):
+            if not (self.mc_boundaries_list[i][0] < new_params[i] < self.mc_boundaries_list[i][1]): return -np.inf
+            else: self.params[self.mc_kind[i]][self.mc_header[i]] = new_params[i]
+
+        vel2d, int2d, linew2d = self.make_model(**kwargs)
+
+        for side in ['near', 'far']: vel2d[side]*=1e-3 
+        lnx2=0    
+        nchans = len(self.channels)
+        for i in range(nchans):
+            model_chan = self.get_channel(vel2d, int2d, linew2d, self.channels[i], mmol=28.0101*u.amu) 
+            mask_data = np.isfinite(self.data[i])
+            mask_model = np.isfinite(model_chan)
+            data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
+            model = np.where(np.logical_and(mask_data, ~mask_model), 0, model_chan)
+            mask = np.logical_or(mask_data, mask_model)
+            lnx =  np.where(mask, np.power((data - model)/self.noise_stddev, 2), 0) #np.power((I_sliced[i] - model_chan), 2) #
+            #lnx = -0.5 * np.sum(lnx2[~np.isnan(lnx2)] * 0.00001)# * self.ivar)
+            lnx2 += -0.5 * np.sum(lnx)
+        return lnx2 if np.isfinite(lnx2) else -np.inf
+
+     
+class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
+    os.environ["OMP_NUM_THREADS"] = "1"
+
     def __init__(self, grid, prototype=False):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
-        
-        self._params = {'velocity': {'Mstar': True},
-                        'orientation': {'incl': True, 
-                                        'PA': True},
-                        'intensity': {'I0': True, 
-                                      'p': True, #-->r 
-                                      'q': 0},   #-->z
-                        'linewidth': {'L0': True, 
-                                      'p': True, 
-                                      'q': 0}, 
-                        'height_near': {'psi': True},
-                        'height_far': {'psi': True},
-                        }
-
-        self._boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
-                            'orientation': {'incl': [-np.pi/3, np.pi/3], 
-                                            'PA': [-np.pi, np.pi]},
-                            'intensity': {'I0': [0, 100], 
-                                          'p': [-1.0, 1.0], 
-                                          'q': [0, 1.0]},
-                            'linewidth': {'L0': [0.05, 5.0], 
-                                          'p': [-1.0, 1.0], 
-                                          'q': [0, 1.0]},
-                            'height_near': {'psi': [0, np.pi/2]},
-                            'height_far': {'psi': [0, np.pi/2]}
-                            }
-
-        self._get_params2fit(self._params, self._boundaries)
-
-        if prototype:
-            self._params_val = {}
-            #self._params_val = General2d._update_params(self._params, self._params_indices, np.zeros(self.nparams).astype(np.bool)) #Convert fit parameters into Falses so that default values are taken
-            for key in self._params: self._params_val[key] = {}
-            
-            self._get_params2fit(self._params, self._boundaries)
-            print (self._params_val)
+        self.prototype = prototype
 
         self._beam_from = False
         self._beam_info = False
@@ -1094,26 +1093,105 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
         self._use_temperature = True
         self._use_full_channel = False
         self._line_profile = General2d.line_profile_temp
+        
+        #Get and print default parameters for default functions
+        self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'height_near', 'height_far']
+
+        self.mc_params = {'velocity': {'Mstar': True},
+                          'orientation': {'incl': True, 
+                                          'PA': True},
+                          'intensity': {'I0': True, 
+                                        'p': True, #-->r 
+                                        'q': False},   #-->z
+                          'linewidth': {'L0': True, 
+                                        'p': True, 
+                                        'q': 0.1}, 
+                          'height_near': {'psi': True},
+                          'height_far': {'psi': True},
+                          }
+        
+        self.mc_boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
+                              'orientation': {'incl': [-np.pi/3, np.pi/3], 
+                                              'PA': [-np.pi, np.pi]},
+                              'intensity': {'I0': [0, 100], 
+                                            'p': [-1.0, 1.0], 
+                                            'q': [0, 1.0]},
+                              'linewidth': {'L0': [0.05, 5.0], 
+                                            'p': [-1.0, 1.0], 
+                                            'q': [0, 1.0]},
+                              'height_near': {'psi': [0, np.pi/2]},
+                              'height_far': {'psi': [0, np.pi/2]}
+                              }
+
+        if prototype:
+            self.params = {}
+            for key in self.categories: self.params[key] = {}
+            print ('Available categories for prototyping:', self.params)
+
+        else: 
+            self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
+            print ('Default parameter header for mcmc model fitting:', self.mc_header)
+            print ('Default parameters to fit and fixed parameters:', self.mc_params)
 
     @staticmethod
     def orientation(incl=np.pi/4, PA=0.0):
         return incl, PA
 
-    def run_mcmc(self, p0='optimize', nwalkers=30, nsteps=100, frac_stats=0.5, mirror=False): #p0 from 'optimize', 'min', 'max', list of values.
+    def run_mcmc(self, data, channels, p0_mean='optimize', p0_stddev=1e-3, noise_stddev=1.0,
+                 nwalkers=30, nsteps=100, frac_stats=0.5, mc_layers=1, z_mirror=False, **kwargs_model): #p0 from 'optimize', 'min', 'max', list of values.
+        self.data = data
+        self.channels = channels
+        self.noise_stddev = noise_stddev
+
+        kwargs_model.update({'z_mirror': z_mirror})
+        if z_mirror: 
+            for key in self.mc_params['height_far']: self.mc_params['height_far'][key] = 'height_near'
+        self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
+        self.params = copy.deepcopy(self.mc_params)
+
+        print ('Parameter header set for mcmc model fitting:', self.mc_header)
+        print ('Parameters to fit and fixed parameters:', self.mc_params)            
+
+        if p0_mean == 'optimize': p0_mean = optimize_p0()
+        if isinstance(p0_mean, (list, tuple, np.ndarray)): 
+            if len(p0_mean) != self.mc_nparams: raise InputError('Length of input p0 must be equal to number of parameters to fit')
+            else: pass
+        print ('Mean for initial guess p0:', p0_mean)
+
         nstats = int(frac_stats*nsteps)
-        if mirror: self._params['height_far'] = False
-        header, params_indices, boundaries_list = General2d._get_params2fit(self._params, self._boundaries) #This should be done in init so that the user can now the header beforehand
+        ndim = self.mc_nparams
+        labels = self.mc_header
+
+        p0 = np.random.normal(loc=p0_mean,
+                              scale=p0_stddev,
+                              size=(nwalkers, ndim)
+                              )
+            
+        with Pool() as pool:
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
+            start = time.time()
+            sampler.run_mcmc(p0, nsteps, progress=True)
+            end = time.time()
+            multi_time = end - start
+            print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
+        samples = sampler.chain[:, -nstats:]
+        samples = samples.reshape(-1, samples.shape[-1])
+        pf = np.median(samples, axis=0)
+        print (labels)
+        print ('Median from walkers:', str(pf))
         
-    def make_model(self, get_2d=True, mirror=False, R_disc=None):
+    def make_model(self, get_2d=True, z_mirror=False, R_disc=None):
                    
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
+        if self.prototype: print ('Prototype model:', self.params)
         
-        incl, PA = General2d.orientation(**self._params_val['orientation'])
-        int_kwargs = self._params_val['intensity']
-        vel_kwargs = self._params_val['velocity']
-        lw_kwargs = self._params_val['linewidth']
+        incl, PA = General2d.orientation(**self.params['orientation'])
+        int_kwargs = self.params['intensity']
+        vel_kwargs = self.params['velocity']
+        lw_kwargs = self.params['linewidth']
 
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
@@ -1121,16 +1199,16 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools):
         x_true, y_true = x_init, y_init
         phi_true = np.arctan2(y_true, x_true)        
         R_true = np.hypot(x_init, y_init)
-        z_true = self.z_near_func({'R': R_true}, **self._params_val['height_near'])
+        z_true = self.z_near_func({'R': R_true}, **self.params['height_near'])
 
-        if mirror: z_true_far = -z_true
-        else: z_true_far = self.z_far_func({'R': R_true}, **self._params_val['height_far']) 
+        if z_mirror: z_true_far = -z_true
+        else: z_true_far = self.z_far_func({'R': R_true}, **self.params['height_far']) 
             
         grid_true = {'near': [x_true, y_true, z_true, R_true, phi_true], 
                      'far': [x_true, y_true, z_true_far, R_true, phi_true]}
 
         #*******************************
-        #COMPUTE PROPERTIES ON TRUE GRID
+        #COMPUTE PROPERTIES ON TRUE GRID #This will no longer be necessary as all the three functions will always be called
         avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs]
         avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func]
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
