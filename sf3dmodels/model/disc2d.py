@@ -37,12 +37,12 @@ MEDIUM_SIZE = 15
 BIGGER_SIZE = 22
 
 matplotlib.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
-matplotlib.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
-matplotlib.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-matplotlib.rc('xtick', labelsize=MEDIUM_SIZE-2)    # fontsize of the tick labels
-matplotlib.rc('ytick', labelsize=MEDIUM_SIZE-2)    # fontsize of the tick labels
+matplotlib.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of axes title
+matplotlib.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of x and y labels
+matplotlib.rc('xtick', labelsize=MEDIUM_SIZE-2)    # fontsize of y tick labels
+matplotlib.rc('ytick', labelsize=MEDIUM_SIZE-2)    # fontsize of x tick labels
 matplotlib.rc('legend', fontsize=SMALL_SIZE-1)    # legend fontsize
-matplotlib.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+matplotlib.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of figure title
 
 params = {'xtick.major.size': 6.5,
           'ytick.major.size': 6.5
@@ -115,7 +115,7 @@ class Tools:
         return props
   
     @staticmethod
-    def _get_beam_from(file):
+    def _get_beam_from(file, frac_pixels=1.0):
         from radio_beam import Beam
         from astropy.io import fits
         from astropy import units as u
@@ -123,8 +123,8 @@ class Tools:
         beam = Beam.from_fits_header(header)
         pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
         
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / 4.0 #4.0 should rather be an input from the user (averaged pixels on the data to reduce size and time)
-        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / 4.0
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / frac_pixels #4.0 should rather be an input from the user (averaged pixels on the data to reduce size and time)
+        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / frac_pixels
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
         
@@ -729,7 +729,7 @@ class Linewidth:
         else: R = coord['R'] 
         z = coord['z']        
         A = L0*R0**-p*z0**-q
-        return A*R**p*abs(z)**q
+        return A*R**p*np.abs(z)**q
 
 
 class Velocity:
@@ -786,7 +786,6 @@ class Intensity:
     @beam_kernel.setter 
     def beam_kernel(self, beam_kernel): 
         print('Setting beam_kernel var to', beam_kernel)
-        beam_kernel.model.x_stddev.value
         x_stddev = beam_kernel.model.x_stddev.value
         y_stddev = beam_kernel.model.y_stddev.value
         self._beam_area = 2*np.pi*x_stddev*y_stddev
@@ -803,6 +802,8 @@ class Intensity:
 
     @beam_from.setter 
     def beam_from(self, file): 
+        #This should not be a property, the user should interact directly with the function get_beam_from as they may want to set the frac_pixels parameter. 
+        # Furthermore, in the future this should all be hidden to the user and be rather extracted from the data cube via e.g use_beam=True/False and frac_pixels parameters.
         print('Setting beam_from var to', file)
         if file: self.beam_info, self.beam_kernel = Tools._get_beam_from(file)
         self._beam_from = file
@@ -1047,6 +1048,60 @@ class Mcmc:
             else: raise InputError(mc_params, 'Wrong input parameters. Base keys in mc_params must be categories; parameters of a category must be within a dictionary as well.')
 
         return header, kind, len(header), boundaries_list, params_indices
+    
+    @staticmethod
+    def plot_walkers(samples, best_params, nstats=None, header=None, kind=None):
+        npars, nsteps, nwalkers = samples.shape
+        if kind is not None:
+            ukind, neach = np.unique(kind, return_counts=True)
+            ncols = len(ukind)
+            nrows = np.max(neach)
+        else: 
+            ukind = [''] 
+            ncols = 1
+            nrows = npars
+            kind = ['' for i in range(nrows)] 
+        
+        if header is not None:
+            if len(header) != npars: raise InputError(header, 'Number of headers must be equal to number of parameters')
+            
+        kind_col = {ukind[i]: i for i in range(ncols)}
+        col_count = np.zeros(ncols).astype('int')
+
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(3.*ncols, 3*nrows))
+
+        print (header, kind, samples.shape)
+        x0_hline = 0
+        for k, key in enumerate(kind):
+            j = kind_col[key]
+            i = col_count[j] 
+            if i==0: ax[i][j].set_title(key, pad=10)
+            for walker in samples[k].T:
+                axij = ax[i][j]
+                axij.plot(walker, alpha=0.1, lw=1.0, color='k')
+                if header is not None: 
+                    #axij.set_ylabel(header[k])
+                    axij.text(0.06, 0.84, header[k], va='baseline', fontsize=MEDIUM_SIZE-2, transform=axij.transAxes, rotation=90)
+            if nstats is not None: 
+                axij.axvline(nstats, ls=':', lw=2, color='r')
+                x0_hline = nstats
+
+            axij.plot([x0_hline, nsteps], [best_params[k]]*2, ls='-', lw=3, color='dodgerblue')
+            axij.text((nsteps-1)+0.024*nsteps, best_params[k], '%.3f'%best_params[k], va='center', color='dodgerblue', fontsize=SMALL_SIZE+2, rotation=90) 
+            axij.tick_params(axis='y', which='major', labelsize=SMALL_SIZE, rotation=45)
+            axij.set_xlim(None, nsteps-1 + 0.01*nsteps)
+            col_count[j]+=1
+
+        for j in range(ncols):
+            i_last = col_count[j]-1
+            ax[i_last][j].set_xlabel('Steps')
+            if i_last < nrows-1: #Remove empty axes
+                for k in range((nrows-1)-i_last): ax[nrows-1-k][j].axis('off')
+                
+        #plt.subplots_adjust(wspace=0.5)
+        plt.tight_layout()
+        plt.savefig('rework_walkers.png')
+        plt.show()
 
     def ln_likelihood(self, new_params, **kwargs):
         for i in range(self.mc_nparams):
@@ -1071,7 +1126,7 @@ class Mcmc:
         return lnx2 if np.isfinite(lnx2) else -np.inf
 
      
-class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
+class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
     def __init__(self, grid, prototype=False):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
@@ -1097,8 +1152,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
                           'orientation': {'incl': True, 
                                           'PA': True},
                           'intensity': {'I0': True, 
-                                        'p': True, #-->r 
-                                        'q': False},   #-->z
+                                        'p': True, 
+                                        'q': False},
                           'linewidth': {'L0': True, 
                                         'p': True, 
                                         'q': 0.1}, 
@@ -1134,7 +1189,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
         return incl, PA
 
     def run_mcmc(self, data, channels, p0_mean='optimize', p0_stddev=1e-3, noise_stddev=1.0,
-                 nwalkers=30, nsteps=100, frac_stats=0.5, mc_layers=1, z_mirror=False, **kwargs_model): #p0 from 'optimize', 'min', 'max', list of values.
+                 nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
+                 custom_header={}, custom_kind={},
+                 plot_walkers=True, plot_corner=True, **kwargs_model): #p0 from 'optimize', 'min', 'max', list of values.
         self.data = data
         self.channels = channels
         self.noise_stddev = noise_stddev
@@ -1147,7 +1204,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
 
         print ('Parameter header set for mcmc model fitting:', self.mc_header)
         print ('Parameters to fit and fixed parameters:', self.mc_params)            
-        print ('Number of dimensions:', self.mc_nparams)
+        print ('Number of mc parameters:', self.mc_nparams)
         print ('Kind of parameters:', self.mc_kind)
         print ('Parameters boundaries:', self.mc_boundaries_list)
         
@@ -1157,10 +1214,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
             else: pass
         print ('Mean for initial guess p0:', p0_mean)
 
-        nstats = int(frac_stats*nsteps)
+        nstats = int(round(frac_stats*(nsteps-1))) #python2 round returns float, python3 returns int
         ndim = self.mc_nparams
-        labels = self.mc_header
 
+        p0_stddev = [frac_stddev*(self.mc_boundaries_list[i][1] - self.mc_boundaries_list[i][0]) for i in range(self.mc_nparams)]
+        print (p0_stddev)
         p0 = np.random.normal(loc=p0_mean,
                               scale=p0_stddev,
                               size=(nwalkers, ndim)
@@ -1176,11 +1234,17 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
 
         samples = sampler.chain[:, -nstats:]
         samples = samples.reshape(-1, samples.shape[-1])
-        pf = np.median(samples, axis=0)
-        print (labels)
-        print ('Median from walkers:', str(pf))
+        best_params = np.median(samples, axis=0)
+        print ('Median from parameter walkers after step %d:'%nstats, list(zip(self.mc_header, best_params)))
+
+        #************
+        #PLOTTING
+        #************
+        for key in custom_header: self.mc_header[key] = custom_header[key]
+        if plot_walkers: Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats)
+        #if plot_corner: mcmcplot_corner()
         
-    def make_model(self, get_2d=True, z_mirror=False, R_disc=None):
+    def make_model(self, z_mirror=False, R_disc=None):
                    
         from scipy.interpolate import griddata
         #*************************************
@@ -1222,7 +1286,6 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc):
 
         #***********************************
         #PROJECT PROPERTIES ON THE SKY PLANE
-        #grid_axes = np.meshgrid(*self.grid.XYZgrid[:2]) #Avoiding this to keep backward compatibility with python2
         grid_axes = np.meshgrid(self.grid.XYZgrid[0], self.grid.XYZgrid[1]) 
         
         x_pro_dict = {}
@@ -1288,7 +1351,7 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
             t.append(np.sort(np.roots(p)))
         return np.array(t)
 
-    def make_model(self, incl, psi, PA=0.0, get_2d=True, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
+    def make_model(self, incl, psi, PA=0.0, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
         """
         Executes the Rosenfeld+2013 model.
         The sum of incl+psi must be < 90, otherwise the quadratic equation will have imaginary roots as some portions of the cone (which has finite extent)
@@ -1305,9 +1368,6 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
 
         PA : scalar, optional
            Position angle in radians. Measured from North (+y) to East (-x).
-
-        get_2d : bool, optional
-           If True regrids the resulting velocity field into a 2D map and stores it in the attribute 'velocity2d'. 
 
         Attributes
         ----------
