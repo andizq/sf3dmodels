@@ -934,20 +934,25 @@ class Intensity:
         return J
 
     def get_line_profile(self, v_chan, vel2d, temp2d, **kwargs):
+        
         if self.subpixels:
-            v_near, v_far = [], []
-            for i in range(self.subpixels_sq):
-                v_near.append(self.line_profile(v_chan, vel2d[i]['near'], temp2d['near'], **kwargs))
-                v_far.append(self.line_profile(v_chan, vel2d[i]['far'], temp2d['far'], **kwargs))
-
-            integ_v_near = np.sum(np.array(v_near), axis=0) * self.sub_dA / self.pix_dA
-            integ_v_far = np.sum(np.array(v_far), axis=0) * self.sub_dA / self.pix_dA
-            return integ_v_near, integ_v_far
+            subpix = self.subpixels
+            nx, ny = self.grid.Nodes[:2]
+            v_near, v_far = np.zeros((ny, nx)), np.zeros((ny, nx))
+            sub_v_near = self.line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
+            sub_v_far = self.line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
+            for i in range(ny):
+                for j in range(nx):
+                    v_near[i,j] = np.sum(sub_v_near[i*subpix:subpix*(i+1), j*subpix:subpix*(j+1)]) * self.sub_dA / self.pix_dA
+                    v_far[i,j] = np.sum(sub_v_far[i*subpix:subpix*(i+1), j*subpix:subpix*(j+1)]) * self.sub_dA / self.pix_dA
+        #    integ_v_near = np.sum(np.array(v_near), axis=0) * self.sub_dA / self.pix_dA
+         #   integ_v_far = np.sum(np.array(v_far), axis=0) * self.sub_dA / self.pix_dA
+          #  return integ_v_near, integ_v_far
         
         else: 
             v_near = self.line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
             v_far = self.line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
-            return v_near, v_far 
+        return v_near, v_far 
 
     def get_channel(self, velocity2d, intensity2d, temperature2d, v_chan, **kwargs):                    
         vel2d, temp2d, int2d = velocity2d, {}, {}
@@ -988,12 +993,8 @@ class Intensity:
 
         int2d_near_nan = np.isnan(int2d['near'])#~int2d['near'].mask#
         int2d_far_nan = np.isnan(int2d['far'])#~int2d['far'].mask#
-        if self.subpixels:
-            vel2d_near_nan = np.isnan(vel2d[self.sub_centre_id]['near'])
-            vel2d_far_nan = np.isnan(vel2d[self.sub_centre_id]['far'])
-        else:
-            vel2d_near_nan = np.isnan(vel2d['near'])#~vel2d['near'].mask#
-            vel2d_far_nan = np.isnan(vel2d['far'])#~vel2d['far'].mask#
+        vel2d_near_nan = int2d_near_nan #np.isnan(vel2d['near'])#~vel2d['near'].mask#
+        vel2d_far_nan = int2d_far_nan #np.isnan(vel2d['far'])#~vel2d['far'].mask#
 
         for i, v_chan in enumerate(channels):    
             v_near, v_far = self.get_line_profile(v_chan, vel2d, temp2d, **kwargs)
@@ -1170,22 +1171,21 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         self.mesh = np.meshgrid(grid.XYZgrid[0], grid.XYZgrid[1])
 
         if subpixels and isinstance(subpixels, int):
+            import sf3dmodels.Model as Model
             if subpixels%2 == 0: subpixels+=1 #If input even becomes odd to contain pxl centre
             pix_size = grid.step[0]
             dx = dy = pix_size / subpixels
-            centre = int(round((subpixels-1)/2.))
-            centre_sq = int(round((subpixels**2-1)/2.))
-            x_shift = np.arange(0, subpixels*dx, dx) - dx*centre
-            y_shift = np.arange(0, subpixels*dy, dy) - dy*centre
-            sub_x_true = [x_true + x0 for x0 in x_shift]
-            sub_y_true = [y_true + y0 for y0 in y_shift]
-            self.sub_R_true = [[np.hypot(sub_x_true[j], sub_y_true[i]) for j in range(subpixels)] for i in range(subpixels)]
-            self.sub_phi_true = [[np.arctan2(sub_y_true[i], sub_x_true[j]) for j in range(subpixels)] for i in range(subpixels)]
-            self.sub_x_true = sub_x_true
-            self.sub_y_true = sub_x_true
+            sub_nodes = subpixels*np.array(grid.Nodes)
+            sub_nodes[-1] = 1
+            subgrid = Model.grid([np.max(grid.XYZgrid[i]) for i in range(3)], sub_nodes, include_zero=False, indexing='xy')
+            print (subgrid.Nodes, subgrid.step, dx)
+            sub_x_true, sub_y_true = subgrid.XYZ[:2]
+            self.sub_phi_true = subgrid.rRTP[3]
+            self.sub_R_true = subgrid.rRTP[1]
+            self.sub_x_true, self.sub_y_true = sub_x_true, sub_y_true
+            self.submesh = np.meshgrid(subgrid.XYZgrid[0], subgrid.XYZgrid[1])
             self.sub_dA = dx*dy
             self.pix_dA = pix_size**2
-            self.sub_centre_id = centre_sq
             self.subpixels = subpixels
             self.subpixels_sq = subpixels**2
         else: self.subpixels=False
@@ -1320,17 +1320,18 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         prop_funcs = [func for i, func in enumerate(avai_funcs) if true_kwargs[i]]
        
         if self.subpixels:
-            subpix_vel = []
-            for i in range(self.subpixels):
-                for j in range(self.subpixels):
-                    subpix_grid_true = {'near': [self.sub_x_true[j], self.sub_y_true[i], z_true, self.sub_R_true[i][j], self.sub_phi_true[i][j]], 
-                                        'far': [self.sub_x_true[j], self.sub_y_true[i], z_true_far, self.sub_R_true[i][j], self.sub_phi_true[i][j]]}
-                    subpix_vel.append(self._compute_prop(subpix_grid_true, [self.velocity_func], [vel_kwargs])[0])
+            sub_z_true = self.z_near_func({'R': self.sub_R_true}, **self.params['height_near'])
+            if z_mirror: sub_z_true_far = -sub_z_true
+            else: sub_z_true_far = self.z_far_func({'R': self.sub_R_true}, **self.params['height_far']) 
 
-            ang_fac = sin_incl * np.cos(self.phi_true) 
-            for i in range(self.subpixels_sq):
-                for side in ['near', 'far']: subpix_vel[i][side] *= ang_fac
-
+            subgrid_true = {'near': [self.sub_x_true, self.sub_y_true, sub_z_true, self.sub_R_true, self.sub_phi_true], 
+                             'far': [self.sub_x_true, self.sub_y_true, sub_z_true_far, self.sub_R_true, self.sub_phi_true]}
+            
+            subpix_vel = self._compute_prop(subgrid_true, [self.velocity_func], [vel_kwargs])[0]
+            ang_fac = sin_incl * np.cos(self.sub_phi_true) 
+            subpix_vel['near'] *= ang_fac 
+            subpix_vel['far'] *= ang_fac
+            
             props = self._compute_prop(grid_true, prop_funcs[1:], prop_kwargs[1:])
             props.insert(0, subpix_vel)
             
@@ -1346,22 +1347,35 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         x_pro_dict = {}
         y_pro_dict = {}
         z_pro_dict = {}
-        for side in ['near', 'far']:
-            xt, yt, zt = grid_true[side][:3]
-            x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
-            if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
-            if R_disc is not None: R_grid = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
-            x_pro_dict[side] = x_pro
-            y_pro_dict[side] = y_pro
-            z_pro_dict[side] = z_pro
-
-            if self.subpixels:
-                for i in range(self.subpixels_sq): #Subpixels are projected on the same plane where true grid is projected
-                    props[0][i][side] = griddata((x_pro, y_pro), props[0][i][side], (self.mesh[0], self.mesh[1]), method='linear')
+        if self.subpixels:
+            for side in ['near', 'far']:
+                xt, yt, zt = grid_true[side][:3]
+                sub_xt, sub_yt, sub_zt = subgrid_true[side][:3]
+                x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
+                sub_x_pro, sub_y_pro, sub_z_pro = self._project_on_skyplane(sub_xt, sub_yt, sub_zt, cos_incl, sin_incl)
+                if PA: 
+                    x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
+                    sub_x_pro, sub_y_pro = self._rotate_sky_plane(sub_x_pro, sub_y_pro, PA)             
+                if R_disc is not None: R_grid = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
+                x_pro_dict[side] = x_pro
+                y_pro_dict[side] = y_pro
+                z_pro_dict[side] = z_pro
+                
+                props[0][side] = griddata((sub_x_pro, sub_y_pro), props[0][side], (self.submesh[0], self.submesh[1]), method='linear')
                 for prop in props[1:]:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
                     if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*u.au), prop[side], np.nan)
-            else:
+
+        else:
+            for side in ['near', 'far']:
+                xt, yt, zt = grid_true[side][:3]
+                x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
+                if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
+                if R_disc is not None: R_grid = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
+                x_pro_dict[side] = x_pro
+                y_pro_dict[side] = y_pro
+                z_pro_dict[side] = z_pro
+
                 for prop in props:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
                     if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*u.au), prop[side], np.nan)
