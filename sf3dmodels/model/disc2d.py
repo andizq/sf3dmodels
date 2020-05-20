@@ -724,7 +724,7 @@ class Linewidth:
         del self._linewidth_func
 
     @staticmethod
-    def linewidth_powerlaw(coord, L0=1.0, p=-0.2, q=0.3, R0=100*u.au, z0=100*u.au): #A=600.0, p=-0.4, q=0.3): #
+    def linewidth_powerlaw(coord, L0=0.2, p=-0.4, q=0.3, R0=100*u.au, z0=100*u.au): #A=600.0, p=-0.4, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
@@ -752,7 +752,7 @@ class Velocity:
         Mstar *= u.MSun
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
-        return np.sqrt(G*Mstar/R) 
+        return np.sqrt(G*Mstar/R) * 1e-3
     
     @staticmethod
     def keplerian_vertical(coord, Mstar=1.0):
@@ -761,7 +761,7 @@ class Velocity:
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = np.hypot(R, coord['z'])
         else: r = coord['r']
-        return np.sqrt(G*Mstar/r**3)*R
+        return np.sqrt(G*Mstar/r**3)*R * 1e-3
 
 
 class Intensity:   
