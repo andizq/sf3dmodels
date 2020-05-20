@@ -1174,10 +1174,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             import sf3dmodels.Model as Model
             if subpixels%2 == 0: subpixels+=1 #If input even becomes odd to contain pxl centre
             pix_size = grid.step[0]
-            dx = dy = pix_size / subpixels
+            #dx = dy = pix_size / subpixels
             sub_nodes = subpixels*np.array(grid.Nodes)
             sub_nodes[-1] = 1
             subgrid = Model.grid([np.max(grid.XYZgrid[i]) for i in range(3)], sub_nodes, include_zero=False, indexing='xy')
+            dx, dy = subgrid.step[:2]
             print (subgrid.Nodes, subgrid.step, dx)
             sub_x_true, sub_y_true = subgrid.XYZ[:2]
             self.sub_phi_true = subgrid.rRTP[3]
