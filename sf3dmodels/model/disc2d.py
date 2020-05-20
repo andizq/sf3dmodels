@@ -1323,6 +1323,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             subpix_vel = []
             for i in range(self.subpixels):
                 for j in range(self.subpixels):
+                    z_true = self.z_near_func({'R': self.sub_R_true[i][j]}, **self.params['height_near'])
+                    
+                    if z_mirror: z_true_far = -z_true
+                    else: z_true_far = self.z_far_func({'R': self.sub_R_true[i][j]}, **self.params['height_far']) 
+
                     subpix_grid_true = {'near': [self.sub_x_true[j], self.sub_y_true[i], z_true, self.sub_R_true[i][j], self.sub_phi_true[i][j]], 
                                         'far': [self.sub_x_true[j], self.sub_y_true[i], z_true_far, self.sub_R_true[i][j], self.sub_phi_true[i][j]]}
                     subpix_vel.append(self._compute_prop(subpix_grid_true, [self.velocity_func], [vel_kwargs])[0])
