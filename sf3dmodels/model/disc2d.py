@@ -724,7 +724,7 @@ class Linewidth:
         del self._linewidth_func
 
     @staticmethod
-    def linewidth_powerlaw(coord, L0=0.1, p=-0.4, q=0.3, R0=100*u.au, z0=100*u.au): #A=600.0, p=-0.4, q=0.3): #
+    def linewidth_powerlaw(coord, L0=1.0, p=-0.2, q=0.3, R0=100*u.au, z0=100*u.au): #A=600.0, p=-0.4, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
