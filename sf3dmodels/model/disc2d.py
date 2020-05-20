@@ -1186,7 +1186,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             self.sub_x_true, self.sub_y_true = sub_x_true, sub_y_true
             self.submesh = np.meshgrid(subgrid.XYZgrid[0], subgrid.XYZgrid[1])
             self.sub_dA = dx*dy
-            self.pix_dA = pix_size**2
+            self.pix_dA = self.sub_dA*subpixels**2#pix_size**2
             self.subpixels = subpixels
             self.subpixels_sq = subpixels**2
         else: self.subpixels=False
