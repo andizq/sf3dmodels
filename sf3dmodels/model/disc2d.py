@@ -115,7 +115,7 @@ class Tools:
         return props
   
     @staticmethod
-    def _get_beam_from(file, frac_pixels=1.0):
+    def _get_beam_from(file, frac_pixels=4.0):
         from radio_beam import Beam
         from astropy.io import fits
         from astropy import units as u
