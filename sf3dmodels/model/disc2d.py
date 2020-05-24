@@ -6,7 +6,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in show(): Scroll over channels, 2nd slidder for several cubes
 #TODO in Cube: Add convolve() function  
 from ..utils.constants import G, kb
-from ..utils import units as u
+from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
 import matplotlib.pyplot as plt
 import numpy as np
@@ -115,19 +115,30 @@ class Tools:
         return props
   
     @staticmethod
-    def _get_beam_from(file, frac_pixels=4.0):
+    def get_beam_from(beam, grid, distance=None, frac_pixels=1.0):
+        """
+        beam must be str pointing to fits file to extract beam from header or radio_beam Beam object.
+        If Beam object is provided, distance must be set.
+        """
         from radio_beam import Beam
         from astropy.io import fits
         from astropy import units as u
-        header = fits.getheader(file)
-        beam = Beam.from_fits_header(header)
-        pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
-        
+        if isinstance(beam, str):
+            header = fits.getheader(beam)
+            beam = Beam.from_fits_header(header)
+            pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
+        elif isinstance(beam, Beam):
+            if distance is None: InputError(distance, 'Wrong input distance. Please provide a value for the distance (in pc) to transform grid pix to arcsec')
+            pix_arcsec = np.arctan(grid.step[0] / (distance*sfu.pc)) #dist*ang=projdist
+            pix_scale = (pix_arcsec*u.radian).to(u.arcsec)  
+        else: InputError(beam, 'beam object must either be str or Beam instance')
+
         x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / frac_pixels #4.0 should rather be an input from the user (averaged pixels on the data to reduce size and time)
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / frac_pixels
+        print (x_stddev, beam.major)
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
-        
+
         #gauss_kern = beam.as_kernel(pix_scale) #as_kernel() is slowing down the run when used in astropy.convolve
         return beam, gauss_kern
     
@@ -334,12 +345,13 @@ class Cube(object):
         ax[1].set_ylabel(int_unit, labelpad=15)
         ax[1].yaxis.set_label_position('right')
         ax[1].set_xlim(v0-0.1, v1+0.1)
-        ax[1].set_ylim(-1, max_data)
+        vmin, vmax = -max_data/30, max_data
+        ax[1].set_ylim(vmin, vmax)
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap('hot')
         cmap.set_bad(color=(0.9,0.9,0.9))
 
-        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=-1, vmax=max_data)
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
         current_chan = ax[1].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
         text_chan = ax[1].text((self.channels[chan_init]-v0)/dv, 1.02, #Converting xdata coords to Axes coords 
@@ -522,7 +534,7 @@ class Cube(object):
         ax[1].set_ylabel(int_unit, labelpad=15)
         ax[1].yaxis.set_label_position('right')
         #ax[1].set_xlim(v0-0.1, v1+0.1)
-        ax[1].set_ylim(-1, max_data)
+        #ax[1].set_ylim(-1, max_data)
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap('hot')
         cmap.set_bad(color=(0.9,0.9,0.9))
@@ -724,7 +736,7 @@ class Linewidth:
         del self._linewidth_func
 
     @staticmethod
-    def linewidth_powerlaw(coord, L0=0.2, p=-0.4, q=0.3, R0=100*u.au, z0=100*u.au): #A=600.0, p=-0.4, q=0.3): #
+    def linewidth_powerlaw(coord, L0=0.2, p=-0.4, q=0.3, R0=100*sfu.au, z0=100*sfu.au): #A=600.0, p=-0.4, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
@@ -749,14 +761,14 @@ class Velocity:
 
     @staticmethod
     def keplerian(coord, Mstar=1.0):
-        Mstar *= u.MSun
+        Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         return np.sqrt(G*Mstar/R) * 1e-3
     
     @staticmethod
     def keplerian_vertical(coord, Mstar=1.0):
-        Mstar *= u.MSun
+        Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = np.hypot(R, coord['z'])
@@ -802,10 +814,9 @@ class Intensity:
 
     @beam_from.setter 
     def beam_from(self, file): 
-        #This should not be a property, the user should interact directly with the function get_beam_from as they may want to set the frac_pixels parameter. 
-        # Furthermore, in the future this should all be hidden to the user and be rather extracted from the data cube via e.g use_beam=True/False and frac_pixels parameters.
+        #Rework this, missing beam kwargs info
         print('Setting beam_from var to', file)
-        if file: self.beam_info, self.beam_kernel = Tools._get_beam_from(file)
+        if file: self.beam_info, self.beam_kernel = Tools.get_beam_from(file) #Calls beam_kernel setter
         self._beam_from = file
 
     @beam_from.deleter 
@@ -880,7 +891,7 @@ class Intensity:
         del self._intensity_func
 
     @staticmethod
-    def intensity_powerlaw(coord, I0=30.0, R0=100*u.au, p=-0.4, z0=100*u.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
+    def intensity_powerlaw(coord, I0=30.0, R0=100*sfu.au, p=-0.4, z0=100*sfu.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
@@ -888,25 +899,25 @@ class Intensity:
         return A*R**p*np.abs(z)**q
         
     @staticmethod
-    def nuker(coord, I0=30.0, Rt=100*u.au, alpha=-0.5, gamma=0.1, beta=0.2):
+    def nuker(coord, I0=30.0, Rt=100*sfu.au, alpha=-0.5, gamma=0.1, beta=0.2):
         if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
         else: R = coord['R'] 
         A = I0*Rt**gamma
         return A*(R**-gamma) * (1+(R/Rt)**alpha)**((gamma-beta)/alpha)
 
     @staticmethod
-    def line_profile_temp(v_chan, v, T, v_turb=0.0, mmol=2*u.amu):
+    def line_profile_temp(v_chan, v, T, v_turb=0.0, mmol=2*sfu.amu):
         v_sigma = np.sqrt(2*kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         #return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
         return np.exp(-((v-v_chan)/v_sigma)**2)
 
     @staticmethod
-    def line_profile_v_sigma(v_chan, v, v_sigma, mmol=2*u.amu):
+    def line_profile_v_sigma(v_chan, v, v_sigma, mmol=2*sfu.amu):
         #return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
         return np.exp(-((v-v_chan)/v_sigma)**2)
 
     @staticmethod
-    def line_profile_temp_full(v_chan, v, T, v_turb=0.0, mmol=2*u.amu, channel_width=0.1):
+    def line_profile_temp_full(v_chan, v, T, v_turb=0.0, mmol=2*sfu.amu, channel_width=0.1):
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
         v1 = v_chan + half_chan
@@ -920,7 +931,7 @@ class Intensity:
         return J
     
     @staticmethod
-    def line_profile_v_sigma_full(v_chan, v, v_sigma, mmol=2*u.amu, channel_width=0.1):
+    def line_profile_v_sigma_full(v_chan, v, v_sigma, mmol=2*sfu.amu, channel_width=0.1):
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
         v1 = v_chan + half_chan
@@ -1132,7 +1143,7 @@ class Mcmc:
         lnx2=0    
         nchans = len(self.channels)
         for i in range(nchans):
-            model_chan = self.get_channel(vel2d, int2d, linew2d, self.channels[i], mmol=28.0101*u.amu) 
+            model_chan = self.get_channel(vel2d, int2d, linew2d, self.channels[i], mmol=28.0101*sfu.amu) 
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
@@ -1145,15 +1156,18 @@ class Mcmc:
 
      
 class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
-    def __init__(self, grid, prototype=False, subpixels=False):
+    def __init__(self, grid, prototype=False, subpixels=False, beam=None, kwargs_beam={}):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         self.prototype = prototype
 
-        self._beam_from = False
         self._beam_info = False
+        self._beam_from = False #Should be deprecated
         self._beam_kernel = False
-        self._beam_area = False
+        self._beam_area = False 
+        if beam is not None: 
+            self.beam_info, self.beam_kernel = Tools.get_beam_from(beam, grid, **kwargs_beam)
+
         self._z_near_func = General2d.z_cone
         self._z_far_func = General2d.z_cone_neg
         self._velocity_func = General2d.keplerian
@@ -1164,8 +1178,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         self._line_profile = General2d.line_profile_temp
  
         x_true, y_true = grid.XYZ[:2] 
-        self.phi_true = grid.rRTP[3] #np.arctan2(y_true, x_true)
-        self.R_true = grid.rRTP[1] #np.hypot(x_true, y_true) 
+        self.phi_true = np.arctan2(y_true, x_true) #grid.rRTP[3] 
+        self.R_true = np.hypot(x_true, y_true) #grid.rRTP[1] #Slightly different as in the grid object the pixels R=0 actually take the closest-neighbour value. Current approach masks r,R=0
         self.x_true, self.y_true = x_true, y_true
         self.mesh = np.meshgrid(grid.XYZgrid[0], grid.XYZgrid[1])
 
@@ -1233,6 +1247,46 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
     def orientation(incl=np.pi/4, PA=0.0):
         return incl, PA
 
+    def get_projected_coords(self, z_mirror=False, R_disc=None):
+
+        from scipy.interpolate import griddata
+        #*************************************
+        #MAKE TRUE GRID FOR NEAR AND FAR SIDES
+        if self.prototype: print ('Prototype model:', self.params)
+        
+        incl, PA = General2d.orientation(**self.params['orientation'])
+        cos_incl, sin_incl = np.cos(incl), np.sin(incl)
+
+        z_true = {}
+        z_true['near'] = self.z_near_func({'R': self.R_true}, **self.params['height_near'])
+
+        if z_mirror: z_true['far'] = -z_true['near']
+        else: z_true['far'] = self.z_far_func({'R': self.R_true}, **self.params['height_far']) 
+            
+        grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
+                     'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
+        
+        #***********************************
+        #PROJECT PROPERTIES ON THE SKY PLANE        
+        R, phi, z = {}, {}, {}
+        for side in ['near', 'far']:
+            xt, yt, zt = grid_true[side][:3]
+            x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
+            if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
+            R[side] = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
+            x_grid = griddata((x_pro, y_pro), xt, (self.mesh[0], self.mesh[1]), method='linear')
+            y_grid = griddata((x_pro, y_pro), yt, (self.mesh[0], self.mesh[1]), method='linear')
+            phi[side] = np.arctan2(y_grid, x_grid) 
+            #Since this one is periodic it has to be recalculated, otherwise the interpolation will screw up things at the boundary -np.pi->np.pi
+            # When plotting contours there seems to be in any case some sort of interpolation, so there is still problems at the boundary
+            #phi[side] = griddata((x_pro, y_pro), self.phi_true, (self.mesh[0], self.mesh[1]), method='linear')
+            z[side] = griddata((x_pro, y_pro), z_true[side], (self.mesh[0], self.mesh[1]), method='linear')
+            #r[side] = np.hypot(R[side], z[side])
+            if R_disc is not None: 
+                for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>0*sfu.au), prop[side], np.nan)
+            
+        return R, phi, z
+        
     def run_mcmc(self, data, channels, p0_mean='optimize', p0_stddev=1e-3, noise_stddev=1.0,
                  nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
                  custom_header={}, custom_kind={},
@@ -1365,11 +1419,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
                     props[0][i][side] = griddata((x_pro, y_pro), props[0][i][side], (self.mesh[0], self.mesh[1]), method='linear')
                 for prop in props[1:]:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
-                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*u.au), prop[side], np.nan)
+                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*sfu.au), prop[side], np.nan) #Todo: allow for R_in as well
             else:
                 for prop in props:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
-                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*u.au), prop[side], np.nan)
+                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*sfu.au), prop[side], np.nan)
             
         """
         grid_axes_3d = np.meshgrid(self.grid.XYZgrid[0], self.grid.XYZgrid[1], self.grid.XYZgrid[0])
@@ -1399,7 +1453,7 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
     velocity_func : function(coord, **kwargs) 
        Velocity function describing the kinematics of the disc. The argument coord is a dictionary
        of coordinates (e.g. 'x', 'y', 'z', 'r', 'R', 'theta', 'phi') where the function will be evaluated. 
-       Additional arguments are optional and depend upon the function definition, e.g. Mstar=1.0*u.Msun
+       Additional arguments are optional and depend upon the function definition, e.g. Mstar=1.0*sfu.Msun
     """
 
     def __init__(self, grid):
