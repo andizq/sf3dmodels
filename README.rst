@@ -28,7 +28,7 @@ to carry out radiative transfer calculations of the modelled region.
 Documentation
 -------------
 
-Find the full documentation and examples at the `ReadTheDocs <http://star-forming-regions.readthedocs.io>`_ website.
+Find the full documentation and examples on the sf3dmodels `website <http://star-forming-regions.readthedocs.io>`_.
 
 Requirements
 ------------
