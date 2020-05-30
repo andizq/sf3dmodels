@@ -482,7 +482,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
                        grid_style = 0, 
                        coord_system = 0,
                        grid_info = 0, 
-                       include_dim = [1,1,1]):
+                       include_dim = [1,1,1],
+                       conv_to_cm = True):
         """
         Writes the file 'amr_grid.inp' for radmc3d. 
         
@@ -500,7 +501,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
            Defaults to [1,1,1]
         """
         nx,ny,nz = self.GRID.Nodes
-        xi, yi, zi = np.array(self.GRID.XYZgrid) * cm #from m to cm
+        if conv_to_cm: xi, yi, zi = np.array(self.GRID.XYZgrid) * cm #from m to cm
+        else: xi, yi, zi = np.array(self.GRID.XYZgrid)
 
         #if not self.amr_grid:
         with open('amr_grid.inp','w+') as f:
