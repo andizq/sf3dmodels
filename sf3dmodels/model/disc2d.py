@@ -1143,9 +1143,9 @@ class Mcmc:
         lnx2=0    
         nchans = len(self.channels)
         
-        cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, nchan=nchans, tb = {'nu': 230, 'beam': self.beam_info})
+        #cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, nchan=nchans, tb = {'nu': 230, 'beam': self.beam_info})
         for i in range(nchans):
-            model_chan = cube.data[i] #self.get_channel(vel2d, int2d, linew2d, self.channels[i], mmol=28.0101*sfu.amu) 
+            model_chan = self.get_channel(vel2d, int2d, linew2d, self.channels[i]) #cube.data[i]
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
