@@ -1154,7 +1154,7 @@ class Mcmc:
             #lnx = -0.5 * np.sum(lnx2[~np.isnan(lnx2)] * 0.00001)# * self.ivar)
             lnx2 += -0.5 * np.sum(lnx)
 
-        print (new_params, '\nLog LIKELIHOOD: %.2e'%lnx2)
+        #print (new_params, '\nLog LIKELIHOOD: %.2e'%lnx2)
         return lnx2 if np.isfinite(lnx2) else -np.inf
     
      
@@ -1307,7 +1307,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
     def orientation(incl=np.pi/4, PA=0.0):
         return incl, PA
 
-    def get_projected_coords(self, z_mirror=False, R_disc=None):
+    def get_projected_coords(self, z_mirror=False, R_inner=0, R_disc=None):
 
         from scipy.interpolate import griddata
         #*************************************
@@ -1343,11 +1343,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             z[side] = griddata((x_pro, y_pro), z_true[side], (self.mesh[0], self.mesh[1]), method='linear')
             #r[side] = hypot_func(R[side], z[side])
             if R_disc is not None: 
-                for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>0*sfu.au), prop[side], np.nan)
+                for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>R_inner), prop[side], np.nan)
             
         return R, phi, z
         
-    def make_model(self, z_mirror=False, R_disc=None):
+    def make_model(self, z_mirror=False, R_inner=0, R_disc=None):
                    
         from scipy.interpolate import griddata
         #*************************************
@@ -1423,11 +1423,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
                     props[0][i][side] = griddata((x_pro, y_pro), props[0][i][side], (self.mesh[0], self.mesh[1]), method='linear')
                 for prop in props[1:]:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
-                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*sfu.au), prop[side], np.nan) #Todo: allow for R_in as well
+                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>R_inner), prop[side], np.nan) #Todo: allow for R_in as well
             else:
                 for prop in props:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
-                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>0*sfu.au), prop[side], np.nan)
+                    if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>R_inner), prop[side], np.nan)
             
         """
         grid_axes_3d = np.meshgrid(self.grid.XYZgrid[0], self.grid.XYZgrid[1], self.grid.XYZgrid[0])
