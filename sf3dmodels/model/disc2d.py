@@ -51,6 +51,7 @@ params = {'xtick.major.size': 6.5,
 matplotlib.rcParams.update(params)
 sigma2fwhm = np.sqrt(8*np.log(2))
 
+hypot_func = lambda x,y: np.sqrt(x**2 + y**2) #Slightly faster than np.hypot<np.linalg.norm<scipydistance. Checked precision up to au**2 orders and it all seems ok.
 
 class InputError(Exception):
     """Exception raised for errors in the input.
@@ -737,7 +738,7 @@ class Linewidth:
 
     @staticmethod
     def linewidth_powerlaw(coord, L0=0.2, p=-0.4, q=0.3, R0=100*sfu.au, z0=100*sfu.au): #A=600.0, p=-0.4, q=0.3): #
-        if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
         A = L0*R0**-p*z0**-q
@@ -762,18 +763,18 @@ class Velocity:
     @staticmethod
     def keplerian(coord, Mstar=1.0):
         Mstar *= sfu.MSun
-        if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         return np.sqrt(G*Mstar/R) * 1e-3
     
     @staticmethod
     def keplerian_vertical(coord, Mstar=1.0):
         Mstar *= sfu.MSun
-        if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
-        if 'r' not in coord.keys(): r = np.hypot(R, coord['z'])
+        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
-        return np.sqrt(G*Mstar/r**3)*R * 1e-3
+        return np.sqrt(G*Mstar/r**3)*R * 1e-3 #to km
 
 
 class Intensity:   
@@ -892,7 +893,7 @@ class Intensity:
 
     @staticmethod
     def intensity_powerlaw(coord, I0=30.0, R0=100*sfu.au, p=-0.4, z0=100*sfu.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
-        if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
         A = I0*R0**-p*z0**-q
@@ -900,7 +901,7 @@ class Intensity:
         
     @staticmethod
     def nuker(coord, I0=30.0, Rt=100*sfu.au, alpha=-0.5, gamma=0.1, beta=0.2):
-        if 'R' not in coord.keys(): R = np.hypot(coord['x'], coord['y'])
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         A = I0*Rt**gamma
         return A*(R**-gamma) * (1+(R/Rt)**alpha)**((gamma-beta)/alpha)
@@ -1152,8 +1153,10 @@ class Mcmc:
             lnx =  np.where(mask, np.power((data - model)/self.noise_stddev, 2), 0) 
             #lnx = -0.5 * np.sum(lnx2[~np.isnan(lnx2)] * 0.00001)# * self.ivar)
             lnx2 += -0.5 * np.sum(lnx)
-        return lnx2 if np.isfinite(lnx2) else -np.inf
 
+        print (new_params, '\nLog LIKELIHOOD: %.2e'%lnx2)
+        return lnx2 if np.isfinite(lnx2) else -np.inf
+    
      
 class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
     def __init__(self, grid, prototype=False, subpixels=False, beam=None, kwargs_beam={}):
@@ -1179,7 +1182,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
  
         x_true, y_true = grid.XYZ[:2] 
         self.phi_true = np.arctan2(y_true, x_true) #grid.rRTP[3] 
-        self.R_true = np.hypot(x_true, y_true) #grid.rRTP[1] #Slightly different as in the grid object the pixels R=0 actually take the closest-neighbour value. Current approach masks r,R=0
+        self.R_true = hypot_func(x_true, y_true) #grid.rRTP[1] #Slightly different as in the grid object the pixels R=0 actually take the closest-neighbour value. Current approach masks r,R=0
         self.x_true, self.y_true = x_true, y_true
         self.mesh = np.meshgrid(grid.XYZgrid[0], grid.XYZgrid[1])
 
@@ -1193,7 +1196,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             y_shift = np.arange(0, subpixels*dy, dy) - dy*centre
             sub_x_true = [x_true + x0 for x0 in x_shift]
             sub_y_true = [y_true + y0 for y0 in y_shift]
-            self.sub_R_true = [[np.hypot(sub_x_true[j], sub_y_true[i]) for j in range(subpixels)] for i in range(subpixels)]
+            self.sub_R_true = [[hypot_func(sub_x_true[j], sub_y_true[i]) for j in range(subpixels)] for i in range(subpixels)]
             self.sub_phi_true = [[np.arctan2(sub_y_true[i], sub_x_true[j]) for j in range(subpixels)] for i in range(subpixels)]
             self.sub_x_true = sub_x_true
             self.sub_y_true = sub_x_true
@@ -1243,50 +1246,6 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             print ('Default parameter header for mcmc model fitting:', self.mc_header)
             print ('Default parameters to fit and fixed parameters:', self.mc_params)
 
-    @staticmethod
-    def orientation(incl=np.pi/4, PA=0.0):
-        return incl, PA
-
-    def get_projected_coords(self, z_mirror=False, R_disc=None):
-
-        from scipy.interpolate import griddata
-        #*************************************
-        #MAKE TRUE GRID FOR NEAR AND FAR SIDES
-        if self.prototype: print ('Prototype model:', self.params)
-        
-        incl, PA = General2d.orientation(**self.params['orientation'])
-        cos_incl, sin_incl = np.cos(incl), np.sin(incl)
-
-        z_true = {}
-        z_true['near'] = self.z_near_func({'R': self.R_true}, **self.params['height_near'])
-
-        if z_mirror: z_true['far'] = -z_true['near']
-        else: z_true['far'] = self.z_far_func({'R': self.R_true}, **self.params['height_far']) 
-            
-        grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
-                     'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
-        
-        #***********************************
-        #PROJECT PROPERTIES ON THE SKY PLANE        
-        R, phi, z = {}, {}, {}
-        for side in ['near', 'far']:
-            xt, yt, zt = grid_true[side][:3]
-            x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
-            if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
-            R[side] = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
-            x_grid = griddata((x_pro, y_pro), xt, (self.mesh[0], self.mesh[1]), method='linear')
-            y_grid = griddata((x_pro, y_pro), yt, (self.mesh[0], self.mesh[1]), method='linear')
-            phi[side] = np.arctan2(y_grid, x_grid) 
-            #Since this one is periodic it has to be recalculated, otherwise the interpolation will screw up things at the boundary -np.pi->np.pi
-            # When plotting contours there seems to be in any case some sort of interpolation, so there is still problems at the boundary
-            #phi[side] = griddata((x_pro, y_pro), self.phi_true, (self.mesh[0], self.mesh[1]), method='linear')
-            z[side] = griddata((x_pro, y_pro), z_true[side], (self.mesh[0], self.mesh[1]), method='linear')
-            #r[side] = np.hypot(R[side], z[side])
-            if R_disc is not None: 
-                for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>0*sfu.au), prop[side], np.nan)
-            
-        return R, phi, z
-        
     def run_mcmc(self, data, channels, p0_mean='optimize', p0_stddev=1e-3, noise_stddev=1.0,
                  nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
                  custom_header={}, custom_kind={},
@@ -1334,6 +1293,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         samples = sampler.chain[:, -nstats:]
         samples = samples.reshape(-1, samples.shape[-1])
         best_params = np.median(samples, axis=0)
+        self.best_params = best_params
         print ('Median from parameter walkers after step %d:'%nstats, list(zip(self.mc_header, best_params)))
 
         #************
@@ -1342,6 +1302,50 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         for key in custom_header: self.mc_header[key] = custom_header[key]
         if plot_walkers: Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats)
         #if plot_corner: mcmcplot_corner()
+
+    @staticmethod
+    def orientation(incl=np.pi/4, PA=0.0):
+        return incl, PA
+
+    def get_projected_coords(self, z_mirror=False, R_disc=None):
+
+        from scipy.interpolate import griddata
+        #*************************************
+        #MAKE TRUE GRID FOR NEAR AND FAR SIDES
+        if self.prototype: print ('Prototype model:', self.params)
+        
+        incl, PA = General2d.orientation(**self.params['orientation'])
+        cos_incl, sin_incl = np.cos(incl), np.sin(incl)
+
+        z_true = {}
+        z_true['near'] = self.z_near_func({'R': self.R_true}, **self.params['height_near'])
+
+        if z_mirror: z_true['far'] = -z_true['near']
+        else: z_true['far'] = self.z_far_func({'R': self.R_true}, **self.params['height_far']) 
+            
+        grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
+                     'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
+        
+        #***********************************
+        #PROJECT PROPERTIES ON THE SKY PLANE        
+        R, phi, z = {}, {}, {}
+        for side in ['near', 'far']:
+            xt, yt, zt = grid_true[side][:3]
+            x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
+            if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
+            R[side] = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
+            x_grid = griddata((x_pro, y_pro), xt, (self.mesh[0], self.mesh[1]), method='linear')
+            y_grid = griddata((x_pro, y_pro), yt, (self.mesh[0], self.mesh[1]), method='linear')
+            phi[side] = np.arctan2(y_grid, x_grid) 
+            #Since this one is periodic it has to be recalculated, otherwise the interpolation will screw up things at the boundary -np.pi->np.pi
+            # When plotting contours there seems to be in any case some sort of interpolation, so there is still problems at the boundary
+            #phi[side] = griddata((x_pro, y_pro), self.phi_true, (self.mesh[0], self.mesh[1]), method='linear')
+            z[side] = griddata((x_pro, y_pro), z_true[side], (self.mesh[0], self.mesh[1]), method='linear')
+            #r[side] = hypot_func(R[side], z[side])
+            if R_disc is not None: 
+                for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>0*sfu.au), prop[side], np.nan)
+            
+        return R, phi, z
         
     def make_model(self, z_mirror=False, R_disc=None):
                    
@@ -1523,8 +1527,8 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
         y_true_far = y_plane_cos_incl + t[0]*sin_incl
         
         #np.hypot 2x faster than np.linalg.norm([x,y], axis=0)
-        R_true_near = np.hypot(x_true_near, y_true_near) 
-        R_true_far = np.hypot(x_true_far, y_true_far)
+        R_true_near = hypot_func(x_true_near, y_true_near) 
+        R_true_far = hypot_func(x_true_far, y_true_far)
 
         z_true_near = t[1] * cos_incl
         z_true_far = t[0] * cos_incl 
