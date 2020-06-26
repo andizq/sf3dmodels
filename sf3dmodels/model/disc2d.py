@@ -774,7 +774,7 @@ class Velocity:
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
-        return np.sqrt(G*Mstar/r**3)*R * 1e-3 #to km
+        return np.sqrt(G*Mstar/r**3)*R * 1e-3 #to km/s
 
 
 class Intensity:   
@@ -1140,21 +1140,21 @@ class Mcmc:
 
         vel2d, int2d, linew2d = self.make_model(**kwargs)
 
-        for side in ['near', 'far']: vel2d[side]*=1e-3 
         lnx2=0    
         nchans = len(self.channels)
+        
+        cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, nchan=nchans, tb = {'nu': 230, 'beam': self.beam_info})
         for i in range(nchans):
-            model_chan = self.get_channel(vel2d, int2d, linew2d, self.channels[i], mmol=28.0101*sfu.amu) 
+            model_chan = cube.data[i] #self.get_channel(vel2d, int2d, linew2d, self.channels[i], mmol=28.0101*sfu.amu) 
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
             model = np.where(np.logical_and(mask_data, ~mask_model), 0, model_chan)
-            mask = np.logical_or(mask_data, mask_model)
+            mask = np.logical_and(mask_data, mask_model)
             lnx =  np.where(mask, np.power((data - model)/self.noise_stddev, 2), 0) 
             #lnx = -0.5 * np.sum(lnx2[~np.isnan(lnx2)] * 0.00001)# * self.ivar)
             lnx2 += -0.5 * np.sum(lnx)
 
-        #print (new_params, '\nLog LIKELIHOOD: %.2e'%lnx2)
         return lnx2 if np.isfinite(lnx2) else -np.inf
     
      
