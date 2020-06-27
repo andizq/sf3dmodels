@@ -977,7 +977,7 @@ class Intensity:
         int2d_near = np.where(np.isnan(int2d['near']), -np.inf, int2d['near'] * v_near_clean)# / v_near_clean.max())
         int2d_far = np.where(np.isnan(int2d['far']), -np.inf, int2d['far'] * v_far_clean)# / v_far_clean.max())
         
-        vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
+        #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
         int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
         
         if self.beam_kernel:
@@ -1143,9 +1143,9 @@ class Mcmc:
         lnx2=0    
         nchans = len(self.channels)
         
-        #cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, nchan=nchans, tb = {'nu': 230, 'beam': self.beam_info})
+        cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, nchan=nchans, tb = {'nu': 230, 'beam': self.beam_info})
         for i in range(nchans):
-            model_chan = self.get_channel(vel2d, int2d, linew2d, self.channels[i]) #cube.data[i]
+            model_chan = cube.data[i] #self.get_channel(vel2d, int2d, linew2d, self.channels[i])
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
@@ -1154,7 +1154,8 @@ class Mcmc:
             lnx =  np.where(mask, np.power((data - model)/self.noise_stddev, 2), 0) 
             #lnx = -0.5 * np.sum(lnx2[~np.isnan(lnx2)] * 0.00001)# * self.ivar)
             lnx2 += -0.5 * np.sum(lnx)
-
+            
+        #print (new_params, "\nLOG LIKELIHOOD %.4e"%lnx2)
         return lnx2 if np.isfinite(lnx2) else -np.inf
     
      
