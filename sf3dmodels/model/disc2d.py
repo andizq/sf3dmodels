@@ -163,7 +163,8 @@ class Cube(object):
         self._interactive = self.cursor
         self._interactive_path = self.curve
         if beam: self.beam = beam
-        if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'])
+        if isinstance(tb, dict):
+            if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'])
 
     @property
     def interactive(self): 
@@ -536,11 +537,13 @@ class Cube(object):
         ax[1].yaxis.set_label_position('right')
         #ax[1].set_xlim(v0-0.1, v1+0.1)
         #ax[1].set_ylim(-1, max_data)
+        vmin, vmax = -max_data/30, max_data
+        ax[1].set_ylim(vmin, vmax)
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap('hot')
         cmap.set_bad(color=(0.9,0.9,0.9))
 
-        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=-1, vmax=max_data)
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
         text_chan = ax[1].text(0.15, 1.04, #Converting xdata coords to Axes coords 
                                r'v$_{\rmchan}$=%4.1f %s'%(self.channels[chan_init], vel_unit), ha='center', 
@@ -761,20 +764,20 @@ class Velocity:
         del self._velocity_func
 
     @staticmethod
-    def keplerian(coord, Mstar=1.0):
+    def keplerian(coord, Mstar=1.0, vel_sign=1):
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
-        return np.sqrt(G*Mstar/R) * 1e-3
+        return vel_sign*np.sqrt(G*Mstar/R) * 1e-3
     
     @staticmethod
-    def keplerian_vertical(coord, Mstar=1.0):
+    def keplerian_vertical(coord, Mstar=1.0, vel_sign=1):
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
-        return np.sqrt(G*Mstar/r**3)*R * 1e-3 #to km/s
+        return vel_sign*np.sqrt(G*Mstar/r**3)*R * 1e-3 #to km/s
 
 
 class Intensity:   
@@ -1211,7 +1214,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         #Get and print default parameters for default functions
         self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'height_near', 'height_far']
 
-        self.mc_params = {'velocity': {'Mstar': True},
+        self.mc_params = {'velocity': {'Mstar': True, 'vel_sign': 1},
                           'orientation': {'incl': True, 
                                           'PA': True},
                           'intensity': {'I0': True, 
