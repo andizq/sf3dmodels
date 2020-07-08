@@ -455,8 +455,12 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         print ('Set RADMC-3D format...')
         self.GRID = GRID
         self._col_ids()
-        nx,ny,nz = self.GRID.Nodes
-        self.nn = nx * ny * nz
+        if hasattr(self.GRID, 'Nodes'):
+            nx,ny,nz = self.GRID.Nodes
+            self.nn = nx * ny * nz
+        elif hasattr(self.GRID, 'Nodes'):
+            self.nn = self.GRID.NPoints
+        else: self.nn = 0
         super(Radmc3d, self).__init__(GRID)
 
     def _col_ids(self):
