@@ -458,7 +458,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         if hasattr(self.GRID, 'Nodes'):
             nx,ny,nz = self.GRID.Nodes
             self.nn = nx * ny * nz
-        elif hasattr(self.GRID, 'Nodes'):
+        elif hasattr(self.GRID, 'NPoints'):
             self.nn = self.GRID.NPoints
         else: self.nn = 0
         super(Radmc3d, self).__init__(GRID)
