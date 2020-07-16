@@ -1139,6 +1139,14 @@ class Mcmc:
         plt.savefig('rework_walkers.png')
         plt.show()
 
+    @staticmethod
+    def plot_corner(samples, labels=None, quantiles=None):
+        """Plot the corner plot to check for covariances."""
+        import corner
+        quantiles = [0.16, 0.5, 0.84] if quantiles is None else quantiles
+        corner.corner(samples, labels=labels, title_fmt='.4f', bins=30,
+                      quantiles=quantiles, show_titles=True)
+        
     def ln_likelihood(self, new_params, **kwargs):
         for i in range(self.mc_nparams):
             if not (self.mc_boundaries_list[i][0] < new_params[i] < self.mc_boundaries_list[i][1]): return -np.inf
@@ -1307,8 +1315,14 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         #PLOTTING
         #************
         for key in custom_header: self.mc_header[key] = custom_header[key]
-        if plot_walkers: Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats)
-        #if plot_corner: mcmcplot_corner()
+        if plot_walkers: 
+            Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats)
+            plt.savefig('mc_walkers_%dwalkers_%dsteps.png'%(nwalkers, nsteps))
+            plt.close()
+        if plot_corner: 
+            Mcmc.plot_corner(samples, labels=self.mc_header)
+            plt.savefig('mc_corner_%dwalkers_%dsteps.png'%(nwalkers, nsteps))
+            plt.close()
 
     @staticmethod
     def orientation(incl=np.pi/4, PA=0.0):
