@@ -870,8 +870,8 @@ class Radmc3dDefaults(Radmc3d):
                  kwargs_control = {'scattering_mode_max': 0,
                                    'incl_dust': 0,
                                    'camera_incl_stars': 0},
-                 kwargs_wavelength = {'nxx': [20,20,20],
-                                      'lam': [5e2,2e4,4e4,3e5]}
+                 kwargs_wavelength = {'nxx': [20,20,20,20],
+                                      'lam': [1e-1, 5e2,2e4,4e4,3e5]}
                  ): 
         """
         Writes the files required by `RADMC-3D`_ to compute free-free emission from the input model.
