@@ -1263,7 +1263,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
 
     def run_mcmc(self, data, channels, p0_mean='optimize', p0_stddev=1e-3, noise_stddev=1.0,
                  nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
-                 custom_header={}, custom_kind={},
+                 custom_header={}, custom_kind={}, tag='',
                  plot_walkers=True, plot_corner=True, **kwargs_model): #p0 from 'optimize', 'min', 'max', list of values.
         self.data = data
         self.channels = channels
@@ -1317,11 +1317,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         for key in custom_header: self.mc_header[key] = custom_header[key]
         if plot_walkers: 
             Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats)
-            plt.savefig('mc_walkers_%dwalkers_%dsteps.png'%(nwalkers, nsteps))
+            plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
             plt.close()
         if plot_corner: 
             Mcmc.plot_corner(samples, labels=self.mc_header)
-            plt.savefig('mc_corner_%dwalkers_%dsteps.png'%(nwalkers, nsteps))
+            plt.savefig('mc_corner_$s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
             plt.close()
 
     @staticmethod
