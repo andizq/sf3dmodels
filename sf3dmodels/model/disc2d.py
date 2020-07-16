@@ -1321,7 +1321,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
             plt.close()
         if plot_corner: 
             Mcmc.plot_corner(samples, labels=self.mc_header)
-            plt.savefig('mc_corner_$s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
+            plt.savefig('mc_corner_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
             plt.close()
 
     @staticmethod
