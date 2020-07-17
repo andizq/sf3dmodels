@@ -1242,11 +1242,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
                               'orientation': {'incl': [-np.pi/3, np.pi/3], 
                                               'PA': [-np.pi, np.pi]},
                               'intensity': {'I0': [0, 100], 
-                                            'p': [-2.0, 2.0], 
-                                            'q': [0, 2.0]},
+                                            'p': [-5.0, 5.0], 
+                                            'q': [0, 5.0]},
                               'linewidth': {'L0': [0.05, 5.0], 
-                                            'p': [-2.0, 2.0], 
-                                            'q': [0, 2.0]},
+                                            'p': [-5.0, 5.0], 
+                                            'q': [0, 5.0]},
                               'height_near': {'psi': [0, np.pi/2]},
                               'height_far': {'psi': [0, np.pi/2]}
                               }
