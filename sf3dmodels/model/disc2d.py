@@ -1086,7 +1086,7 @@ class Mcmc:
         return header, kind, len(header), boundaries_list, params_indices
     
     @staticmethod
-    def plot_walkers(samples, best_params, nstats=None, header=None, kind=None):
+    def plot_walkers(samples, best_params, nstats=None, header=None, kind=None, tag=''):
         npars, nsteps, nwalkers = samples.shape
         if kind is not None:
             ukind, neach = np.unique(kind, return_counts=True)
@@ -1119,8 +1119,8 @@ class Mcmc:
                     #axij.set_ylabel(header[k])
                     axij.text(0.06, 0.84, header[k], va='baseline', fontsize=MEDIUM_SIZE-2, transform=axij.transAxes, rotation=90)
             if nstats is not None: 
-                axij.axvline(nstats, ls=':', lw=2, color='r')
-                x0_hline = nstats
+                axij.axvline(nsteps-nstats, ls=':', lw=2, color='r')
+                x0_hline = nsteps-nstats
 
             axij.plot([x0_hline, nsteps], [best_params[k]]*2, ls='-', lw=3, color='dodgerblue')
             axij.text((nsteps-1)+0.024*nsteps, best_params[k], '%.3f'%best_params[k], va='center', color='dodgerblue', fontsize=SMALL_SIZE+2, rotation=90) 
@@ -1133,11 +1133,11 @@ class Mcmc:
             ax[i_last][j].set_xlabel('Steps')
             if i_last < nrows-1: #Remove empty axes
                 for k in range((nrows-1)-i_last): ax[nrows-1-k][j].axis('off')
-                
-        #plt.subplots_adjust(wspace=0.5)
+
         plt.tight_layout()
-        plt.savefig('rework_walkers.png')
-        plt.show()
+        plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
+        plt.close()
+
 
     @staticmethod
     def plot_corner(samples, labels=None, quantiles=None):
@@ -1316,9 +1316,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         #************
         for key in custom_header: self.mc_header[key] = custom_header[key]
         if plot_walkers: 
-            Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats)
-            plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
-            plt.close()
+            Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats, tag=tag)
         if plot_corner: 
             Mcmc.plot_corner(samples, labels=self.mc_header)
             plt.savefig('mc_corner_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
