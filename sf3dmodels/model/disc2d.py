@@ -1246,7 +1246,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
                                             'q': [0, 5.0]},
                               'linewidth': {'L0': [0.05, 5.0], 
                                             'p': [-5.0, 5.0], 
-                                            'q': [0, 5.0]},
+                                            'q': [-5.0, 5.0]},
                               'height_near': {'psi': [0, np.pi/2]},
                               'height_far': {'psi': [0, np.pi/2]}
                               }
