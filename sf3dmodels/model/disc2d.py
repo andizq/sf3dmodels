@@ -347,10 +347,10 @@ class Cube(object):
         ax[1].set_ylabel(int_unit, labelpad=15)
         ax[1].yaxis.set_label_position('right')
         ax[1].set_xlim(v0-0.1, v1+0.1)
-        vmin, vmax = -max_data/30, max_data
+        vmin, vmax = -max_data/30, 0.9*max_data
         ax[1].set_ylim(vmin, vmax)
         ax[1].grid(lw=1.5, ls=':')
-        cmap = plt.get_cmap('hot')
+        cmap = plt.get_cmap('gnuplot2_r')
         cmap.set_bad(color=(0.9,0.9,0.9))
 
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
@@ -540,7 +540,7 @@ class Cube(object):
         vmin, vmax = -max_data/30, max_data
         ax[1].set_ylim(vmin, vmax)
         ax[1].grid(lw=1.5, ls=':')
-        cmap = plt.get_cmap('hot')
+        cmap = plt.get_cmap('brg')
         cmap.set_bad(color=(0.9,0.9,0.9))
 
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
