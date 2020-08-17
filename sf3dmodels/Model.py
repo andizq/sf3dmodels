@@ -401,7 +401,7 @@ def density_Hamburgers(RStar, shFactor, Ro, rhoE0, Arho, GRID,
         if not rdisc_max: rdisc_max = Ro
         rhoD0 = Arho * rhoE0 
         H0 = shFactor * RStar
-        print ('Scale-height normalization constant (au):', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
+        print ('Scale-height at RStar (au):', H0 / AU * 1 / ((RStar/AU)**(1 + 0.5*(1-q))))
         H = H0 * (RList / RStar)**(1 + 0.5*(1-q)) #Scaleheight, with no tapering 
         if Rt: H = H * np.exp(-((RList-Rt) / (Ro-Rt))**2)  #Scaleheight, with tapering 
         rhoDISC = np.where( RList <= rdisc_max, rhoD0 * (RList / Ro)**-p * np.exp(-0.5 * zList**2 / H**2), rho_min)

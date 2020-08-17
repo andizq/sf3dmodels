@@ -160,7 +160,6 @@ class MakeDatatab(object):
         of `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`. 
         """
 
-        
         os.system('mkdir %s'%folder)
         if folder[-1] != '/': folder += '/'
         file_path = '%s%s'%(folder,output)
@@ -262,7 +261,7 @@ class Lime(MakeDatatab):
         print ('Set LIME format...')
         self._col_ids()
         super(Lime, self).__init__(GRID)
-        
+
     def _col_ids(self):
         
         CP_H2 = 1
@@ -630,9 +629,10 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         fmt : str
            Format string for numbers in the output file.
         """
-        with open('dust_temperature.inp','w+') as f:
+        with open('dust_temperature.dat','w+') as f:
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
+            f.write('1\n')                                          # Dust species
             temp_dust.tofile(f, sep='\n', format=fmt)
             f.close()
             
@@ -935,6 +935,7 @@ class Radmc3dDefaults(Radmc3d):
         self.write_ion_numdens(prop['dens_ion'], fmt=fmt)
         self.write_gas_temperature(prop['temp_gas'], fmt=fmt)
         if 'temp_dust' in prop: self.write_dust_temperature(prop['temp_dust'], fmt=fmt)
+        if 'dens_dust' in prop: self.write_dust_density(prop['dens_dust'], fmt=fmt)
 
         kwargs_control['incl_freefree'] = 1
         self.write_radmc3d_control(**kwargs_control)
