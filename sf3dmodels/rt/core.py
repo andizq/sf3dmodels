@@ -160,7 +160,6 @@ class MakeDatatab(object):
         of `~sf3dmodels.rt.Lime` or `~sf3dmodels.rt.Radmc3d`. 
         """
 
-        
         os.system('mkdir %s'%folder)
         if folder[-1] != '/': folder += '/'
         file_path = '%s%s'%(folder,output)
@@ -262,7 +261,7 @@ class Lime(MakeDatatab):
         print ('Set LIME format...')
         self._col_ids()
         super(Lime, self).__init__(GRID)
-        
+
     def _col_ids(self):
         
         CP_H2 = 1
@@ -486,7 +485,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
                        grid_style = 0, 
                        coord_system = 0,
                        grid_info = 0, 
-                       include_dim = [1,1,1]):
+                       include_dim = [1,1,1],
+                       conv_to_cm = True):
         """
         Writes the file 'amr_grid.inp' for radmc3d. 
         
@@ -504,7 +504,8 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
            Defaults to [1,1,1]
         """
         nx,ny,nz = self.GRID.Nodes
-        xi, yi, zi = np.array(self.GRID.XYZgrid) * cm #from m to cm
+        if conv_to_cm: xi, yi, zi = np.array(self.GRID.XYZgrid) * cm #from m to cm
+        else: xi, yi, zi = np.array(self.GRID.XYZgrid)
 
         #if not self.amr_grid:
         with open('amr_grid.inp','w+') as f:
@@ -628,9 +629,10 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         fmt : str
            Format string for numbers in the output file.
         """
-        with open('dust_temperature.inp','w+') as f:
+        with open('dust_temperature.dat','w+') as f:
             f.write('1\n')                                          # Format number
             f.write('%d\n'%self.nn)                                 # Nr of cells
+            f.write('1\n')                                          # Dust species
             temp_dust.tofile(f, sep='\n', format=fmt)
             f.close()
             
@@ -868,8 +870,8 @@ class Radmc3dDefaults(Radmc3d):
                  kwargs_control = {'scattering_mode_max': 0,
                                    'incl_dust': 0,
                                    'camera_incl_stars': 0},
-                 kwargs_wavelength = {'nxx': [20,20,20],
-                                      'lam': [5e2,2e4,4e4,3e5]}
+                 kwargs_wavelength = {'nxx': [20,20,20,20],
+                                      'lam': [1e-1, 5e2,2e4,4e4,3e5]}
                  ): 
         """
         Writes the files required by `RADMC-3D`_ to compute free-free emission from the input model.
@@ -933,6 +935,7 @@ class Radmc3dDefaults(Radmc3d):
         self.write_ion_numdens(prop['dens_ion'], fmt=fmt)
         self.write_gas_temperature(prop['temp_gas'], fmt=fmt)
         if 'temp_dust' in prop: self.write_dust_temperature(prop['temp_dust'], fmt=fmt)
+        if 'dens_dust' in prop: self.write_dust_density(prop['dens_dust'], fmt=fmt)
 
         kwargs_control['incl_freefree'] = 1
         self.write_radmc3d_control(**kwargs_control)
