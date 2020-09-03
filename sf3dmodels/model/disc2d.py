@@ -911,31 +911,17 @@ class Intensity:
 
     @staticmethod
     def line_profile_temp(v_chan, v, T, v_turb=0.0, mmol=2*sfu.amu):
-        v_sigma = np.sqrt(2*kb*T/mmol + v_turb**2) * 1e-3 #in km/s
+        v_sigma = np.sqrt(kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         #return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
-        return np.exp(-((v-v_chan)/v_sigma)**2)
+        return np.exp(-0.5*((v-v_chan)/v_sigma)**2)
 
     @staticmethod
     def line_profile_v_sigma(v_chan, v, v_sigma, mmol=2*sfu.amu):
-        #return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
+        #return 1/(np.sqrt(2*np.pi)*v_sigma) * np.exp(-0.5*((v-v_chan)/v_sigma)**2)
         #return np.where(np.abs(v-v_chan) < 0.5*v_sigma, 1, 0)
-        #return np.exp(-((v-v_chan)/v_sigma)**2)
-        b=5
-        return 1/(1+np.abs((v-v_chan)/v_sigma)**(2*b))
-        
-    @staticmethod
-    def line_profile_temp_full(v_chan, v, T, v_turb=0.0, mmol=2*sfu.amu, channel_width=0.1):
-        half_chan = 0.5*channel_width
-        v0 = v_chan - half_chan
-        v1 = v_chan + half_chan
-        nsub = 10
-        vsub = np.linspace(v0, v1, nsub)
-        dvsub = vsub[1]-vsub[0]
-        J = 0
-        for vs in vsub:
-            J += np.exp(-((v-vs)/v_sigma)**2)
-        J = J * dvsub/channel_width
-        return J
+        return np.exp(-0.5*((v-v_chan)/v_sigma)**2)
+        #b=5
+        #return 1/(1+np.abs((v-v_chan)/v_sigma)**(2*b))        
     
     @staticmethod
     def line_profile_v_sigma_full(v_chan, v, v_sigma, mmol=2*sfu.amu, channel_width=0.1):
@@ -947,7 +933,7 @@ class Intensity:
         dvsub = vsub[1]-vsub[0]
         J = 0
         for vs in vsub:
-            J += np.exp(-((v-vs)/v_sigma)**2)
+            J += np.exp(-0.5*((v-vs)/v_sigma)**2)
         J = J * dvsub/channel_width
         return J
 
