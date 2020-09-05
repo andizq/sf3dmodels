@@ -748,6 +748,33 @@ class Linewidth:
         return A*R**p*np.abs(z)**q
 
 
+class Lineslope:
+    @property
+    def lineslope_func(self): 
+        return self._lineslope_func
+          
+    @lineslope_func.setter 
+    def lineslope_func(self, lineslope): 
+        print('Setting lineslope function to', lineslope) 
+        self._lineslope_func = lineslope
+
+    @lineslope_func.deleter 
+    def lineslope_func(self): 
+        print('Deleting lineslope function') 
+        del self._lineslope_func
+
+    @staticmethod
+    def lineslope_powerlaw(coord, Ls=5.0, p=0.0, q=0.0, R0=100*sfu.au, z0=100*sfu.au): #A=600.0, p=-0.4, q=0.3): #
+        if p==0.0 and q==0.0:
+            return Ls
+        else:
+            if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+            else: R = coord['R'] 
+            z = coord['z']        
+            A = Ls*R0**-p*z0**-q
+            return A*R**p*np.abs(z)**q
+
+
 class Velocity:
     @property
     def velocity_func(self): 
@@ -837,7 +864,7 @@ class Intensity:
         use = bool(use)
         print('Setting use_temperature var to', use)
         if use: self.line_profile = self.line_profile_temp
-        else: self.line_profile = self.line_profile_v_sigma
+        #else: self.line_profile = self.line_profile_v_sigma
         self._use_temperature = use
 
     @use_temperature.deleter 
@@ -850,7 +877,7 @@ class Intensity:
         return self._use_full_channel
 
     @use_full_channel.setter 
-    def use_full_channel(self, use): 
+    def use_full_channel(self, use): #Needs remake, there is now a new kernel (line_profile_bell) 
         use = bool(use)
         print('Setting use_full_channel var to', use)
         if use: 
@@ -910,21 +937,27 @@ class Intensity:
         return A*(R**-gamma) * (1+(R/Rt)**alpha)**((gamma-beta)/alpha)
 
     @staticmethod
-    def line_profile_temp(v_chan, v, T, v_turb=0.0, mmol=2*sfu.amu):
+    def line_profile_subchannel(line_profile_func, v_chan, v, v_sigma, b_slope, channel_width=0.1, **kwargs): #Not currently used
+        half_chan = 0.5*channel_width
+        v0 = v_chan - half_chan
+        v1 = v_chan + half_chan
+        nsub = 10
+        vsub = np.linspace(v0, v1, nsub)
+        dvsub = vsub[1]-vsub[0]
+        J = 0
+        for vs in vsub:
+            J += line_profile_func(vs, v, v_sigma, b_slope, **kwargs) 
+        J = J * dvsub/channel_width
+        return J
+        
+    @staticmethod
+    def line_profile_temp(v_chan, v, T, dum, v_turb=0.0, mmol=2*sfu.amu):
         v_sigma = np.sqrt(kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         #return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
         return np.exp(-0.5*((v-v_chan)/v_sigma)**2)
 
     @staticmethod
-    def line_profile_v_sigma(v_chan, v, v_sigma, mmol=2*sfu.amu):
-        #return 1/(np.sqrt(2*np.pi)*v_sigma) * np.exp(-0.5*((v-v_chan)/v_sigma)**2)
-        #return np.where(np.abs(v-v_chan) < 0.5*v_sigma, 1, 0)
-        return np.exp(-0.5*((v-v_chan)/v_sigma)**2)
-        #b=5
-        #return 1/(1+np.abs((v-v_chan)/v_sigma)**(2*b))        
-
-    @staticmethod
-    def line_profile_temp_full(v_chan, v, T, v_turb=0, mmol=2*sfu.amu, channel_width=0.1):
+    def line_profile_temp_full(v_chan, v, T, dum, v_turb=0, mmol=2*sfu.amu, channel_width=0.1):
         v_sigma = np.sqrt(kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
@@ -937,9 +970,15 @@ class Intensity:
             J += np.exp(-0.5*((v-vs)/v_sigma)**2)
         J = J * dvsub/channel_width
         return J
+
+    @staticmethod
+    def line_profile_v_sigma(v_chan, v, v_sigma, dum):
+        #return 1/(np.sqrt(2*np.pi)*v_sigma) * np.exp(-0.5*((v-v_chan)/v_sigma)**2)
+        #return np.where(np.abs(v-v_chan) < 0.5*v_sigma, 1, 0)
+        return np.exp(-0.5*((v-v_chan)/v_sigma)**2)
     
     @staticmethod
-    def line_profile_v_sigma_full(v_chan, v, v_sigma, mmol=2*sfu.amu, channel_width=0.1):
+    def line_profile_v_sigma_full(v_chan, v, v_sigma, dum, channel_width=0.1):
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
         v1 = v_chan + half_chan
@@ -952,30 +991,51 @@ class Intensity:
         J = J * dvsub/channel_width
         return J
 
-    def get_line_profile(self, v_chan, vel2d, temp2d, **kwargs):
+    @staticmethod
+    def line_profile_bell(v_chan, v, v_sigma, b_slope):
+        return 1/(1+np.abs((v-v_chan)/v_sigma)**(2*b_slope))        
+
+    @staticmethod
+    def line_profile_bell_full(v_chan, v, v_sigma, b_slope, channel_width=0.1):
+        half_chan = 0.5*channel_width
+        v0 = v_chan - half_chan
+        v1 = v_chan + half_chan
+        nsub = 10
+        vsub = np.linspace(v0, v1, nsub)
+        dvsub = vsub[1]-vsub[0]
+        J = 0
+        for vs in vsub:
+            J += 1/(1+np.abs((v-vs)/v_sigma)**(2*b_slope))
+        J = J * dvsub/channel_width
+        return J
+
+    def get_line_profile(self, v_chan, vel2d, linew2d, lineb2d, **kwargs):
         if self.subpixels:
             v_near, v_far = [], []
             for i in range(self.subpixels_sq):
-                v_near.append(self.line_profile(v_chan, vel2d[i]['near'], temp2d['near'], **kwargs))
-                v_far.append(self.line_profile(v_chan, vel2d[i]['far'], temp2d['far'], **kwargs))
+                v_near.append(self.line_profile(v_chan, vel2d[i]['near'], linew2d['near'], lineb2d['near'], **kwargs))
+                v_far.append(self.line_profile(v_chan, vel2d[i]['far'], linew2d['far'], lineb2d['far'], **kwargs))
 
             integ_v_near = np.sum(np.array(v_near), axis=0) * self.sub_dA / self.pix_dA
             integ_v_far = np.sum(np.array(v_far), axis=0) * self.sub_dA / self.pix_dA
             return integ_v_near, integ_v_far
         
         else: 
-            v_near = self.line_profile(v_chan, vel2d['near'], temp2d['near'], **kwargs)
-            v_far = self.line_profile(v_chan, vel2d['far'], temp2d['far'], **kwargs)
+            v_near = self.line_profile(v_chan, vel2d['near'], linew2d['near'], lineb2d['near'], **kwargs)
+            v_far = self.line_profile(v_chan, vel2d['far'], linew2d['far'], lineb2d['far'], **kwargs)
             return v_near, v_far 
 
-    def get_channel(self, velocity2d, intensity2d, temperature2d, v_chan, **kwargs):                    
-        vel2d, temp2d, int2d = velocity2d, {}, {}
-        if isinstance(temperature2d, numbers.Number): temp2d['near'] = temp2d['far'] = temperature2d
-        else: temp2d = temperature2d
+    def get_channel(self, velocity2d, intensity2d, linewidth2d, lineslope2d, v_chan, **kwargs):                    
+        vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
+
         if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
         else: int2d = intensity2d
+        if isinstance(linewidth2d, numbers.Number): linew2d['near'] = linew2d['far'] = linewidth2d
+        else: linew2d = linewidth2d
+        if isinstance(lineslope2d, numbers.Number): lineb2d['near'] = lineb2d['far'] = lineslope2d
+        else: lineb2d = lineslope2d
     
-        v_near, v_far = self.get_line_profile(v_chan, vel2d, temp2d, **kwargs)
+        v_near, v_far = self.get_line_profile(v_chan, vel2d, linew2d, lineb2d, **kwargs)
 
         v_near_clean = np.where(np.isnan(v_near), -np.inf, v_near)
         v_far_clean = np.where(np.isnan(v_far), -np.inf, v_far)
@@ -994,16 +1054,18 @@ class Intensity:
 
         return int2d_full
 
-    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
-        vel2d, temp2d, int2d = velocity2d, {}, {}
+    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
+        vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
         line_profile = self.line_profile
         channels = np.linspace(vchan0, vchan1, num=nchan)
         cube = []
 
-        if isinstance(temperature2d, numbers.Number): temp2d['near'] = temp2d['far'] = temperature2d
-        else: temp2d = temperature2d
         if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
         else: int2d = intensity2d
+        if isinstance(linewidth2d, numbers.Number): linew2d['near'] = linew2d['far'] = linewidth2d
+        else: linew2d = linewidth2d
+        if isinstance(lineslope2d, numbers.Number): lineb2d['near'] = lineb2d['far'] = lineslope2d
+        else: lineb2d = lineslope2d
 
         int2d_near_nan = np.isnan(int2d['near'])#~int2d['near'].mask#
         int2d_far_nan = np.isnan(int2d['far'])#~int2d['far'].mask#
@@ -1015,7 +1077,7 @@ class Intensity:
             vel2d_far_nan = np.isnan(vel2d['far'])#~vel2d['far'].mask#
 
         for i, v_chan in enumerate(channels):    
-            v_near, v_far = self.get_line_profile(v_chan, vel2d, temp2d, **kwargs)
+            v_near, v_far = self.get_line_profile(v_chan, vel2d, linew2d, lineb2d, **kwargs)
             v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
             v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
             
@@ -1034,15 +1096,15 @@ class Intensity:
         return Cube(nchan, channels, np.array(cube), beam=self.beam_info, tb=tb)
 
     @staticmethod
-    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, temperature2d, nchans=30, folder='./movie_channels/', **kwargs):
+    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, linewidth2d, nchans=30, folder='./movie_channels/', **kwargs):
         import matplotlib.pyplot as plt
         channels = np.linspace(vchan0, vchan1, num=nchans)
         int2d_cube = []
         for i, vchan in enumerate(channels):
-            int2d = Intensity.get_channel(velocity2d, intensity2d, temperature2d, vchan, **kwargs)
+            int2d = Intensity.get_channel(velocity2d, intensity2d, linewidth2d, lineslope2d, vchan, **kwargs)
             int2d_cube.append(int2d)
             extent = [-600, 600, -600, 600]
-            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower left', vmax=np.max(temperature2d['near']))
+            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower left', vmax=np.max(linewidth2d['near']))
             plt.xlabel('au')
             plt.ylabel('au')
             plt.text(200, 500, '%.1f km/s'%vchan)
@@ -1153,14 +1215,14 @@ class Mcmc:
             if not (self.mc_boundaries_list[i][0] < new_params[i] < self.mc_boundaries_list[i][1]): return -np.inf
             else: self.params[self.mc_kind[i]][self.mc_header[i]] = new_params[i]
 
-        vel2d, int2d, linew2d = self.make_model(**kwargs)
+        vel2d, int2d, linew2d, lineb2d = self.make_model(**kwargs)
 
         lnx2=0    
         nchans = len(self.channels)
         
-        cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, nchan=nchans)#, tb = {'nu': 230, 'beam': self.beam_info})
+        cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, lineb2d, nchan=nchans)#, tb = {'nu': 230, 'beam': self.beam_info})
         for i in range(nchans):
-            model_chan = cube.data[i] #self.get_channel(vel2d, int2d, linew2d, self.channels[i])
+            model_chan = cube.data[i] #self.get_channel(vel2d, int2d, linew2d, lineb2d, self.channels[i])
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
@@ -1174,7 +1236,7 @@ class Mcmc:
         return lnx2 if np.isfinite(lnx2) else -np.inf
     
      
-class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
+class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
     def __init__(self, grid, prototype=False, subpixels=False, beam=None, kwargs_beam={}):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
@@ -1192,9 +1254,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         self._velocity_func = General2d.keplerian
         self._intensity_func = General2d.intensity_powerlaw
         self._linewidth_func = General2d.linewidth_powerlaw
-        self._use_temperature = True
+        self._lineslope_func = General2d.lineslope_powerlaw
+        self._line_profile = General2d.line_profile_bell
+        self._use_temperature = False
         self._use_full_channel = False
-        self._line_profile = General2d.line_profile_temp
  
         x_true, y_true = grid.XYZ[:2] 
         self.phi_true = np.arctan2(y_true, x_true) #grid.rRTP[3] 
@@ -1224,7 +1287,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         else: self.subpixels=False
 
         #Get and print default parameters for default functions
-        self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'height_near', 'height_far']
+        self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'lineslope', 'height_near', 'height_far']
 
         self.mc_params = {'velocity': {'Mstar': True, 'vel_sign': 1},
                           'orientation': {'incl': True, 
@@ -1235,6 +1298,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
                           'linewidth': {'L0': True, 
                                         'p': True, 
                                         'q': 0.1}, 
+                          'lineslope': {'Ls': False, 
+                                        'p': False, 
+                                        'q': False},
                           'height_near': {'psi': True},
                           'height_far': {'psi': True},
                           }
@@ -1246,6 +1312,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
                                             'p': [-5.0, 5.0], 
                                             'q': [0, 5.0]},
                               'linewidth': {'L0': [0.05, 5.0], 
+                                            'p': [-5.0, 5.0], 
+                                            'q': [-5.0, 5.0]},
+                              'lineslope': {'Ls': [0.05, 100], 
                                             'p': [-5.0, 5.0], 
                                             'q': [-5.0, 5.0]},
                               'height_near': {'psi': [0, np.pi/2]},
@@ -1332,7 +1401,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
-        if self.prototype: print ('Prototype model:', self.params)
+        if self.prototype: print ('Getting projected coords for prototype model:', self.params)
         
         incl, PA = General2d.orientation(**self.params['orientation'])
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
@@ -1378,6 +1447,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
         int_kwargs = self.params['intensity']
         vel_kwargs = self.params['velocity']
         lw_kwargs = self.params['linewidth']
+        ls_kwargs = self.params['lineslope']
 
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
@@ -1391,8 +1461,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
 
         #*******************************
         #COMPUTE PROPERTIES ON TRUE GRID #This will no longer be necessary as all the three functions will always be called
-        avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs]
-        avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func]
+        avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs, ls_kwargs]
+        avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func, self.lineslope_func]
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
         prop_kwargs = [kwarg for i, kwarg in enumerate(avai_kwargs) if true_kwargs[i]]
         prop_funcs = [func for i, func in enumerate(avai_funcs) if true_kwargs[i]]
@@ -1440,13 +1510,13 @@ class General2d(Height, Velocity, Intensity, Linewidth, Tools, Mcmc): #Inheritan
 
             if self.subpixels:
                 for i in range(self.subpixels_sq): #Subpixels are projected on the same plane where true grid is projected
-                    props[0][i][side] = griddata((x_pro, y_pro), props[0][i][side], (self.mesh[0], self.mesh[1]), method='linear')
+                    props[0][i][side] = griddata((x_pro, y_pro), props[0][i][side], (self.mesh[0], self.mesh[1]), method='linear') #subpixels velocity
                 for prop in props[1:]:
                     prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
                     if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>R_inner), prop[side], np.nan) #Todo: allow for R_in as well
             else:
                 for prop in props:
-                    prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
+                    if not isinstance(prop[side], numbers.Number): prop[side] = griddata((x_pro, y_pro), prop[side], (self.mesh[0], self.mesh[1]), method='linear')
                     if R_disc is not None: prop[side] = np.where(np.logical_and(R_grid<R_disc, R_grid>R_inner), prop[side], np.nan)
             
         """
@@ -1486,9 +1556,10 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
         self._velocity_func = Rosenfeld2d.keplerian
         self._intensity_func = Rosenfeld2d.intensity_powerlaw
         self._linewidth_func = Rosenfeld2d.linewidth_powerlaw
-        self._use_temperature = True
+        self._line_profile = General2d.line_profile_v_sigma
+        self._use_temperature = False
         self._use_full_channel = False
-        self._line_profile = General2d.line_profile_temp
+
 
     def _get_t(self, A, B, C):
         t = []
@@ -1497,7 +1568,7 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
             t.append(np.sort(np.roots(p)))
         return np.array(t)
 
-    def make_model(self, incl, psi, PA=0.0, int_kwargs={}, vel_kwargs={}, lw_kwargs=None):
+    def make_model(self, incl, psi, PA=0.0, int_kwargs={}, vel_kwargs={}, lw_kwargs=None, ls_kwargs=None):
         """
         Executes the Rosenfeld+2013 model.
         The sum of incl+psi must be < 90, otherwise the quadratic equation will have imaginary roots as some portions of the cone (which has finite extent)
@@ -1563,8 +1634,8 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
 
         #*******************************
         #COMPUTE PROPERTIES ON TRUE GRID
-        avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs]
-        avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func]
+        avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs, ls_kwargs]
+        avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func, self.lineslope_func]
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
         prop_kwargs = [kwarg for i, kwarg in enumerate(avai_kwargs) if true_kwargs[i]]
         prop_funcs = [func for i, func in enumerate(avai_funcs) if true_kwargs[i]]
