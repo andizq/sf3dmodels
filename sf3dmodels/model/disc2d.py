@@ -1375,10 +1375,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             multi_time = end - start
             print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
-        samples = sampler.chain[:, -nstats:]
-        print(samples.shape)
-        samples = samples.reshape(-1, samples.shape[-1])
-        print(samples.shape)
+        samples = sampler.chain[:, -nstats:] #3d matrix, shape (nwalkers, nstats, npars)
+        samples = samples.reshape(-1, samples.shape[-1]) #2d matrix, shape (nwalkers*nstats, npars). With the -1 np guesses the dimensionality
         best_params = np.median(samples, axis=0)
         self.best_params = best_params
         print ('Median from parameter walkers for the last %d steps:'%nstats, list(zip(self.mc_header, best_params)))
