@@ -1361,7 +1361,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         ndim = self.mc_nparams
 
         p0_stddev = [frac_stddev*(self.mc_boundaries_list[i][1] - self.mc_boundaries_list[i][0]) for i in range(self.mc_nparams)]
-        print (p0_stddev)
+        print ('p0 pars stddev:', p0_stddev)
         p0 = np.random.normal(loc=p0_mean,
                               scale=p0_stddev,
                               size=(nwalkers, ndim)
@@ -1376,10 +1376,12 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
         samples = sampler.chain[:, -nstats:]
+        print(samples.shape)
         samples = samples.reshape(-1, samples.shape[-1])
+        print(samples.shape)
         best_params = np.median(samples, axis=0)
         self.best_params = best_params
-        print ('Median from parameter walkers after step %d:'%nstats, list(zip(self.mc_header, best_params)))
+        print ('Median from parameter walkers for the last %d steps:'%nstats, list(zip(self.mc_header, best_params)))
 
         #************
         #PLOTTING
