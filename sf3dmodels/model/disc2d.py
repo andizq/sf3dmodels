@@ -1174,13 +1174,14 @@ class Mcmc:
         for k, key in enumerate(kind):
             j = kind_col[key]
             i = col_count[j] 
-            if i==0: ax[i][j].set_title(key, pad=10)
             for walker in samples[k].T:
-                axij = ax[i][j]
+                if ncols == 1: axij = ax[i]
+                else: axij = ax[i][j]
                 axij.plot(walker, alpha=0.1, lw=1.0, color='k')
                 if header is not None: 
                     #axij.set_ylabel(header[k])
                     axij.text(0.06, 0.84, header[k], va='baseline', fontsize=MEDIUM_SIZE-2, transform=axij.transAxes, rotation=90)
+            if i==0: axij.set_title(key, pad=10)
             if nstats is not None: 
                 axij.axvline(nsteps-nstats, ls=':', lw=2, color='r')
                 x0_hline = nsteps-nstats
@@ -1193,7 +1194,8 @@ class Mcmc:
 
         for j in range(ncols):
             i_last = col_count[j]-1
-            ax[i_last][j].set_xlabel('Steps')
+            if ncols==1: ax[i_last].set_xlabel('Steps')
+            else: ax[i_last][j].set_xlabel('Steps')
             if i_last < nrows-1: #Remove empty axes
                 for k in range((nrows-1)-i_last): ax[nrows-1-k][j].axis('off')
 
