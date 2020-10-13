@@ -110,11 +110,12 @@ The LIME installation is identical to the standard installation
 If you need to install third-party libraries (e.g. qhull, cfitsio, gsl), make sure to configure their paths to 
 point to the LIME directory included in this repository. 
 
-We strongly recommend to install the 2010 version of Qhull, which can be done as follows:
+**We strongly recommend the user to install the 2010 version of Qhull, which can be done as follows:**
 
 .. code-block:: bash
 
-   wget https://github.com/qhull/qhull/archive/2010.1.tar.gz
+   wget https://github.com/qhull/qhull/archive/2010.1.tar.gz #download qhull v2010.1
+   #curl -O https://github.com/qhull/qhull/archive/2010.1.tar.gz #you can also use curl
    gunzip 2010.1.tar.gz
    tar -xvf 2010.1.tar
    cd qhull-2010.1
