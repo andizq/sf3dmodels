@@ -161,7 +161,7 @@ Developers
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
-Special thanks to the people who reported bugs and/or provided ideas that improved sf3dmodels: 
+Special thanks to the people who have reported bugs and shared ideas to improve sf3dmodels: 
 
 - Rowan Smith
 - Yuxin Lin
@@ -176,10 +176,10 @@ Special thanks to the people who reported bugs and/or provided ideas that improv
 Papers using sf3dmodels
 -----------------------
 
--`Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_
--`Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
--`Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
--Izquierdo et al. (2020, subm.) The Cloud Factory II
+- `Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_
+- `Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
+- `Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
+- Izquierdo et al. (2020, subm.) The Cloud Factory II
 
 License
 -------
