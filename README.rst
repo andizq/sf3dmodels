@@ -19,7 +19,6 @@ sf3dmodels
 
 
 
-
 sf3dmodels is a 3D modelling package that brings together analytical prescriptions of 
 gas/dust envelopes, discs, outflows and filaments in order to reproduce complex star-forming 
 systems such as those being revealed by state-of-the-art telescopes. The package can (i) model 
@@ -30,6 +29,8 @@ The output model can then be read with `LIME <https://lime.readthedocs.io/en/lat
 `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ or `Polaris <http://www1.astrophysik.uni-kiel.de/~polaris/downloads.html>`_
 to compute the radiative transfer of the modelled region, which is a key step prior comparison to real observations. 
 
+The sf3models grid and radiative transfer modules can also be used as wrappers between hydrodynamical simulations and 
+radiative transfer codes. Here we include examples linking hydrodynamical simulations from the AREPO and Phantom codes with Polaris and LIME.
 
 
 Documentation
@@ -160,6 +161,26 @@ Developers
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
+Special thanks to the people who reported bugs and/or provided ideas that improved sf3dmodels: 
+
+- Rowan Smith
+- Yuxin Lin
+- Antonio Hernandez
+- Jonathan Henshaw
+- Qizhou Zhang
+- Leonardo Testi
+- Stefano Facchini
+- Ewine van Dishoeck
+- Pietro Curone
+
+Papers using sf3dmodels
+-----------------------
+
+`Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_
+`Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
+`Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
+Izquierdo et al. (2020, subm.) The Cloud Factory II
+
 License
 -------
 
@@ -172,7 +193,7 @@ more information.
 Citing sf3dmodels
 -----------------
 
-If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo et al. 2018 <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/>`_::
+If you find **sf3dmodels** useful for your research please cite the work of `Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_::
 
    @ARTICLE{2018MNRAS.478.2505I,
       author = {{Izquierdo}, Andr{\'e}s F. and {Galv{\'a}n-Madrid}, Roberto and
