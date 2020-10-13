@@ -1333,7 +1333,7 @@ def velocity_piecewise(density, GRID,
 
     vr, vtheta, vphi = np.zeros((3,NPoints))        
     if R_list is not None:
-        print ('Computing keplerian velocity with powerlaws', pR_list)
+        print ('Computing phi velocity with powerlaws', pR_list)
         vphi_coeff = [v0R[2]]
         #Pure azimuthal component. It's assumed that the radial velocity in the rotationally supported disc is comparatively small (Keto 2010).
         for i,R in enumerate(R_list[1:-1],1):
