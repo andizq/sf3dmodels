@@ -98,7 +98,7 @@ LIME in *sf3dmodels* mode
 -------------------------
 
 The star-forming-regions repository includes a customised version of LIME v1.9.5, with additional routines for **sf3dmodels** users. 
-This customisations allows using the **sf3dmodels** output as input for LIME in a user-friendly way. 
+This customisation allows using the **sf3dmodels** output as input for LIME in a user-friendly way. 
 
 Installation
 ************
