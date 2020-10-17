@@ -328,7 +328,7 @@ class Cube(object):
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         return cid
         
-    def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True,
+    def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True, cmap='gnuplot2_r',
              int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
              **kwargs):
         from matplotlib.widgets import Slider, Cursor, Button
@@ -350,7 +350,7 @@ class Cube(object):
         vmin, vmax = -max_data/30, 0.9*max_data
         ax[1].set_ylim(vmin, vmax)
         ax[1].grid(lw=1.5, ls=':')
-        cmap = plt.get_cmap('gnuplot2_r')
+        cmap = plt.get_cmap(cmap)
         cmap.set_bad(color=(0.9,0.9,0.9))
 
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)

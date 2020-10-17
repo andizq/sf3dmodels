@@ -104,7 +104,7 @@ This customisation allows using the **sf3dmodels** output as input for LIME in a
 Installation
 ************
 
-LIME must be configured separately once the **sf3dmodels** package has been installed with success. 
+LIME must be configured separately after installing the **sf3dmodels** package with success.
 
 The LIME installation is identical to the standard installation 
 (have a look at the `LIME installation notes <https://github.com/andizq/lime/tree/sf3dmodels>`_ section). 
@@ -161,7 +161,7 @@ Developers
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
-Special thanks to the people who have reported bugs and shared ideas to improve sf3dmodels: 
+Special thanks to those who have reported bugs or whose ideas and discussions helped improve sf3dmodels, 
 
 - Rowan Smith
 - Yuxin Lin
