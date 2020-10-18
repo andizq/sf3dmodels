@@ -3,11 +3,11 @@
 ==============
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
-#TODO in show(): Scroll over channels, 2nd slidder for several cubes
-#TODO in Cube: Add convolve() function  
+#TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes  
 from ..utils.constants import G, kb
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
+from matplotlib.ticker import AutoMinorLocator
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
@@ -120,6 +120,7 @@ class Tools:
         """
         beam must be str pointing to fits file to extract beam from header or radio_beam Beam object.
         If Beam object is provided, distance must be set.
+        #frac_pixels: number of averaged pixels on the data to reduce size and time
         """
         from radio_beam import Beam
         from astropy.io import fits
@@ -134,7 +135,7 @@ class Tools:
             pix_scale = (pix_arcsec*u.radian).to(u.arcsec)  
         else: InputError(beam, 'beam object must either be str or Beam instance')
 
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / frac_pixels #4.0 should rather be an input from the user (averaged pixels on the data to reduce size and time)
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / frac_pixels 
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / frac_pixels
         print (x_stddev, beam.major)
         angle = (90*u.deg+beam.pa).to(u.radian).value
@@ -153,6 +154,262 @@ class Tools:
         from astropy import units as u
         return (1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value
 
+class Residuals:
+    pass
+
+class PlotTools:
+    @staticmethod
+    def mod_nticks_cbars(cbars, nbins=5):
+        for cb in cbars:
+            cb.locator = ticker.MaxNLocator(nbins=nbins)
+            cb.update_ticks()
+
+    @staticmethod
+    def mod_major_ticks(ax, axis='both', nbins=6):
+        ax.locator_params(axis=axis, nbins=nbins)
+
+    @staticmethod
+    def mod_minor_ticks(ax):
+        ax.minorticks_on()
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2)) #1 minor tick per major interval
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        
+    @staticmethod
+    def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
+        new_cmap = colors.LinearSegmentedColormap.from_list(
+            'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+            cmap(np.linspace(minval, maxval, n)))
+        return new_cmap
+
+    @staticmethod
+    def get_cmap_from_color(color, lev=3):
+        cmap = matplotlib.colors.to_rgba(color)
+        newcolors = np.tile(cmap, lev).reshape(lev,4) #Repeats the colour lev times
+        newcolors[:,-1] = np.linspace(0.25, 0.95, lev) #Modifies alpha only
+        new_cmap = ListedColormap(newcolors)
+        return new_cmap
+
+    @classmethod
+    def make_up_ax(cls, ax, xlims=(None, None), ylims=(None, None), **kwargs_tick_params):
+        kwargs_t = dict(labeltop=True, labelbottom=False, top=True, right=True, which='both', direction='in')
+        cls.mod_major_ticks(ax)
+        cls.mod_minor_ticks(ax)
+        ax.set_xlim(*xlims)
+        ax.set_ylim(*ylims)
+        ax.tick_params(**kwargs_t)
+
+
+class Contours(PlotTools):
+    @staticmethod
+    def emission_surface(ax, R, phi, R_lev=None, phi_lev=None, extent=None, kwargs_R={}, kwargs_phi={}):
+        kwargs_phif = dict(linestyles=':', linewidths=1.0, colors='k')
+        kwargs_Rf = dict(linewidths=1.4, colors='k')
+        kwargs_phif.update(kwargs_phi)        
+        kwargs_Rf.update(kwargs_R)
+
+        near_nonan = ~np.isnan(R['near'])
+
+        Rmax = np.max(R['near'][near_nonan])
+        if extent is None:
+            extent = np.array([-Rmax, Rmax, -Rmax, Rmax])/sfu.au
+        kwargs_phif.update({'extent': extent})
+        kwargs_Rf.update({'extent': extent})
+
+        if R_lev is None: R_lev = np.linspace(0.06, 0.985, 4)*Rmax
+        else: R_lev = np.sort(R_lev)
+        if phi_lev is None: phi_lev = np.linspace(-np.pi*0.95, np.pi, 11, endpoint=False)
+
+        #Splitting phi into pos and neg to try and avoid ugly contours close to -pi and pi
+        phi_lev_neg = phi_lev[phi_lev<0] 
+        phi_lev_pos = phi_lev[phi_lev>0]
+        phi_neg_near = np.where((phi['near']<0) & (R['near']>R_lev[0]), phi['near'], np.nan)
+        phi_pos_near = np.where((phi['near']>0) & (R['near']>R_lev[0]), phi['near'], np.nan)
+        phi_neg_far = np.where((phi['far']<0) & (R['far']>R_lev[0]), phi['far'], np.nan)
+        phi_pos_far = np.where((phi['far']>0) & (R['far']>R_lev[0]), phi['far'], np.nan)
+
+        ax.contour(R['near'], levels=R_lev, **kwargs_Rf)
+        ax.contour(np.where(near_nonan, np.nan, R['far']), levels=R_lev, **kwargs_Rf)
+
+        ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
+        ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
+        ax.contour(np.where(near_nonan, np.nan, phi_pos_far), levels=phi_lev_pos, **kwargs_phif)
+        ax.contour(np.where(near_nonan, np.nan, phi_neg_far), levels=phi_lev_neg, **kwargs_phif)
+
+    #The following method can be optimised if the contour finding process is separated from the plotting
+    # by returning coords_list and inds_cont first, which will allow the user use the same set of contours to plot different props.
+    @staticmethod
+    def prop_along_coords(ax, prop, coords, coord_ref, coord_levels, 
+                          ax2=None, X=None, Y=None, 
+                          PA=0,
+                          acc_threshold=0.05, 
+                          color_bounds=[np.pi/5, np.pi/2],
+                          colors=['k', 'dodgerblue', (0,1,0), (1,0,0)],
+                          lws=[2, 0.5, 0.2, 0.2],
+                          subtract_quadrants=False):
+        """
+        Compute radial/azimuthal contours according to the model disc geometry 
+        to get and plot information from the input 2D property ``prop``.    
+
+        Parameters
+        ----------
+        ax : `matplotlib.axes` instance, optional
+           ax instance to make the plot. 
+
+        prop : array_like, shape (nx, ny)
+           Input 2D field to extract information along the computed contours.
+        
+        coords : list, shape (2,)
+           coords[0] [array_like, shape (nx, ny)], is the coordinate 2D map onto which contours will be computed using the input ``coord_levels``;
+           coords[1] [array_like, shape (nx, ny)], is the coordinate 2D map against which the ``prop`` values are plotted. The output plot is prop vs coords[1]       
+           
+        coord_ref : scalar
+           Reference coordinate (referred to ``coords[0]``) to highlight among the other contours.
+           
+        coord_levels : array_like, shape (nlevels,)
+           Contour levels to be extracted from ``coords[0]``.
+        
+        ax2 : `matplotlib.axes` instance (or list of instances), optional
+           Additional ax(s) instance(s) to plot the location of contours in the disc. 
+           If provided, ``X`` and ``Y`` must also be passed.
+           
+        X : array_like, shape (nx, ny), optional
+           Meshgrid of the model x coordinate (see `numpy.meshgrid`). Required if ax2 instance(s) is provided.
+
+        Y : array_like, shape (nx, ny), optional
+           Meshgrid of the model y coordinate (see `numpy.meshgrid`). Required if ax2 instance(s) is provided.
+        
+        PA : scalar, optional
+           Reference position angle.
+           
+        acc_threshold : float, optional 
+           Threshold to accept contours at constant coords[0].
+
+        color_bounds : array_like, shape (nbounds,), optional
+           Colour bounds with respect to the reference contour coord_ref.
+           
+        colors : array_like, shape (nbounds+2,), optional
+           Contour colors. (i=0) is reserved for the reference contour coord_ref, 
+           (i>0) for contour colors according to the bounds in color_bounds. 
+           
+        lws : array_like, shape (nbounds+2), optional
+           Contour linewidths. Similarly, (i=0) is reserved for coord_ref and 
+           (i>0) for subsequent bounds.
+
+        subtract_quadrants : bool, optional
+           If True, subtract residuals by folding along the projected minor axis of the disc.
+        """
+        from skimage import measure 
+
+        coord_list, lev_list, resid_list, color_list = [], [], [], []
+        if np.sum(coord_levels==coord_ref)==0: coord_levels = np.append(coord_levels, coord_ref)
+        for lev in coord_levels:
+            contour = measure.find_contours(coords[0], lev) #, fully_connected='high', positive_orientation='high')
+            if len(contour)==0:
+                print ('no contours found for phi =', lev)
+                continue
+            inds_cont = np.round(contour[-1]).astype(np.int)
+            inds_cont = [tuple(f) for f in inds_cont]
+            first_cont = np.array([coords[0][i] for i in inds_cont])
+            second_cont = np.array([coords[1][i] for i in inds_cont])
+            prop_cont = np.array([prop[i] for i in inds_cont])
+            corr_inds = np.abs(first_cont-lev) < acc_threshold
+            if lev == coord_ref: zorder=10
+            else: zorder=np.random.randint(0,10)
+
+            lw = lws[-1]
+            color = colors[-1]
+            for i,bound in enumerate(color_bounds):
+                if lev == coord_ref: 
+                    lw = lws[0]
+                    color = colors[0]
+                    zorder = 10
+                    break
+                if np.abs(coord_ref - lev) < bound: 
+                    lw = lws[i+1]
+                    color = colors[i+1]
+                    break
+
+            if subtract_quadrants:
+                if lev < color_bounds[0]: continue
+                ref_pos = PA+90
+                ref_neg = PA-90
+                angles = second_cont[corr_inds]
+                prop_ = prop_cont[corr_inds]
+                angles_pos = angles[angles>=0]
+                angles_neg = angles[angles<0]
+                relative_diff_pos = ref_pos - angles_pos
+                relative_diff_neg = ref_neg - angles_neg
+                angle_diff_pos, prop_diff_pos = [], []
+                angle_diff_neg, prop_diff_neg = [], []
+
+                for i,diff in enumerate(relative_diff_pos):
+                    #Finding where the difference matches that of the current analysis angle
+                    #The -1 flips the sign so that the number on the other side of the symmetry axis is found                
+                    ind = np.argmin(np.abs(-1*relative_diff_pos - diff))  
+                    mirror_ind = angles==angles_pos[ind]
+                    current_ind = angles==angles_pos[i]
+                    prop_diff = prop_[current_ind][0] - prop_[mirror_ind][0]
+                    angle_diff_pos.append(angles_pos[i])
+                    prop_diff_pos.append(prop_diff)
+                angle_diff_pos = np.asarray(angle_diff_pos)
+                prop_diff_pos = np.asarray(prop_diff_pos)
+
+                if len(angle_diff_pos)>1:
+                    ind_sort_pos = np.argsort(angle_diff_pos)
+                    plot_ang_diff_pos = angle_diff_pos[ind_sort_pos]
+                    plot_prop_diff_pos = prop_diff_pos[ind_sort_pos]
+                    ax.plot(plot_ang_diff_pos, plot_prop_diff_pos, color=color, lw=lw, zorder=zorder)
+                    coord_list.append(plot_ang_diff_pos)
+                    resid_list.append(plot_prop_diff_pos)
+                    color_list.append(color)
+                    lev_list.append(lev)
+                else: 
+                    plot_ang_diff_pos = []
+                    plot_prop_diff_pos = []
+
+                for i,diff in enumerate(relative_diff_neg):
+                    ind = np.argmin(np.abs(-1*relative_diff_neg - diff))
+                    mirror_ind = angles==angles_neg[ind]
+                    current_ind = angles==angles_neg[i]
+                    prop_diff = prop_[current_ind][0] - prop_[mirror_ind][0]
+                    angle_diff_neg.append(angles_neg[i])
+                    prop_diff_neg.append(prop_diff)
+                angle_diff_neg = np.asarray(angle_diff_neg)
+                prop_diff_neg = np.asarray(prop_diff_neg)
+
+                if len(angle_diff_neg)>1:
+                    ind_sort_neg = np.argsort(angle_diff_neg)    
+                    plot_ang_diff_neg = angle_diff_neg[ind_sort_neg]
+                    plot_prop_diff_neg = prop_diff_neg[ind_sort_neg]
+                    ax.plot(plot_ang_diff_neg, plot_prop_diff_neg, color=color, lw=lw, zorder=zorder)
+                    coord_list.append(plot_ang_diff_neg)
+                    resid_list.append(plot_prop_diff_neg)
+                    color_list.append(color)
+                    lev_list.append(lev)
+                else: 
+                    plot_ang_diff_neg = []
+                    plot_prop_diff_neg = []
+
+                """
+                if len(angle_diff_pos)>1 or len(angle_diff_neg)>1:
+                    coord_list.append(np.append(plot_ang_diff_pos, plot_ang_diff_neg))
+                    resid_list.append(np.append(plot_prop_diff_pos, plot_prop_diff_neg))
+                    color_list.append(color)
+                    lev_list.append(lev)
+                """
+            else: ax.plot(second_cont[corr_inds], prop_cont[corr_inds], color=color, lw=lw, zorder=zorder)
+
+            if ax2 is not None:
+                x_cont = np.array([X[i] for i in inds_cont])
+                y_cont = np.array([Y[i] for i in inds_cont])
+            if isinstance(ax2, matplotlib.axes._subplots.Axes): 
+                ax2.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw)
+            elif isinstance(ax2, list):
+                for axi in ax2: 
+                    if isinstance(axi, matplotlib.axes._subplots.Axes): axi.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw)
+
+        return coord_list, resid_list, color_list, lev_list
+ 
 
 class Cube(object):
     def __init__(self, nchan, channels, data, beam=False, tb={'nu': False, 'beam': False}):
@@ -1398,7 +1655,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
     def orientation(incl=np.pi/4, PA=0.0):
         return incl, PA
 
-    def get_projected_coords(self, z_mirror=False, R_inner=0, R_disc=None):
+    def get_projected_coords(self, z_mirror=False, R_inner=0, R_disc=None, 
+                             R_nan_val=0, phi_nan_val=10*np.pi, z_nan_val=0):
 
         from scipy.interpolate import griddata
         #*************************************
@@ -1436,7 +1694,12 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             if R_disc is not None: 
                 for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>R_inner), prop[side], np.nan)
             
-        return R, phi, z
+        R_nonan, phi_nonan, z_nonan = None, None, None
+        if R_nan_val is not None: R_nonan = {side: np.where(np.isnan(R[side]), R_nan_val, R[side]) for side in ['near', 'far']}
+        if phi_nan_val is not None: phi_nonan = {side: np.where(np.isnan(phi[side]), phi_nan_val, phi[side]) for side in ['near', 'far']}
+        if z_nan_val is not None: z_nonan = {side: np.where(np.isnan(z[side]), z_nan_val, z[side]) for side in ['near', 'far']}
+
+        return R, phi, z, R_nonan, phi_nonan, z_nonan
         
     def make_model(self, z_mirror=False, R_inner=0, R_disc=None):
                    
