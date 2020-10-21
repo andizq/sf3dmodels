@@ -27,7 +27,7 @@ The output model can then be read with `LIME <https://lime.readthedocs.io/en/lat
 `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ or `Polaris <http://www1.astrophysik.uni-kiel.de/~polaris/downloads.html>`_
 to compute the radiative transfer of the modelled region, which is a key step prior comparison to real observations. 
 
-.. image:: ./images/intro_sf3dmodels0_pdf.pdf
+.. image:: https://render.githubusercontent.com/view/pdf?commit=4b7a98e8015ec1fd3f8b0a15812523142d7fc466&enc_url=68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f616e64697a712f737461722d666f726d696e672d726567696f6e732f346237613938653830313565633166643366386230613135383132353233313432643766633436362f696d616765732f696e74726f5f736633646d6f64656c73305f7064662e706466&nwo=andizq%2Fstar-forming-regions&path=images%2Fintro_sf3dmodels0_pdf.pdf&repository_id=112042758&repository_type=Repository#127b9b5c-ec89-4935-85bd-6d3807f1d51c
    :width: 680
 
 The sf3models *grid* and *rt* (radiative transfer) modules can also be used as wrappers between hydrodynamical simulations and 
