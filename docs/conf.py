@@ -72,7 +72,8 @@ rst_epilog += """
 .. _Documentation: http://star-forming-regions.readthedocs.io
 .. _RADMC-3D: http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d
 .. _LIME: https://lime.readthedocs.io/en/latest
-.. _AREPO:  https://wwwmpa.mpa-garching.mpg.de/~volker/arepo
+.. _Polaris: http://www1.astrophysik.uni-kiel.de/~polaris/downloads.html
+.. _AREPO: https://arepo-code.org
 .. _Izquierdo+2018: https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I
 .. _Galvan-Madrid+2010: https://ui.adsabs.harvard.edu/abs/2010ApJ...725...17G 
 .. _Maud+2017: https://ui.adsabs.harvard.edu/abs/2017MNRAS.467L.120M
