@@ -190,14 +190,48 @@ class PlotTools:
         return new_cmap
 
     @classmethod
-    def make_up_ax(cls, ax, xlims=(None, None), ylims=(None, None), **kwargs_tick_params):
+    def make_up_ax(cls, ax, xlims=(None, None), ylims=(None, None), 
+                   mod_minor=True, mod_major=True, **kwargs_tick_params):
         kwargs_t = dict(labeltop=True, labelbottom=False, top=True, right=True, which='both', direction='in')
-        cls.mod_major_ticks(ax)
-        cls.mod_minor_ticks(ax)
+        kwargs_t.update(kwargs_tick_params)
+        if mod_major: cls.mod_major_ticks(ax)
+        if mod_minor: cls.mod_minor_ticks(ax)
         ax.set_xlim(*xlims)
         ax.set_ylim(*ylims)
         ax.tick_params(**kwargs_t)
+    
+    @staticmethod
+    def append_stddev_panel(ax, prop):
+        gauss = lambda x, A, mu, sigma: A*np.exp(-(x-mu)**2/(2.*sigma**2))
+        ax[-1].set_xlim(-0.2, 1.2)
+        ax1_ylims = ax[-2].get_ylim()
+        for axi in ax[:-1]: axi.tick_params(which='both', right=False, labelright=False)
+        ax[-1].tick_params(which='both', top=False, bottom=False, labelbottom=False, 
+                           left=False, labelleft=False, right=True, labelright=True)
+        ax[-1].yaxis.set_label_position('right')
+        ax[-1].spines['left'].set_color('0.6')
+        ax[-1].spines['left'].set_linewidth(3.5)
+    
+        prop_mean = np.mean(prop)
+        prop_std = np.std(prop)
+        prop_x = np.linspace(prop_mean-4*prop_std, prop_mean+4*prop_std, 100)
+        prop_pars =  [1.0, prop_mean, prop_std]
+        prop_y = gauss(prop_x, *prop_pars)
+        ax[-1].plot(prop_y, prop_x, color='limegreen', lw=3.5)
+        #ax[-1].plot([-0.2, 1.0], [prop_mean]*2, color='0.6', lw=2.5)
+        #for axi in ax[:-1]: axi.axhline(prop_mean, color='0.6', lw=2.5)
+    
+        for i in range(0,4): 
+            prop_stdi = prop_mean+i*prop_std
+            gauss_prop_stdi = gauss(prop_stdi, *prop_pars)
+            ax[-1].plot([-0.2, gauss_prop_stdi], [prop_stdi]*2, color='0.6', ls=':', lw=2.)
+            for axi in ax[:-1]: axi.axhline(prop_stdi, color='0.6', ls=':', lw=2.)
+            if prop_stdi < ax1_ylims[-1] and i>0:
+                ax[-1].text(gauss_prop_stdi+0.2, prop_stdi, r'%d$\sigma$'%i, 
+                            fontsize=14, ha='center', va='center', rotation=-90)
 
+        for axi in ax: axi.set_ylim(*ax1_ylims)
+       
 
 class Contours(PlotTools):
     @staticmethod
@@ -408,7 +442,7 @@ class Contours(PlotTools):
                 for axi in ax2: 
                     if isinstance(axi, matplotlib.axes._subplots.Axes): axi.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw)
 
-        return coord_list, resid_list, color_list, lev_list
+        return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
  
 
 class Cube(object):
