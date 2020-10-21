@@ -44,17 +44,17 @@ The output model can then be read with `LIME <https://lime.readthedocs.io/en/lat
 to compute the radiative transfer of the modelled region, which is a key step prior comparison to real observations. 
 
 .. image:: ../images/intro_sf3dmodels0_pdf.pdf
-   :width: 675
-
+   :width: 680
 
 The sf3models *grid* and *rt* (radiative transfer) modules can also be used as wrappers between hydrodynamical simulations and 
 radiative transfer codes. These modules are especially dedicated to treat irregular meshes (e.g. Voronoi meshes or SPH grid particles).
 
 .. image:: ../images/intro_sf3dmodels1_pdf.pdf
-   :width: 675
+   :width: 680
 
 Take a look at the following examples linking `AREPO <https://arepo-code.org>`_ and `Phantom <https://phantomsph.readthedocs.io>`_ hydrodynamical simulations with Polaris and LIME,
 
+Put links to example folders here...
 
 Requirements
 ============
@@ -223,6 +223,26 @@ Developers
 * `Roberto Galvan-Madrid <https://github.com/rgalvanmadrid>`_
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
+
+Special thanks to those who have reported bugs or whose ideas and discussions helped improve sf3dmodels, 
+
+- Rowan Smith
+- Yuxin Lin
+- Antonio Hernandez
+- Jonathan Henshaw
+- Qizhou Zhang
+- Leonardo Testi
+- Stefano Facchini
+- Ewine van Dishoeck
+- Pietro Curone
+
+Papers using sf3dmodels
+=======================
+
+- `Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_
+- `Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
+- `Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
+- Izquierdo et al. (2020, subm.) The Cloud Factory II
 
 License
 =======
