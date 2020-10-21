@@ -27,13 +27,13 @@ The output model can then be read with `LIME <https://lime.readthedocs.io/en/lat
 `RADMC-3D <http://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ or `Polaris <http://www1.astrophysik.uni-kiel.de/~polaris/downloads.html>`_
 to compute the radiative transfer of the modelled region, which is a key step prior comparison to real observations. 
 
-.. image:: ../images/intro_sf3dmodels0_pdf.pdf
+.. image:: ./images/intro_sf3dmodels0_pdf.pdf
    :width: 680
 
 The sf3models *grid* and *rt* (radiative transfer) modules can also be used as wrappers between hydrodynamical simulations and 
 radiative transfer codes. These modules are especially dedicated to treat irregular meshes (e.g. Voronoi meshes or SPH grid particles).
 
-.. image:: ../images/intro_sf3dmodels1_pdf.pdf
+.. image:: ./images/intro_sf3dmodels1_pdf.pdf
    :width: 680
 
 Take a look at the following examples linking `AREPO <https://arepo-code.org>`_ and `Phantom <https://phantomsph.readthedocs.io>`_ hydrodynamical simulations with Polaris and LIME.
