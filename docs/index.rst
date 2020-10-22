@@ -20,23 +20,24 @@ systems such as those being revealed by state-of-the-art telescopes. The package
 individual/isolated objects or, alternatively, (ii) couple multiple models in a single grid 
 to recreate composite regions.
 
-.. image:: ../images/burger_face.png
-   :width: 112.5
+..
+ .. image:: ../images/burger_face.png
+    :width: 112.5
 
-.. image:: ../images/burger_edge.png
-   :width: 112.5
+ .. image:: ../images/burger_edge.png
+    :width: 112.5
 
-.. image:: ../images/burger_tapering.png
-   :width: 112.5
+ .. image:: ../images/burger_tapering.png
+    :width: 112.5
 
-.. image:: ../images/global_objects.png
-   :width: 112.5
+ .. image:: ../images/global_objects.png
+    :width: 112.5
 
-.. image:: ../images/compact_sources.png
-   :width: 112.5
+ .. image:: ../images/compact_sources.png
+    :width: 112.5
 
-.. image:: ../images/pIntensitypoints.png
-   :width: 112.5
+ .. image:: ../images/pIntensitypoints.png
+    :width: 112.5
 
  
 The output model can then be read with `LIME <https://lime.readthedocs.io/en/latest/>`_,
@@ -54,7 +55,8 @@ radiative transfer codes. These modules are especially dedicated to treat irregu
 
 Take a look at the following examples linking `AREPO <https://arepo-code.org>`_ and `Phantom <https://phantomsph.readthedocs.io>`_ hydrodynamical simulations with Polaris and LIME,
 
-Put links to example folders here...
+`AREPO examples <https://github.com/andizq/star-forming-regions/tree/master/examples/arepo_code>`_
+`Phantom examples <https://github.com/andizq/star-forming-regions/tree/master/examples/phantom_code>`_
 
 Requirements
 ============
