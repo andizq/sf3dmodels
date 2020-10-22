@@ -1,6 +1,6 @@
 # Dust continuum and line emission from a broken disc, triggered by a binary system, simulated with the Phantom SPH code 
 
-Download the simulation snapshot [here](https://girder.hub.yt/#user/5da06b5868085e00016c2dee/folder/5f9173da68085e0001d27e7e)
+Download the simulation snapshot [here](https://girder.hub.yt/#user/5da06b5868085e00016c2dee/folder/5f9173da68085e0001d27e7e) <br/>
 Simulation credit: Facchini et al. 2018
 
 Type the following commands in a terminal:
