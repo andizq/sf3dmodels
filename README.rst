@@ -37,6 +37,7 @@ radiative transfer codes. These modules are especially dedicated to treat irregu
 Take a look at the following examples linking `AREPO <https://arepo-code.org>`_ and `Phantom <https://phantomsph.readthedocs.io>`_ hydrodynamical simulations with Polaris and LIME.
 
 `AREPO examples <https://github.com/andizq/star-forming-regions/tree/master/examples/arepo_code>`_
+
 `Phantom examples <https://github.com/andizq/star-forming-regions/tree/master/examples/phantom_code>`_
 
 Documentation
