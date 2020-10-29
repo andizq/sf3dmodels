@@ -237,6 +237,8 @@ Special thanks to those who have reported bugs or whose ideas and discussions he
 - Stefano Facchini
 - Ewine van Dishoeck
 - Pietro Curone
+- Carlos Carrasco-González
+- Adriana Rodríguez-Kamenetzky
 
 Papers using sf3dmodels
 =======================
