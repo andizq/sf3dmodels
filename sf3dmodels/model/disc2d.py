@@ -7,8 +7,8 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 from ..utils.constants import G, kb
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
-from matplotlib.ticker import AutoMinorLocator
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import matplotlib
 import warnings
@@ -171,8 +171,8 @@ class PlotTools:
     @staticmethod
     def mod_minor_ticks(ax):
         ax.minorticks_on()
-        ax.xaxis.set_minor_locator(AutoMinorLocator(2)) #1 minor tick per major interval
-        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2)) #1 minor tick per major interval
+        ax.yaxis.set_minor_locator(ticker.AutoMinorLocator(2))
         
     @staticmethod
     def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
