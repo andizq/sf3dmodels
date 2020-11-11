@@ -70,7 +70,7 @@ radmc.write_stars(nstars=1, pos=[[0,0,0]], rstars = [u.RSun], mstars = [u.MSun],
                   lam = wavelength_intervals, nxx = wavelength_divisions) 
 radmc.write_wavelength_micron(lam = wavelength_intervals, nxx = wavelength_divisions) #lam --> wavelengths in microns, nxx --> number of divisions in between wavelengths
 
-Model.PrintProperties(density, temperature, GRID)                
+Model.PrintProperties(density, temperature, GRID)
 
 #---------------
 #PLOTTING 2D z=0

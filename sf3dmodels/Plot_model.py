@@ -409,8 +409,8 @@ def plane2D(GRID, prop, axisunit = 1.0, plane = {'z': 0}, rot_dict = False,
         xyz = ['X', 'Y', 'Z']
         #ax.set_xlabel(xyz[dim2plot[0]])
         #ax.set_ylabel(xyz[dim2plot[1]])
-        ax.set_ylabel('au')
-        ax.set_xlabel('au')
+        #ax.set_ylabel('au')
+        #ax.set_xlabel('au')
         
         min_cbar, max_cbar = im.get_clim()
         min_prop, max_prop = np.min(prop_2d), np.max(prop_2d) 
