@@ -8,6 +8,7 @@ from ..utils.constants import G, kb
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib import ticker
 import numpy as np
 import matplotlib
@@ -154,8 +155,10 @@ class Tools:
         from astropy import units as u
         return (1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value
 
+
 class Residuals:
     pass
+
 
 class PlotTools:
     @staticmethod
@@ -231,11 +234,15 @@ class PlotTools:
                             fontsize=14, ha='center', va='center', rotation=-90)
 
         for axi in ax: axi.set_ylim(*ax1_ylims)
+
        
+class Canvas3d:
+    pass
+
 
 class Contours(PlotTools):
     @staticmethod
-    def emission_surface(ax, R, phi, R_lev=None, phi_lev=None, extent=None, kwargs_R={}, kwargs_phi={}):
+    def emission_surface(ax, R, phi, R_lev=None, phi_lev=None, extent=None, proj_offset=None, X=None, Y=None, kwargs_R={}, kwargs_phi={}):
         kwargs_phif = dict(linestyles=':', linewidths=1.0, colors='k')
         kwargs_Rf = dict(linewidths=1.4, colors='k')
         kwargs_phif.update(kwargs_phi)        
@@ -261,13 +268,21 @@ class Contours(PlotTools):
         phi_neg_far = np.where((phi['far']<0) & (R['far']>R_lev[0]), phi['far'], np.nan)
         phi_pos_far = np.where((phi['far']>0) & (R['far']>R_lev[0]), phi['far'], np.nan)
 
-        ax.contour(R['near'], levels=R_lev, **kwargs_Rf)
-        ax.contour(np.where(near_nonan, np.nan, R['far']), levels=R_lev, **kwargs_Rf)
-
-        ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
-        ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
-        ax.contour(np.where(near_nonan, np.nan, phi_pos_far), levels=phi_lev_pos, **kwargs_phif)
-        ax.contour(np.where(near_nonan, np.nan, phi_neg_far), levels=phi_lev_neg, **kwargs_phif)
+        if proj_offset is not None: #For 3d projections
+            ax.contour(X, Y, R['near'], offset=proj_offset, levels=R_lev, **kwargs_Rf)
+            ax.contour(X, Y, np.where(near_nonan, np.nan, R['far']), offset=proj_offset, levels=R_lev, **kwargs_Rf)
+            ax.contour(X, Y, phi_pos_near, offset=proj_offset, levels=phi_lev_pos, **kwargs_phif)
+            ax.contour(X, Y, phi_neg_near, offset=proj_offset, levels=phi_lev_neg, **kwargs_phif)
+            ax.contour(X, Y, np.where(near_nonan, np.nan, phi_pos_far), offset=proj_offset, levels=phi_lev_pos, **kwargs_phif)
+            ax.contour(X, Y, np.where(near_nonan, np.nan, phi_neg_far), offset=proj_offset, levels=phi_lev_neg, **kwargs_phif)
+            
+        else:
+            ax.contour(R['near'], levels=R_lev, **kwargs_Rf)
+            ax.contour(np.where(near_nonan, np.nan, R['far']), levels=R_lev, **kwargs_Rf)
+            ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
+            ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
+            ax.contour(np.where(near_nonan, np.nan, phi_pos_far), levels=phi_lev_pos, **kwargs_phif)
+            ax.contour(np.where(near_nonan, np.nan, phi_neg_far), levels=phi_lev_neg, **kwargs_phif)
 
     #The following method can be optimised if the contour finding process is separated from the plotting
     # by returning coords_list and inds_cont first, which will allow the user use the same set of contours to plot different props.
@@ -443,10 +458,10 @@ class Contours(PlotTools):
                     if isinstance(axi, matplotlib.axes._subplots.Axes): axi.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw)
 
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
- 
+
 
 class Cube(object):
-    def __init__(self, nchan, channels, data, beam=False, tb={'nu': False, 'beam': False}):
+    def __init__(self, nchan, channels, data, beam=False, beam_kernel=False, tb={'nu': False, 'beam': False}):
         self.nchan = nchan
         self.channels = channels
         self.data = data
@@ -454,6 +469,7 @@ class Cube(object):
         self._interactive = self.cursor
         self._interactive_path = self.curve
         if beam: self.beam = beam
+        if beam_kernel: self.beam_kernel = beam_kernel
         if isinstance(tb, dict):
             if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'])
 
@@ -527,7 +543,6 @@ class Cube(object):
    
     def box(self, fig, ax, extent=None, compare_cubes=[], stat_func=np.mean, **kwargs):
         from matplotlib.widgets import RectangleSelector
-        import matplotlib.patches as patches
         
         def onselect(eclick, erelease):
             if eclick.inaxes is ax[0]:
@@ -618,17 +633,27 @@ class Cube(object):
 
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         return cid
+
+    def _plot_beam(self, ax):
+        x_fwhm = self.beam_kernel.model.x_fwhm
+        y_fwhm = self.beam_kernel.model.y_fwhm
+        ny_pix, nx_pix = np.shape(self.data[0])
+        ellipse = patches.Ellipse(xy = (0.05,0.05), angle = 90+self.beam.pa.value,
+                                  width=x_fwhm/nx_pix, height=y_fwhm/ny_pix, lw=1, fill=True, 
+                                  fc='gray', ec='k', transform=ax.transAxes)
+        ax.add_artist(ellipse)
         
     def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True, cmap='gnuplot2_r',
              int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
-             **kwargs):
+             show_beam=False, **kwargs):
         from matplotlib.widgets import Slider, Cursor, Button
         v0, v1 = self.channels[0], self.channels[-1]
         dv = v1-v0
         fig, ax = plt.subplots(ncols=2, figsize=(12,5))
-        
+        plt.subplots_adjust(wspace=0.25)
+
         y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
-        axcbar = plt.axes([0.48, y0, 0.03, y1-y0])
+        axcbar = plt.axes([0.47, y0, 0.03, y1-y0])
         max_data = np.max(self.data)
         ax[0].set_xlabel(pos_unit)
         ax[0].set_ylabel(pos_unit)
@@ -643,6 +668,8 @@ class Cube(object):
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap(cmap)
         cmap.set_bad(color=(0.9,0.9,0.9))
+
+        if show_beam and self.beam_kernel: self._plot_beam(ax[0])
 
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
@@ -713,7 +740,9 @@ class Cube(object):
             print ('Cleaning interactive figure...')
             plt.close()
             chan = int(slider_chan.val)
-            self.show(extent, chan, compare_cubes, cursor_grid, int_unit, pos_unit, vel_unit, **kwargs)
+            self.show(extent=extent, chan_init=chan, compare_cubes=compare_cubes, 
+                      cursor_grid=cursor_grid, int_unit=int_unit, pos_unit=pos_unit, 
+                      vel_unit=vel_unit, **kwargs)
 
         
         box_img = plt.imread(path_file+'button_box.png')
@@ -810,14 +839,15 @@ class Cube(object):
 
     def show_path(self, x, y, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True,
                   int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
-                  **kwargs):
+                  show_beam=False, **kwargs):
         from matplotlib.widgets import Slider, Cursor, Button
         v0, v1 = self.channels[0], self.channels[-1]
         dv = v1-v0
         fig, ax = plt.subplots(ncols=2, figsize=(12,5))
-        
+        plt.subplots_adjust(wspace=0.25)
+
         y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
-        axcbar = plt.axes([0.48, y0, 0.03, y1-y0])
+        axcbar = plt.axes([0.47, y0, 0.03, y1-y0])
         max_data = np.max(self.data)
         ax[0].set_xlabel(pos_unit)
         ax[0].set_ylabel(pos_unit)
@@ -833,6 +863,8 @@ class Cube(object):
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap('brg')
         cmap.set_bad(color=(0.9,0.9,0.9))
+
+        if show_beam and self.beam_kernel: self._plot_beam(ax[0])
 
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
@@ -1384,7 +1416,7 @@ class Intensity:
 
             cube.append(int2d_full)
 
-        return Cube(nchan, channels, np.array(cube), beam=self.beam_info, tb=tb)
+        return Cube(nchan, channels, np.array(cube), beam=self.beam_info, beam_kernel=self.beam_kernel, tb=tb)
 
     @staticmethod
     def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, linewidth2d, nchans=30, folder='./movie_channels/', **kwargs):
