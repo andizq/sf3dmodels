@@ -12,6 +12,7 @@ import matplotlib.patches as patches
 from matplotlib import ticker
 import numpy as np
 import matplotlib
+import itertools
 import warnings
 import numbers
 import emcee
@@ -654,7 +655,7 @@ class Cube(object):
 
         y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
         axcbar = plt.axes([0.47, y0, 0.03, y1-y0])
-        max_data = np.max(self.data)
+        max_data = np.max([self.data]+[comp.data for comp in compare_cubes])
         ax[0].set_xlabel(pos_unit)
         ax[0].set_ylabel(pos_unit)
         ax[1].set_xlabel('l.o.s velocity [%s]'%vel_unit)
@@ -663,7 +664,7 @@ class Cube(object):
         ax[1].set_ylabel(int_unit, labelpad=15)
         ax[1].yaxis.set_label_position('right')
         ax[1].set_xlim(v0-0.1, v1+0.1)
-        vmin, vmax = -max_data/30, 0.9*max_data
+        vmin, vmax = -1*max_data/100, 0.98*max_data#0.8*max_data#
         ax[1].set_ylim(vmin, vmax)
         ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap(cmap)
@@ -1377,10 +1378,12 @@ class Intensity:
 
         return int2d_full
 
-    def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
+    #def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
+    def get_cube(self, vchannels, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=None, tb={'nu': False, 'beam': False}, **kwargs):
         vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
         line_profile = self.line_profile
-        channels = np.linspace(vchan0, vchan1, num=nchan)
+        if nchan is None: nchan=len(vchannels)
+        #channels = np.linspace(vchan0, vchan1, num=nchan)
         cube = []
 
         if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
@@ -1399,8 +1402,11 @@ class Intensity:
             vel2d_near_nan = np.isnan(vel2d['near'])#~vel2d['near'].mask#
             vel2d_far_nan = np.isnan(vel2d['far'])#~vel2d['far'].mask#
 
-        for i, v_chan in enumerate(channels):    
-            v_near, v_far = self.get_line_profile(v_chan, vel2d, linew2d, lineb2d, **kwargs)
+        #for i, v_chan in enumerate(vchannels):
+        #viter = iter(vchannels)
+        #for _ in itertools.repeat(None, nchan):
+        for i in range(nchan):
+            v_near, v_far = self.get_line_profile(vchannels[i], vel2d, linew2d, lineb2d, **kwargs)
             v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
             v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
             
@@ -1543,11 +1549,10 @@ class Mcmc:
         vel2d, int2d, linew2d, lineb2d = self.make_model(**kwargs)
 
         lnx2=0    
-        nchans = len(self.channels)
-        
-        cube = self.get_cube(self.channels[0], self.channels[-1], vel2d, int2d, linew2d, lineb2d, nchan=nchans)#, tb = {'nu': 230, 'beam': self.beam_info})
-        for i in range(nchans):
-            model_chan = cube.data[i] #self.get_channel(vel2d, int2d, linew2d, lineb2d, self.channels[i])
+        #nchan = len(self.channels)
+        model = self.get_cube(self.channels, vel2d, int2d, linew2d, lineb2d, nchan=self.nchan)#, tb = {'nu': 230, 'beam': self.beam_info})
+        for i in range(nchan):
+            model_chan = model.data[i] #self.get_channel(vel2d, int2d, linew2d, lineb2d, self.channels[i])
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
@@ -1614,7 +1619,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         #Get and print default parameters for default functions
         self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'lineslope', 'height_near', 'height_far']
 
-        self.mc_params = {'velocity': {'Mstar': True, 'vel_sign': 1},
+        self.mc_params = {'velocity': {'Mstar': True, 
+                                       'vel_sign': 1,
+                                       'vsys': 0},
                           'orientation': {'incl': True, 
                                           'PA': True},
                           'intensity': {'I0': True, 
@@ -1630,7 +1637,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                           'height_far': {'psi': True},
                           }
         
-        self.mc_boundaries = {'velocity': {'Mstar': [0.05, 5.0]},
+        self.mc_boundaries = {'velocity': {'Mstar': [0.05, 5.0],
+                                           'vsys': [-10, 10]},
                               'orientation': {'incl': [-np.pi/3, np.pi/3], 
                                               'PA': [-np.pi, np.pi]},
                               'intensity': {'I0': [0, 100], 
@@ -1662,6 +1670,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                  plot_walkers=True, plot_corner=True, **kwargs_model): #p0 from 'optimize', 'min', 'max', list of values.
         self.data = data
         self.channels = channels
+        self.nchan = len(channels)
         self.noise_stddev = noise_stddev
 
         kwargs_model.update({'z_mirror': z_mirror})
@@ -1674,7 +1683,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         print ('Parameters to fit and fixed parameters:', self.mc_params)            
         print ('Number of mc parameters:', self.mc_nparams)
         print ('Kind of parameters:', self.mc_kind)
-        print ('Parameters boundaries:', self.mc_boundaries_list)
+        print ('Parameter boundaries:', self.mc_boundaries_list)
         
         if p0_mean == 'optimize': p0_mean = optimize_p0()
         if isinstance(p0_mean, (list, tuple, np.ndarray)): 
@@ -1791,7 +1800,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                      'far': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
 
         #*******************************
-        #COMPUTE PROPERTIES ON TRUE GRID #This will no longer be necessary as all the three functions will always be called
+        #COMPUTE PROPERTIES ON SKY GRID #This will no longer be necessary as all four functions will always be called
         avai_kwargs = [vel_kwargs, int_kwargs, lw_kwargs, ls_kwargs]
         avai_funcs = [self.velocity_func, self.intensity_func, self.linewidth_func, self.lineslope_func]
         true_kwargs = [isinstance(kwarg, dict) for kwarg in avai_kwargs]
@@ -1824,6 +1833,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                 ang_fac = sin_incl * np.cos(self.phi_true) 
                 props[0]['near'] *= ang_fac 
                 props[0]['far'] *= ang_fac
+                props[0]['near'] += vel_kwargs['vsys']
+                props[0]['far'] += vel_kwargs['vsys']
 
         #***********************************
         #PROJECT PROPERTIES ON THE SKY PLANE        
