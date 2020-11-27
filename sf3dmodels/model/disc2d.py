@@ -1115,14 +1115,14 @@ class Velocity:
         del self._velocity_func
 
     @staticmethod
-    def keplerian(coord, Mstar=1.0, vel_sign=1):
+    def keplerian(coord, Mstar=1.0, vel_sign=1, vsys=0):
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         return vel_sign*np.sqrt(G*Mstar/R) * 1e-3
     
     @staticmethod
-    def keplerian_vertical(coord, Mstar=1.0, vel_sign=1):
+    def keplerian_vertical(coord, Mstar=1.0, vel_sign=1, vsys=0):
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
