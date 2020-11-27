@@ -1422,8 +1422,9 @@ class Intensity:
                 int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
 
             cube.append(int2d_full)
-
-        return Cube(nchan, vchannels, np.array(cube), beam=self.beam_info, beam_kernel=self.beam_kernel, tb=tb)
+            
+        if return_data_only: return np.asarray(cube)
+        else: return Cube(nchan, vchannels, np.asarray(cube), beam=self.beam_info, beam_kernel=self.beam_kernel, tb=tb)
 
     @staticmethod
     def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, linewidth2d, nchans=30, folder='./movie_channels/', **kwargs):
