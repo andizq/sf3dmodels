@@ -1379,7 +1379,8 @@ class Intensity:
         return int2d_full
 
     #def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
-    def get_cube(self, vchannels, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=None, tb={'nu': False, 'beam': False}, **kwargs):
+    def get_cube(self, vchannels, velocity2d, intensity2d, linewidth2d, lineslope2d, 
+                 nchan=None, tb={'nu': False, 'beam': False}, return_data_only=False, **kwargs):
         vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
         line_profile = self.line_profile
         if nchan is None: nchan=len(vchannels)
@@ -1422,7 +1423,7 @@ class Intensity:
 
             cube.append(int2d_full)
 
-        return Cube(nchan, channels, np.array(cube), beam=self.beam_info, beam_kernel=self.beam_kernel, tb=tb)
+        return Cube(nchan, vchannels, np.array(cube), beam=self.beam_info, beam_kernel=self.beam_kernel, tb=tb)
 
     @staticmethod
     def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, linewidth2d, nchans=30, folder='./movie_channels/', **kwargs):
@@ -1549,10 +1550,9 @@ class Mcmc:
         vel2d, int2d, linew2d, lineb2d = self.make_model(**kwargs)
 
         lnx2=0    
-        #nchan = len(self.channels)
-        model = self.get_cube(self.channels, vel2d, int2d, linew2d, lineb2d, nchan=self.nchan)#, tb = {'nu': 230, 'beam': self.beam_info})
-        for i in range(nchan):
-            model_chan = model.data[i] #self.get_channel(vel2d, int2d, linew2d, lineb2d, self.channels[i])
+        model_cube = self.get_cube(self.channels, vel2d, int2d, linew2d, lineb2d, nchan=self.nchan, return_data_only=True)#, tb = {'nu': 230, 'beam': self.beam_info})
+        for i in range(self.nchan):
+            model_chan = model_cube[i] #model_cube.data[i] #self.get_channel(vel2d, int2d, linew2d, lineb2d, self.channels[i])
             mask_data = np.isfinite(self.data[i])
             mask_model = np.isfinite(model_chan)
             data = np.where(np.logical_and(mask_model, ~mask_data), 0, self.data[i])
