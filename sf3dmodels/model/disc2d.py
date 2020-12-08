@@ -257,17 +257,17 @@ class Contours(PlotTools):
         kwargs_phif.update({'extent': extent})
         kwargs_Rf.update({'extent': extent})
 
-        if R_lev is None: R_lev = np.linspace(0.06, 0.985, 4)*Rmax
+        if R_lev is None: R_lev = np.linspace(0.06, 0.97, 4)*Rmax
         else: R_lev = np.sort(R_lev)
         if phi_lev is None: phi_lev = np.linspace(-np.pi*0.95, np.pi, 11, endpoint=False)
 
         #Splitting phi into pos and neg to try and avoid ugly contours close to -pi and pi
         phi_lev_neg = phi_lev[phi_lev<0] 
         phi_lev_pos = phi_lev[phi_lev>0]
-        phi_neg_near = np.where((phi['near']<0) & (R['near']>R_lev[0]), phi['near'], np.nan)
-        phi_pos_near = np.where((phi['near']>0) & (R['near']>R_lev[0]), phi['near'], np.nan)
-        phi_neg_far = np.where((phi['far']<0) & (R['far']>R_lev[0]), phi['far'], np.nan)
-        phi_pos_far = np.where((phi['far']>0) & (R['far']>R_lev[0]), phi['far'], np.nan)
+        phi_neg_near = np.where((phi['near']<0) & (R['near']>R_lev[0]) & (R['near']<R_lev[-1]), phi['near'], np.nan)
+        phi_pos_near = np.where((phi['near']>0) & (R['near']>R_lev[0]) & (R['near']<R_lev[-1]), phi['near'], np.nan)
+        phi_neg_far = np.where((phi['far']<0) & (R['far']>R_lev[0]) & (R['far']<R_lev[-1]), phi['far'], np.nan)
+        phi_pos_far = np.where((phi['far']>0) & (R['far']>R_lev[0]) & (R['far']<R_lev[-1]), phi['far'], np.nan)
 
         if proj_offset is not None: #For 3d projections
             ax.contour(X, Y, R['near'], offset=proj_offset, levels=R_lev, **kwargs_Rf)
@@ -294,7 +294,7 @@ class Contours(PlotTools):
                           acc_threshold=0.05, 
                           color_bounds=[np.pi/5, np.pi/2],
                           colors=['k', 'dodgerblue', (0,1,0), (1,0,0)],
-                          lws=[2, 0.5, 0.2, 0.2],
+                          lws=[2, 0.5, 0.2, 0.2], lw_ax2_factor=1,
                           subtract_quadrants=False):
         """
         Compute radial/azimuthal contours according to the model disc geometry 
@@ -453,10 +453,10 @@ class Contours(PlotTools):
                 x_cont = np.array([X[i] for i in inds_cont])
                 y_cont = np.array([Y[i] for i in inds_cont])
             if isinstance(ax2, matplotlib.axes._subplots.Axes): 
-                ax2.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw)
+                ax2.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw*lw_ax2_factor)
             elif isinstance(ax2, list):
                 for axi in ax2: 
-                    if isinstance(axi, matplotlib.axes._subplots.Axes): axi.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw)
+                    if isinstance(axi, matplotlib.axes._subplots.Axes): axi.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw*lw_ax2_factor)
 
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
 
@@ -644,9 +644,11 @@ class Cube(object):
                                   fc='gray', ec='k', transform=ax.transAxes)
         ax.add_artist(ellipse)
         
+    def surface(self, ax, *args, **kwargs): return Contours.emission_surface(ax, *args, **kwargs)
+
     def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True, cmap='gnuplot2_r',
              int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
-             show_beam=False, **kwargs):
+             show_beam=False, surface={'args': (), 'kwargs': {}}, **kwargs):
         from matplotlib.widgets import Slider, Cursor, Button
         v0, v1 = self.channels[0], self.channels[-1]
         dv = v1-v0
@@ -674,6 +676,7 @@ class Cube(object):
 
         img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
+        img.cmap.set_under('w')
         current_chan = ax[1].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
         text_chan = ax[1].text((self.channels[chan_init]-v0)/dv, 1.02, #Converting xdata coords to Axes coords 
                                '%4.1f %s'%(self.channels[chan_init], vel_unit), ha='center', 
@@ -743,12 +746,16 @@ class Cube(object):
             chan = int(slider_chan.val)
             self.show(extent=extent, chan_init=chan, compare_cubes=compare_cubes, 
                       cursor_grid=cursor_grid, int_unit=int_unit, pos_unit=pos_unit, 
-                      vel_unit=vel_unit, **kwargs)
-
-        
+                      vel_unit=vel_unit, surface=surface, **kwargs)
+        def go2surface(event):
+            self.surface(ax[0], *surface['args'], **surface['kwargs'])
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            
         box_img = plt.imread(path_file+'button_box.png')
         cursor_img = plt.imread(path_file+'button_cursor.jpeg')
         trash_img = plt.imread(path_file+'button_trash.jpg') 
+        surface_img = plt.imread(path_file+'button_surface.png') 
         axbcursor = plt.axes([0.05, 0.709, 0.05, 0.05])
         axbbox = plt.axes([0.05, 0.65, 0.05, 0.05])
         axbtrash = plt.axes([0.05, 0.591, 0.05, 0.05], frameon=True, aspect='equal')
@@ -758,6 +765,10 @@ class Cube(object):
         bbox.on_clicked(go2box)
         btrash = Button(axbtrash, '', image=trash_img, color='white', hovercolor='lime')
         btrash.on_clicked(go2trash)
+        if len(surface['args'])>0:
+            axbsurf = plt.axes([0.005, 0.689, 0.07, 0.07], frameon=True, aspect='equal')
+            bsurf = Button(axbsurf, '', image=surface_img)
+            bsurf.on_clicked(go2surface)
         plt.show()
 
         
