@@ -516,7 +516,7 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
             f.write('%d %d %d\n'%tuple(include_dim))  # Include x,y,z coordinate
             f.write('%d %d %d\n'%(nx,ny,nz))          # Size of grid
 
-            tmp = ['%13.6e '*(n+1) for n in [nx,ny,nz]]
+            tmp = ['%13.12e '*(n+1) for n in [nx,ny,nz]]
             f.write((tmp[0]+'\n')%tuple(xi)) # X values (cell walls)
             f.write((tmp[1]+'\n')%tuple(yi)) # Y values (cell walls)
             f.write((tmp[2]+'\n')%tuple(zi)) # Z values (cell walls)
