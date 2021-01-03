@@ -1737,8 +1737,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             errpos.append(np.percentile(val, [68.2])) 
             val = np.abs(samples[:,i][indneg] - tmp)
             errneg.append(np.percentile(val, [68.2])) 
-        self.best_params_errpos = np.asarray(errpos)
-        self.best_params_errneg = np.asarray(errneg)
+        self.best_params_errpos = np.asarray(errpos).squeeze()
+        self.best_params_errneg = np.asarray(errneg).squeeze()
 
         #************
         #PLOTTING
