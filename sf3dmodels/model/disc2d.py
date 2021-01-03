@@ -1139,7 +1139,7 @@ class Velocity:
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
-        return vel_sign*np.sqrt(G*Mstar/r**3)*R * 1e-3 #to km/s
+        return vel_sign*np.sqrt(G*Mstar/r**3)*R * 1e-3 
 
 
 class Intensity:   
@@ -1726,6 +1726,19 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         best_params = np.median(samples, axis=0)
         self.best_params = best_params
         print ('Median from parameter walkers for the last %d steps:'%nstats, list(zip(self.mc_header, best_params)))
+
+        #Errors: +- 68.2 percentiles
+        errpos, errneg = [], []
+        for i in range(self.mc_nparams):
+            tmp = best_params[i]
+            indpos = samples[:,i] > tmp
+            indneg = samples[:,i] < tmp
+            val = samples[:,i][indpos] - tmp
+            errpos.append(np.percentile(val, [68.2])) 
+            val = np.abs(samples[:,i][indneg] - tmp)
+            errneg.append(np.percentile(val, [68.2])) 
+        self.best_params_errpos = np.asarray(errpos)
+        self.best_params_errneg = np.asarray(errneg)
 
         #************
         #PLOTTING
