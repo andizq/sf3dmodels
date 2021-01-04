@@ -1654,7 +1654,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                               'orientation': {'incl': [-np.pi/3, np.pi/3], 
                                               'PA': [-np.pi, np.pi]},
                               'intensity': {'I0': [0, 100], 
-                                            'p': [-5.0, 5.0], 
+                                            'p': [-10.0, 10.0], 
                                             'q': [0, 5.0]},
                               'linewidth': {'L0': [0.005, 5.0], 
                                             'p': [-5.0, 5.0], 
