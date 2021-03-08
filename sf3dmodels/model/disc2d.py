@@ -177,7 +177,7 @@ class PlotTools:
         ax.minorticks_on()
         ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2)) #1 minor tick per major interval
         ax.yaxis.set_minor_locator(ticker.AutoMinorLocator(2))
-        
+                
     @staticmethod
     def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
         new_cmap = colors.LinearSegmentedColormap.from_list(
@@ -381,7 +381,7 @@ class Contours(PlotTools):
 
             if subtract_quadrants:
                 if lev < color_bounds[0]: continue
-                ref_pos = PA+90
+                ref_pos = PA+90 #Reference axis for positive angles
                 ref_neg = PA-90
                 angles = second_cont[corr_inds]
                 prop_ = prop_cont[corr_inds]
@@ -1020,32 +1020,32 @@ class Cube(object):
 
 class Height:
     @property
-    def z_near_func(self): 
-        return self._z_near_func
+    def z_upper_func(self): 
+        return self._z_upper_func
           
-    @z_near_func.setter 
-    def z_near_func(self, near): 
+    @z_upper_func.setter 
+    def z_upper_func(self, near): 
         print('Setting near-side height function to', near) 
-        self._z_near_func = near
+        self._z_upper_func = near
 
-    @z_near_func.deleter 
-    def z_near_func(self): 
+    @z_upper_func.deleter 
+    def z_upper_func(self): 
         print('Deleting near-side height function') 
-        del self._z_near_func
+        del self._z_upper_func
 
     @property
-    def z_far_func(self): 
-        return self._z_far_func
+    def z_lower_func(self): 
+        return self._z_lower_func
           
-    @z_far_func.setter 
-    def z_far_func(self, far): 
+    @z_lower_func.setter 
+    def z_lower_func(self, far): 
         print('Setting far-side height function to', far) 
-        self._z_far_func = far
+        self._z_lower_func = far
 
-    @z_far_func.deleter 
-    def z_far_func(self): 
+    @z_lower_func.deleter 
+    def z_lower_func(self): 
         print('Deleting far-side height function') 
-        del self._z_far_func
+        del self._z_lower_func
 
     psi0 = 15*np.pi/180
     @staticmethod
@@ -1522,14 +1522,14 @@ class Mcmc:
                 axij.plot(walker, alpha=0.1, lw=1.0, color='k')
                 if header is not None: 
                     #axij.set_ylabel(header[k])
-                    axij.text(0.06, 0.84, header[k], va='baseline', fontsize=MEDIUM_SIZE-2, transform=axij.transAxes, rotation=90)
-            if i==0: axij.set_title(key, pad=10)
+                    axij.text(0.1, 0.1, header[k], va='center', ha='left', fontsize=MEDIUM_SIZE+2, transform=axij.transAxes, rotation=0) #0.06, 0.95, va top, rot 90
+            if i==0: axij.set_title(key, pad=10, fontsize=MEDIUM_SIZE+2)
             if nstats is not None: 
                 axij.axvline(nsteps-nstats, ls=':', lw=2, color='r')
                 x0_hline = nsteps-nstats
 
             axij.plot([x0_hline, nsteps], [best_params[k]]*2, ls='-', lw=3, color='dodgerblue')
-            axij.text((nsteps-1)+0.024*nsteps, best_params[k], '%.3f'%best_params[k], va='center', color='dodgerblue', fontsize=SMALL_SIZE+2, rotation=90) 
+            axij.text((nsteps-1)+0.03*nsteps, best_params[k], '%.3f'%best_params[k], va='center', color='dodgerblue', fontsize=MEDIUM_SIZE+1, rotation=90) 
             axij.tick_params(axis='y', which='major', labelsize=SMALL_SIZE, rotation=45)
             axij.set_xlim(None, nsteps-1 + 0.01*nsteps)
             col_count[j]+=1
@@ -1591,8 +1591,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         if beam is not None: 
             self.beam_info, self.beam_kernel = Tools.get_beam_from(beam, grid, **kwargs_beam)
 
-        self._z_near_func = General2d.z_cone
-        self._z_far_func = General2d.z_cone_neg
+        self._z_upper_func = General2d.z_cone
+        self._z_lower_func = General2d.z_cone_neg
         self._velocity_func = General2d.keplerian
         self._intensity_func = General2d.intensity_powerlaw
         self._linewidth_func = General2d.linewidth_powerlaw
@@ -1629,7 +1629,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         else: self.subpixels=False
 
         #Get and print default parameters for default functions
-        self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'lineslope', 'height_near', 'height_far']
+        self.categories = ['velocity', 'orientation', 'intensity', 'linewidth', 'lineslope', 'height_upper', 'height_lower']
 
         self.mc_params = {'velocity': {'Mstar': True, 
                                        'vel_sign': 1,
@@ -1645,8 +1645,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                           'lineslope': {'Ls': False, 
                                         'p': False, 
                                         'q': False},
-                          'height_near': {'psi': True},
-                          'height_far': {'psi': True},
+                          'height_upper': {'psi': True},
+                          'height_lower': {'psi': True},
                           }
         
         self.mc_boundaries = {'velocity': {'Mstar': [0.05, 5.0],
@@ -1662,8 +1662,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                               'lineslope': {'Ls': [0.005, 100], 
                                             'p': [-5.0, 5.0], 
                                             'q': [-5.0, 5.0]},
-                              'height_near': {'psi': [0, np.pi/2]},
-                              'height_far': {'psi': [0, np.pi/2]}
+                              'height_upper': {'psi': [0, np.pi/2]},
+                              'height_lower': {'psi': [0, np.pi/2]}
                               }
 
         if prototype:
@@ -1687,7 +1687,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         kwargs_model.update({'z_mirror': z_mirror})
         if z_mirror: 
-            for key in self.mc_params['height_far']: self.mc_params['height_far'][key] = 'height_near'
+            for key in self.mc_params['height_lower']: self.mc_params['height_lower'][key] = 'height_upper'
         self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
         self.params = copy.deepcopy(self.mc_params)
 
@@ -1767,10 +1767,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
         z_true = {}
-        z_true['near'] = self.z_near_func({'R': self.R_true}, **self.params['height_near'])
+        z_true['near'] = self.z_upper_func({'R': self.R_true}, **self.params['height_upper'])
 
         if z_mirror: z_true['far'] = -z_true['near']
-        else: z_true['far'] = self.z_far_func({'R': self.R_true}, **self.params['height_far']) 
+        else: z_true['far'] = self.z_lower_func({'R': self.R_true}, **self.params['height_lower']) 
             
         grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
                      'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
@@ -1816,10 +1816,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
-        z_true = self.z_near_func({'R': self.R_true}, **self.params['height_near'])
+        z_true = self.z_upper_func({'R': self.R_true}, **self.params['height_upper'])
 
         if z_mirror: z_true_far = -z_true
-        else: z_true_far = self.z_far_func({'R': self.R_true}, **self.params['height_far']) 
+        else: z_true_far = self.z_lower_func({'R': self.R_true}, **self.params['height_lower']) 
             
         grid_true = {'near': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true], 
                      'far': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
@@ -1836,10 +1836,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             subpix_vel = []
             for i in range(self.subpixels):
                 for j in range(self.subpixels):
-                    z_true = self.z_near_func({'R': self.sub_R_true[i][j]}, **self.params['height_near'])
+                    z_true = self.z_upper_func({'R': self.sub_R_true[i][j]}, **self.params['height_upper'])
                     
                     if z_mirror: z_true_far = -z_true
-                    else: z_true_far = self.z_far_func({'R': self.sub_R_true[i][j]}, **self.params['height_far']) 
+                    else: z_true_far = self.z_lower_func({'R': self.sub_R_true[i][j]}, **self.params['height_lower']) 
 
                     subpix_grid_true = {'near': [self.sub_x_true[j], self.sub_y_true[i], z_true, self.sub_R_true[i][j], self.sub_phi_true[i][j]], 
                                         'far': [self.sub_x_true[j], self.sub_y_true[i], z_true_far, self.sub_R_true[i][j], self.sub_phi_true[i][j]]}
