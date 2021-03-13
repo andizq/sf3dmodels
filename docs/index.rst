@@ -246,7 +246,8 @@ Papers using sf3dmodels
 - `Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_
 - `Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
 - `Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
-- Izquierdo et al. (2020, subm.) The Cloud Factory II
+- `Izquierdo et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021MNRAS.500.5268I/abstract>`_
+- Izquierdo et al. (2021, subm.), The Disc Miner I
 
 License
 =======
