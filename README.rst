@@ -109,7 +109,7 @@ Developers
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
-We thank collaborators who have reported bugs or whose ideas and discussions have helped improve sf3dmodels, 
+We thank collaborators who have reported bugs or whose ideas and discussions helped improve sf3dmodels, 
 
 - Rowan Smith
 - Yuxin Lin
@@ -129,7 +129,8 @@ Papers using sf3dmodels
 - `Izquierdo et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.478.2505I/abstract>`_
 - `Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
 - `Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
-- Izquierdo et al. (2020, subm.) The Cloud Factory II
+- `Izquierdo et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021MNRAS.500.5268I/abstract>`_
+- Izquierdo et al. (2021, subm.) The Disc Miner I
 
 License
 -------
