@@ -109,7 +109,7 @@ Developers
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
-Special thanks to those who have reported bugs or whose ideas and discussions helped improve sf3dmodels, 
+We thank collaborators who have reported bugs or whose ideas and discussions have helped improve sf3dmodels, 
 
 - Rowan Smith
 - Yuxin Lin
