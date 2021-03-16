@@ -130,16 +130,16 @@ class Tools:
         if isinstance(beam, str):
             header = fits.getheader(beam)
             beam = Beam.from_fits_header(header)
-            pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2'])
+            pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2']) * frac_pixels
         elif isinstance(beam, Beam):
-            if distance is None: InputError(distance, 'Wrong input distance. Please provide a value for the distance (in pc) to transform grid pix to arcsec')
-            pix_arcsec = np.arctan(grid.step[0] / (distance*sfu.pc)) #dist*ang=projdist
-            pix_scale = (pix_arcsec*u.radian).to(u.arcsec)  
-        else: InputError(beam, 'beam object must either be str or Beam instance')
+            if distance is None: raise InputError(distance, 'Wrong input distance. Please provide a value for the distance (in pc) to transform grid pix to arcsec')
+            pix_radians = np.arctan(grid.step[0] / (distance*sfu.pc)) #dist*ang=projdist
+            pix_scale = (pix_radians*u.radian).to(u.arcsec)  
+        else: raise InputError(beam, 'beam object must either be str or Beam instance')
 
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value / frac_pixels 
-        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value / frac_pixels
-        print (x_stddev, beam.major)
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value 
+        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value 
+        print (x_stddev, beam.major, pix_scale)
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
 

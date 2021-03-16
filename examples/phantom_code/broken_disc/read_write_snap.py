@@ -100,9 +100,9 @@ cbar.ax.set_ylabel(r'H$_2$ density [cm$^{-3}$]')
 ax.set_xlabel('au')
 plt.savefig('img_H2_density_sph.png')
 
-#*******************************************************************************
-#Writing file for self-consistently calculation of dust temperature with POLARIS
-#*******************************************************************************
+#*****************************************************
+#Writing file to compute dust temperature with POLARIS
+#*****************************************************
 output_file = 'voronoi_grid.dat'
 grid_id = 50 #polaris grid ID (50 = voronoi)
 data_ids = [0]
@@ -270,8 +270,8 @@ for i in id_list:
     vor_region_i = np.array(vor.regions[vor.point_region[i]]) #Indices of vertices forming region i.
     vor_region_valid = vor_region_i[vor_region_i!=-1] #-1 indicates vertex outside the Voronoi diagram.
     verts_region_valid = vor.vertices[vor_region_valid]
-    delau_i = Delaunay(verts_region_valid)
-    tets_i = delau_i.points[delau_i.simplices]
+    delau_i = Delaunay(verts_region_valid) #Delaunay triangulation within voronoi cell i
+    tets_i = delau_i.points[delau_i.simplices] #Vertices of Delaunay tetrahedra within vor cell i
     vol = tetrahedron_volume(tets_i[:, 0], tets_i[:, 1], 
                              tets_i[:, 2], tets_i[:, 3]).sum()
     volume[pos_counter] = vol
