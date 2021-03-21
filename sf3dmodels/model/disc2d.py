@@ -7,6 +7,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 from ..utils.constants import G, kb
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
+from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib import ticker
@@ -1579,10 +1580,11 @@ class Mcmc:
     
      
 class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
-    def __init__(self, grid, prototype=False, subpixels=False, beam=None, kwargs_beam={}):
+    def __init__(self, grid, prototype=False, subpixels=False, beam=None, skygrid=None, kwargs_beam={}):
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         self.prototype = prototype
+        if skygrid is None: skygrid = grid
 
         self._beam_info = False
         self._beam_from = False #Should be deprecated
@@ -1605,7 +1607,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self.phi_true = np.arctan2(y_true, x_true) #grid.rRTP[3] 
         self.R_true = hypot_func(x_true, y_true) #grid.rRTP[1] #Slightly different as in the grid object the pixels R=0 actually take the closest-neighbour value. Current approach masks r,R=0
         self.x_true, self.y_true = x_true, y_true
-        self.mesh = np.meshgrid(grid.XYZgrid[0], grid.XYZgrid[1])
+        self.mesh = np.meshgrid(skygrid.XYZgrid[0], skygrid.XYZgrid[1]) #disc grid will be interpolated onto this sky grid in make_model(). Must match data dims for mcmc. 
 
         if subpixels and isinstance(subpixels, int):
             if subpixels%2 == 0: subpixels+=1 #If input even becomes odd to contain pxl centre
@@ -1803,7 +1805,6 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         
     def make_model(self, z_mirror=False, R_inner=0, R_disc=None):
                    
-        from scipy.interpolate import griddata
         #*************************************
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
         if self.prototype: print ('Prototype model:', self.params)
