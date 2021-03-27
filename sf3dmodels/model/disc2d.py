@@ -292,7 +292,8 @@ class Contours(PlotTools):
     def prop_along_coords(ax, prop, coords, coord_ref, coord_levels, 
                           ax2=None, X=None, Y=None, 
                           PA=0,
-                          acc_threshold=0.05, 
+                          acc_threshold=0.05,
+                          max_prop_threshold=1.0,
                           color_bounds=[np.pi/5, np.pi/2],
                           colors=['k', 'dodgerblue', (0,1,0), (1,0,0)],
                           lws=[2, 0.5, 0.2, 0.2], lw_ax2_factor=1,
@@ -333,7 +334,10 @@ class Contours(PlotTools):
            Reference position angle.
            
         acc_threshold : float, optional 
-           Threshold to accept contours at constant coords[0].
+           Threshold to accept points on contours at constant coords[0]. If obtained level at a point is such that np.abs(level-level_reference)<acc_threshold the point is accepted
+
+        max_prop_threshold : float, optional 
+           Threshold to plot contours. If peak residual of the contour is < max_prop_threshold the contour is plotted. Useful to reject hot pixels. The contour will be included in the list anyway.
 
         color_bounds : array_like, shape (nbounds,), optional
            Colour bounds with respect to the reference contour coord_ref.
@@ -380,8 +384,8 @@ class Contours(PlotTools):
                     color = colors[i+1]
                     break
 
-            if subtract_quadrants:
-                if lev < color_bounds[0]: continue
+            if subtract_quadrants: #Currently for azimuthal contours only
+                #if lev < color_bounds[0]: continue
                 ref_pos = PA+90 #Reference axis for positive angles
                 ref_neg = PA-90
                 angles = second_cont[corr_inds]
@@ -409,7 +413,7 @@ class Contours(PlotTools):
                     ind_sort_pos = np.argsort(angle_diff_pos)
                     plot_ang_diff_pos = angle_diff_pos[ind_sort_pos]
                     plot_prop_diff_pos = prop_diff_pos[ind_sort_pos]
-                    ax.plot(plot_ang_diff_pos, plot_prop_diff_pos, color=color, lw=lw, zorder=zorder)
+                    if np.max(np.abs(plot_prop_diff_pos))<max_prop_threshold: ax.plot(plot_ang_diff_pos, plot_prop_diff_pos, color=color, lw=lw, zorder=zorder)
                     coord_list.append(plot_ang_diff_pos)
                     resid_list.append(plot_prop_diff_pos)
                     color_list.append(color)
@@ -432,7 +436,7 @@ class Contours(PlotTools):
                     ind_sort_neg = np.argsort(angle_diff_neg)    
                     plot_ang_diff_neg = angle_diff_neg[ind_sort_neg]
                     plot_prop_diff_neg = prop_diff_neg[ind_sort_neg]
-                    ax.plot(plot_ang_diff_neg, plot_prop_diff_neg, color=color, lw=lw, zorder=zorder)
+                    if np.max(np.abs(plot_prop_diff_neg))<max_prop_threshold: ax.plot(plot_ang_diff_neg, plot_prop_diff_neg, color=color, lw=lw, zorder=zorder)
                     coord_list.append(plot_ang_diff_neg)
                     resid_list.append(plot_prop_diff_neg)
                     color_list.append(color)
@@ -448,7 +452,12 @@ class Contours(PlotTools):
                     color_list.append(color)
                     lev_list.append(lev)
                 """
-            else: ax.plot(second_cont[corr_inds], prop_cont[corr_inds], color=color, lw=lw, zorder=zorder)
+            else:
+                coord_list.append(second_cont[corr_inds])
+                resid_list.append(prop_cont[corr_inds])
+                color_list.append(color)
+                lev_list.append(lev)
+                ax.plot(second_cont[corr_inds], prop_cont[corr_inds], color=color, lw=lw, zorder=zorder)
 
             if ax2 is not None:
                 x_cont = np.array([X[i] for i in inds_cont])
@@ -1769,10 +1778,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
         z_true = {}
-        z_true['near'] = self.z_upper_func({'R': self.R_true}, **self.params['height_upper'])
+        z_true['near'] = self.z_upper_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_upper'])
 
         if z_mirror: z_true['far'] = -z_true['near']
-        else: z_true['far'] = self.z_lower_func({'R': self.R_true}, **self.params['height_lower']) 
+        else: z_true['far'] = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
             
         grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
                      'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
@@ -1817,10 +1826,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
-        z_true = self.z_upper_func({'R': self.R_true}, **self.params['height_upper'])
+        z_true = self.z_upper_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_upper'])
 
         if z_mirror: z_true_far = -z_true
-        else: z_true_far = self.z_lower_func({'R': self.R_true}, **self.params['height_lower']) 
+        else: z_true_far = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
             
         grid_true = {'near': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true], 
                      'far': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
