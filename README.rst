@@ -131,7 +131,7 @@ Papers using sf3dmodels
 - `Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
 - `Izquierdo et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021MNRAS.500.5268I/abstract>`_
 - Izquierdo et al. (2021, subm.), The Disc Miner I
-
+- Carrasco-González et al. (2021, subm.)
 
 License
 -------
