@@ -637,8 +637,8 @@ class Cube(object):
                     print('%s click: button=%d, xdata=%f, ydata=%f' %
                           ('double' if event.dblclick else 'single', event.button,
                            event.xdata, event.ydata))
-                    ax[0].scatter(event.xdata, event.ydata, color=plot_spec[0].get_color())
-                    ax[1].legend()
+                    ax[0].scatter(event.xdata, event.ydata, marker='D', s=50, facecolor=plot_spec[0].get_color(), edgecolor='k')
+                    ax[1].legend(frameon=False, handlelength=0.7, fontsize=MEDIUM_SIZE-1)
                     fig.canvas.draw()
                     fig.canvas.flush_events()
 
@@ -657,7 +657,7 @@ class Cube(object):
     def surface(self, ax, *args, **kwargs): return Contours.emission_surface(ax, *args, **kwargs)
 
     def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True, cmap='gnuplot2_r',
-             int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='au', vel_unit=r'km s$^{-1}$',
+             int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='Offset [au]', vel_unit=r'km s$^{-1}$',
              show_beam=False, surface={'args': (), 'kwargs': {}}, **kwargs):
         from matplotlib.widgets import Slider, Cursor, Button
         v0, v1 = self.channels[0], self.channels[-1]
@@ -671,14 +671,16 @@ class Cube(object):
         ax[0].set_xlabel(pos_unit)
         ax[0].set_ylabel(pos_unit)
         ax[1].set_xlabel('l.o.s velocity [%s]'%vel_unit)
+        PlotTools.mod_major_ticks(ax[0], axis='both', nbins=5)
+        ax[0].tick_params(direction='out')
         ax[1].tick_params(direction='in', right=True, labelright=False, labelleft=False)
         axcbar.tick_params(direction='out')
         ax[1].set_ylabel(int_unit, labelpad=15)
         ax[1].yaxis.set_label_position('right')
         ax[1].set_xlim(v0-0.1, v1+0.1)
-        vmin, vmax = -1*max_data/100, 0.98*max_data#0.8*max_data#
+        vmin, vmax = -1*max_data/100, 0.7*max_data#0.8*max_data#
         ax[1].set_ylim(vmin, vmax)
-        ax[1].grid(lw=1.5, ls=':')
+        #ax[1].grid(lw=1.5, ls=':')
         cmap = plt.get_cmap(cmap)
         cmap.set_bad(color=(0.9,0.9,0.9))
 
@@ -766,9 +768,9 @@ class Cube(object):
         cursor_img = plt.imread(path_file+'button_cursor.jpeg')
         trash_img = plt.imread(path_file+'button_trash.jpg') 
         surface_img = plt.imread(path_file+'button_surface.png') 
-        axbcursor = plt.axes([0.05, 0.709, 0.05, 0.05])
-        axbbox = plt.axes([0.05, 0.65, 0.05, 0.05])
-        axbtrash = plt.axes([0.05, 0.591, 0.05, 0.05], frameon=True, aspect='equal')
+        axbcursor = plt.axes([0.05, 0.779, 0.05, 0.05])
+        axbbox = plt.axes([0.05, 0.72, 0.05, 0.05])
+        axbtrash = plt.axes([0.05, 0.661, 0.05, 0.05], frameon=True, aspect='equal')
         bcursor = Button(axbcursor, '', image=cursor_img)
         bcursor.on_clicked(go2cursor)
         bbox = Button(axbbox, '', image=box_img)
@@ -776,7 +778,7 @@ class Cube(object):
         btrash = Button(axbtrash, '', image=trash_img, color='white', hovercolor='lime')
         btrash.on_clicked(go2trash)
         if len(surface['args'])>0:
-            axbsurf = plt.axes([0.005, 0.689, 0.07, 0.07], frameon=True, aspect='equal')
+            axbsurf = plt.axes([0.005, 0.759, 0.07, 0.07], frameon=True, aspect='equal')
             bsurf = Button(axbsurf, '', image=surface_img)
             bsurf.on_clicked(go2surface)
         plt.show()
