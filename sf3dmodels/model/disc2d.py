@@ -4,7 +4,7 @@
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
 #TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes  
-from ..utils.constants import G, kb
+from ..utils import constants as sfc
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
 from scipy.interpolate import griddata
@@ -148,14 +148,28 @@ class Tools:
         return beam, gauss_kern
     
     @staticmethod
-    def _get_tb(I, nu, beam):
+    def _get_tb(I, nu, beam, full=True):
         """
         nu in GHz
         Intensity in mJy/beam
         beam object from radio_beam
+        if full: use full Planck law, else use rayleigh-jeans approx.
         """
         from astropy import units as u
-        return (1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value
+        bmaj = beam.major.to(u.arcsecond).value
+        bmin = beam.minor.to(u.arcsecond).value
+        beam_area = sfu.au**2*np.pi*(bmaj*bmin)/(4*np.log(2)) #area of gaussian beam
+        #beam solid angle: beam_area/(dist*pc)**2. dist**2 cancels out with beamarea's dist**2 from conversion or bmaj, bmin to mks units. 
+        beam_solid = beam_area/sfu.pc**2 
+        mJy_to_SI = 1e-3*1e-26
+        nu = nu*1e9
+        if full:
+            Tb = np.sign(I)*(np.log((2*sfc.h*nu**3)/(sfc.c**2*np.abs(I)*mJy_to_SI/beam_solid)+1))**-1*sfc.h*nu/(sfc.kb) 
+        else:
+            wl = sfc.c/nu 
+            Tb = 0.5*wl**2*I*mJy_to_SI/(beam_solid*sfc.kb) 
+        #(1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value #nrao RayJeans             
+        return Tb
 
 
 class Residuals:
@@ -293,7 +307,7 @@ class Contours(PlotTools):
                           ax2=None, X=None, Y=None, 
                           PA=0,
                           acc_threshold=0.05,
-                          max_prop_threshold=1.0,
+                          max_prop_threshold=np.inf,
                           color_bounds=[np.pi/5, np.pi/2],
                           colors=['k', 'dodgerblue', (0,1,0), (1,0,0)],
                           lws=[2, 0.5, 0.2, 0.2], lw_ax2_factor=1,
@@ -413,9 +427,10 @@ class Contours(PlotTools):
                     ind_sort_pos = np.argsort(angle_diff_pos)
                     plot_ang_diff_pos = angle_diff_pos[ind_sort_pos]
                     plot_prop_diff_pos = prop_diff_pos[ind_sort_pos]
-                    if np.max(np.abs(plot_prop_diff_pos))<max_prop_threshold: ax.plot(plot_ang_diff_pos, plot_prop_diff_pos, color=color, lw=lw, zorder=zorder)
-                    coord_list.append(plot_ang_diff_pos)
-                    resid_list.append(plot_prop_diff_pos)
+                    ind_prop_pos = np.abs(plot_prop_diff_pos)<max_prop_threshold
+                    ax.plot(plot_ang_diff_pos[ind_prop_pos], plot_prop_diff_pos[ind_prop_pos], color=color, lw=lw, zorder=zorder)
+                    coord_list.append(plot_ang_diff_pos[ind_prop_pos])
+                    resid_list.append(plot_prop_diff_pos[ind_prop_pos])
                     color_list.append(color)
                     lev_list.append(lev)
                 else: 
@@ -436,9 +451,10 @@ class Contours(PlotTools):
                     ind_sort_neg = np.argsort(angle_diff_neg)    
                     plot_ang_diff_neg = angle_diff_neg[ind_sort_neg]
                     plot_prop_diff_neg = prop_diff_neg[ind_sort_neg]
-                    if np.max(np.abs(plot_prop_diff_neg))<max_prop_threshold: ax.plot(plot_ang_diff_neg, plot_prop_diff_neg, color=color, lw=lw, zorder=zorder)
-                    coord_list.append(plot_ang_diff_neg)
-                    resid_list.append(plot_prop_diff_neg)
+                    ind_prop_neg = np.abs(plot_prop_diff_neg)<max_prop_threshold
+                    ax.plot(plot_ang_diff_neg[ind_prop_neg], plot_prop_diff_neg[ind_prop_neg], color=color, lw=lw, zorder=zorder)
+                    coord_list.append(plot_ang_diff_neg[ind_prop_neg])
+                    resid_list.append(plot_prop_diff_neg[ind_prop_neg])
                     color_list.append(color)
                     lev_list.append(lev)
                 else: 
@@ -472,7 +488,7 @@ class Contours(PlotTools):
 
 
 class Cube(object):
-    def __init__(self, nchan, channels, data, beam=False, beam_kernel=False, tb={'nu': False, 'beam': False}):
+    def __init__(self, nchan, channels, data, beam=False, beam_kernel=False, tb={'nu': False, 'beam': False, 'full': True}):
         self.nchan = nchan
         self.channels = channels
         self.data = data
@@ -482,7 +498,7 @@ class Cube(object):
         if beam: self.beam = beam
         if beam_kernel: self.beam_kernel = beam_kernel
         if isinstance(tb, dict):
-            if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'])
+            if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'], full=tb['full'])
 
     @property
     def interactive(self): 
@@ -1142,7 +1158,7 @@ class Velocity:
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
-        return vel_sign*np.sqrt(G*Mstar/R) * 1e-3
+        return vel_sign*np.sqrt(sfc.G*Mstar/R) * 1e-3
     
     @staticmethod
     def keplerian_vertical(coord, Mstar=1.0, vel_sign=1, vsys=0):
@@ -1151,7 +1167,7 @@ class Velocity:
         else: R = coord['R'] 
         if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
-        return vel_sign*np.sqrt(G*Mstar/r**3)*R * 1e-3 
+        return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 
 
 
 class Intensity:   
@@ -1299,13 +1315,13 @@ class Intensity:
         
     @staticmethod
     def line_profile_temp(v_chan, v, T, dum, v_turb=0.0, mmol=2*sfu.amu):
-        v_sigma = np.sqrt(kb*T/mmol + v_turb**2) * 1e-3 #in km/s
+        v_sigma = np.sqrt(sfc.kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         #return 1/(np.sqrt(np.pi)*v_sigma) * np.exp(-((v-v_chan)/v_sigma)**2)
         return np.exp(-0.5*((v-v_chan)/v_sigma)**2)
 
     @staticmethod
     def line_profile_temp_full(v_chan, v, T, dum, v_turb=0, mmol=2*sfu.amu, channel_width=0.1):
-        v_sigma = np.sqrt(kb*T/mmol + v_turb**2) * 1e-3 #in km/s
+        v_sigma = np.sqrt(sfc.kb*T/mmol + v_turb**2) * 1e-3 #in km/s
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
         v1 = v_chan + half_chan
@@ -1403,7 +1419,7 @@ class Intensity:
 
     #def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
     def get_cube(self, vchannels, velocity2d, intensity2d, linewidth2d, lineslope2d, 
-                 nchan=None, tb={'nu': False, 'beam': False}, return_data_only=False, **kwargs):
+                 nchan=None, tb={'nu': False, 'beam': False, 'full': True}, return_data_only=False, **kwargs):
         vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
         line_profile = self.line_profile
         if nchan is None: nchan=len(vchannels)
