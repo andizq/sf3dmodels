@@ -117,13 +117,21 @@ class Tools:
             coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
-  
+    
     @staticmethod
-    def get_beam_from(beam, grid, distance=None, frac_pixels=1.0):
+    def _progress_bar(percent=0, width=50):
+        left = width * percent // 100 
+        right = width - left
+        print('\r[', '#' * left, ' ' * right, ']',
+              f' {percent:.0f}%',
+              sep='', end='', flush=True)
+        
+    @staticmethod
+    def _get_beam_from(beam, dpix=None, distance=None, frac_pixels=1.0):
         """
         beam must be str pointing to fits file to extract beam from header or radio_beam Beam object.
-        If Beam object is provided, distance must be set.
-        #frac_pixels: number of averaged pixels on the data to reduce size and time
+        If radio_beam Beam instance is provided, pixel size (in SI, from grid obj) and distance (in pc) must be provided.
+        #frac_pixels: number of averaged pixels on the data (useful to reduce computing time)
         """
         from radio_beam import Beam
         from astropy.io import fits
@@ -134,26 +142,88 @@ class Tools:
             pix_scale = header['CDELT2'] * u.Unit(header['CUNIT2']) * frac_pixels
         elif isinstance(beam, Beam):
             if distance is None: raise InputError(distance, 'Wrong input distance. Please provide a value for the distance (in pc) to transform grid pix to arcsec')
-            pix_radians = np.arctan(grid.step[0] / (distance*sfu.pc)) #dist*ang=projdist
+            pix_radians = np.arctan(dpix / (distance*sfu.pc)) #dist*ang=projdist
             pix_scale = (pix_radians*u.radian).to(u.arcsec)  
         else: raise InputError(beam, 'beam object must either be str or Beam instance')
 
         x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value 
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value 
-        print (x_stddev, beam.major, pix_scale)
+        #print (x_stddev, beam.major, pix_scale)
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
 
         #gauss_kern = beam.as_kernel(pix_scale) #as_kernel() is slowing down the run when used in astropy.convolve
         return beam, gauss_kern
-    
+
     @staticmethod
-    def _get_tb(I, nu, beam, full=True):
+    def average_pixels_cube(data, frac_pixels, av_method=np.median):
+        """
+        data: datacube with shape (nchan, nx0, ny0)
+        frac_pixels: number of pixels to average
+        av_method: function to compute average
+        """
+        nchan, nx0, ny0 = np.shape(data)
+        nx = int(round(nx0/frac_pixels))
+        ny = int(round(ny0/frac_pixels))
+        av_data = np.zeros((nchan, nx, ny))
+        progress = Tools._progress_bar
+        if frac_pixels>1:
+            di = frac_pixels
+            dj = frac_pixels
+            print ('Averaging %dx%d pixels from data cube...'%(di, dj))
+            for k in range(nchan):
+                progress(int(100*k/nchan))
+                for i in range(nx):
+                    for j in range(ny):
+                        av_data[k,i,j] = av_method(data[k,i*di:i*di+di,j*dj:j*dj+dj])
+            progress(100)
+            return av_data
+        else:
+            print('frac_pixels is <= 1, no average was performed...')
+            return data
+        
+    @staticmethod
+    def fit_one_gauss_cube(data, vchannels, lw_chan=1.0):
+        """
+        Fit Gaussian profile along velocity axis to input data
+        lw_chan: initial guess for line width is lw_chan*np.mean(dvi).  
+        """
+        from scipy.optimize import curve_fit
+        gauss = lambda x, *p: p[0]*np.exp(-(x-p[1])**2/(2.*p[2]**2))
+        nchan, nx, ny = np.shape(data)
+        peak = np.zeros((nx, ny))
+        centroid = np.zeros((nx, ny))
+        linewidth = np.zeros((nx, ny))
+        nbad = 0
+        ind_max = np.argmax(data, axis=0)
+        I_max = np.max(data, axis=0)
+        vel_peak = vchannels[ind_max]
+        dv = lw_chan*np.mean(vchannels[1:]-vchannels[:-1])
+        progress = Tools._progress_bar   
+        print ('Fitting Gaussian profile to pixels (along velocity axis)...')
+        for i in range(nx):
+            for j in range(ny):
+                tmp_data = data[:,i,j]
+                try: coeff, var_matrix = curve_fit(gauss, vchannels, tmp_data, 
+                                                   p0=[I_max[i,j], vel_peak[i,j], dv])
+                except RuntimeError: 
+                    nbad+=1
+                    continue
+                peak[i,j] = coeff[0]
+                centroid[i,j] = coeff[1]
+                linewidth[i,j] = coeff[2]
+            progress(int(100*i/nx))
+        progress(100)
+        print ('\nGaussian fit did not converge for %.2f%s of the pixels'%(100.0*nbad/(nx*ny),'%'))
+        return peak, centroid, linewidth
+        
+    @staticmethod
+    def get_tb(I, nu, beam, full=True):
         """
         nu in GHz
         Intensity in mJy/beam
         beam object from radio_beam
-        if full: use full Planck law, else use rayleigh-jeans approx.
+        if full: use full Planck law, else use rayleigh-jeans approximation
         """
         from astropy import units as u
         bmaj = beam.major.to(u.arcsecond).value
@@ -170,6 +240,10 @@ class Tools:
             Tb = 0.5*wl**2*I*mJy_to_SI/(beam_solid*sfc.kb) 
         #(1222.0*I/(nu**2*(beam.minor/1.0).to(u.arcsecond)*(beam.major/1.0).to(u.arcsecond))).value #nrao RayJeans             
         return Tb
+
+    @staticmethod
+    def _get_tb(*args, **kwargs): return Tools.get_tb(*args, **kwargs)
+        
 
 
 class Residuals:
@@ -351,7 +425,7 @@ class Contours(PlotTools):
            Threshold to accept points on contours at constant coords[0]. If obtained level at a point is such that np.abs(level-level_reference)<acc_threshold the point is accepted
 
         max_prop_threshold : float, optional 
-           Threshold to plot contours. If peak residual of the contour is < max_prop_threshold the contour is plotted. Useful to reject hot pixels. The contour will be included in the list anyway.
+           Threshold to accept points of contours. Rejects residuals of the contour if they are < max_prop_threshold. Useful to reject hot pixels.
 
         color_bounds : array_like, shape (nbounds,), optional
            Colour bounds with respect to the reference contour coord_ref.
@@ -376,7 +450,8 @@ class Contours(PlotTools):
             if len(contour)==0:
                 print ('no contours found for phi =', lev)
                 continue
-            inds_cont = np.round(contour[-1]).astype(np.int)
+            ind_good = np.argmin([np.abs(lev-coords[0][tuple(np.round(contour[i][0]).astype(np.int))]) for i in range(len(contour))]) #getting ind of closest contour to lev
+            inds_cont = np.round(contour[ind_good]).astype(np.int)
             inds_cont = [tuple(f) for f in inds_cont]
             first_cont = np.array([coords[0][i] for i in inds_cont])
             second_cont = np.array([coords[1][i] for i in inds_cont])
@@ -498,7 +573,7 @@ class Cube(object):
         if beam: self.beam = beam
         if beam_kernel: self.beam_kernel = beam_kernel
         if isinstance(tb, dict):
-            if tb['nu'] and tb['beam']: self.data = Tools._get_tb(self.data, tb['nu'], tb['beam'], full=tb['full'])
+            if tb['nu'] and tb['beam']: self.data = Tools.get_tb(self.data, tb['nu'], tb['beam'], full=tb['full'])
 
     @property
     def interactive(self): 
@@ -672,7 +747,7 @@ class Cube(object):
         
     def surface(self, ax, *args, **kwargs): return Contours.emission_surface(ax, *args, **kwargs)
 
-    def show(self, extent=None, chan_init=20, compare_cubes=[], cursor_grid=True, cmap='gnuplot2_r',
+    def show(self, extent=None, chan_init=0, compare_cubes=[], cursor_grid=True, cmap='gnuplot2_r',
              int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='Offset [au]', vel_unit=r'km s$^{-1}$',
              show_beam=False, surface={'args': (), 'kwargs': {}}, **kwargs):
         from matplotlib.widgets import Slider, Cursor, Button
@@ -1210,7 +1285,7 @@ class Intensity:
     def beam_from(self, file): 
         #Rework this, missing beam kwargs info
         print('Setting beam_from var to', file)
-        if file: self.beam_info, self.beam_kernel = Tools.get_beam_from(file) #Calls beam_kernel setter
+        if file: self.beam_info, self.beam_kernel = Tools._get_beam_from(file) #Calls beam_kernel setter
         self._beam_from = file
 
     @beam_from.deleter 
@@ -1618,7 +1693,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self._beam_kernel = False
         self._beam_area = False 
         if beam is not None: 
-            self.beam_info, self.beam_kernel = Tools.get_beam_from(beam, grid, **kwargs_beam)
+            self.beam_info, self.beam_kernel = Tools._get_beam_from(beam, dpix=grid.step[0], **kwargs_beam)
 
         self._z_upper_func = General2d.z_cone
         self._z_lower_func = General2d.z_cone_neg
