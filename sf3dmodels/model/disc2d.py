@@ -1918,8 +1918,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             plt.close()
 
     @staticmethod
-    def orientation(incl=np.pi/4, PA=0.0):
-        return incl, PA
+    def orientation(incl=np.pi/4, PA=0.0, xc=0.0, yc=0.0):
+        xc = xc*sfu.au
+        yc = yc*sfu.au
+        return incl, PA, xc, yc
 
     def get_projected_coords(self, z_mirror=False, R_inner=0, R_disc=None, 
                              R_nan_val=0, phi_nan_val=10*np.pi, z_nan_val=0):
@@ -1929,7 +1931,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
         if self.prototype: print ('Getting projected coords for prototype model:', self.params)
         
-        incl, PA = General2d.orientation(**self.params['orientation'])
+        incl, PA, xc, yc = General2d.orientation(**self.params['orientation'])
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
         z_true = {}
@@ -1937,7 +1939,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         if z_mirror: z_true['far'] = -z_true['near']
         else: z_true['far'] = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
-            
+
         grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
                      'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
         
@@ -1973,7 +1975,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         #MAKE TRUE GRID FOR NEAR AND FAR SIDES
         if self.prototype: print ('Prototype model:', self.params)
         
-        incl, PA = General2d.orientation(**self.params['orientation'])
+        incl, PA, xc, yc = General2d.orientation(**self.params['orientation'])
         int_kwargs = self.params['intensity']
         vel_kwargs = self.params['velocity']
         lw_kwargs = self.params['linewidth']
@@ -1985,7 +1987,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         if z_mirror: z_true_far = -z_true
         else: z_true_far = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
-            
+ 
         grid_true = {'near': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true], 
                      'far': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
 
@@ -2035,6 +2037,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             xt, yt, zt = grid_true[side][:3]
             x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
             if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
+            x_pro = x_pro+xc
+            y_pro = y_pro+yc
             if R_disc is not None: R_grid = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
             x_pro_dict[side] = x_pro
             y_pro_dict[side] = y_pro
