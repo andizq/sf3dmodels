@@ -4,6 +4,9 @@ channels:
     - astropy
     - conda-forge
 
+python:
+    version: 3.6
+
 dependencies:
 #    - astropy=2.0.9
 #    - cython
