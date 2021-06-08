@@ -130,8 +130,8 @@ Papers using sf3dmodels
 - `Galvan-Madrid et al. (2018) <https://ui.adsabs.harvard.edu/abs/2018ApJ...868...39G/abstract>`_
 - `Soler et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020arXiv200707285S/abstract>`_
 - `Izquierdo et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021MNRAS.500.5268I/abstract>`_
-- Izquierdo et al. (2021, subm.), The Disc Miner I
-- Carrasco-González et al. (2021, subm.)
+- Izquierdo et al. (2021), <https://ui.adsabs.harvard.edu/abs/2021arXiv210409596I/abstract>`_
+- Carrasco-González et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210601235C/abstract>`_
 
 License
 -------
