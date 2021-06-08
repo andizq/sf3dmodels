@@ -4,6 +4,7 @@
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
 #TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes  
+from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
@@ -1243,6 +1244,62 @@ class Velocity:
         if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
         return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 
+"""
+    @staticmethod
+    def keplerian_vertical_selfgravity(coord, Mstar=1.0, vel_sign=1, vsys=0):
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
+        else: r = coord['r']
+        SG = integral(R,z; SurfaceDensity(*pars))
+        return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 + SG
+"""
+
+class SurfaceDensity:
+    @property
+    def surfacedensity_func(self): 
+        return self._surfacedensity_func
+          
+    @surfacedensity_func.setter 
+    def surfacedensity_func(self, surf): 
+        print('Setting surfacedensity function to', surf) 
+        self._surfacedensity_func = surf
+
+    @surfacedensity_func.deleter 
+    def surfacedensity_func(self): 
+        print('Deleting surfacedensity function') 
+        del self._surfacedensity_func
+
+    @staticmethod
+    def pringle(coord, Ec=0.3, Rc=100.0, gamma=1.0): #0.03 g/cm2
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        return Ec*(R/Rc)**-gamma * np.exp(-(R/Rc)**(2-gamma))
+
+
+class Temperature:
+    @property
+    def temperature_func(self): 
+        return self._temperature_func
+          
+    @temperature_func.setter 
+    def temperature_func(self, temp): 
+        print('Setting temperature function to', temp) 
+        self._temperature_func = temp
+
+    @temperature_func.deleter 
+    def temperature_func(self): 
+        print('Deleting temperature function') 
+        del self._temperature_func
+
+    @staticmethod
+    def temperature_powerlaw(coord, T0=100.0, R0=100*sfu.au, p=-0.4, z0=100*sfu.au, q=0.3):
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        z = coord['z']        
+        A = T0*R0**-p*z0**-q
+        return A*R**p*np.abs(z)**q        
 
 
 class Intensity:   
