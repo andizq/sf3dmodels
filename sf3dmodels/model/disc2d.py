@@ -1950,6 +1950,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             xt, yt, zt = grid_true[side][:3]
             x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
             if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
+            x_pro = x_pro+xc
+            y_pro = y_pro+yc
             R[side] = griddata((x_pro, y_pro), self.R_true, (self.mesh[0], self.mesh[1]), method='linear')
             x_grid = griddata((x_pro, y_pro), xt, (self.mesh[0], self.mesh[1]), method='linear')
             y_grid = griddata((x_pro, y_pro), yt, (self.mesh[0], self.mesh[1]), method='linear')
