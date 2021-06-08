@@ -20,6 +20,7 @@ import numbers
 import emcee
 import copy
 import time
+import sys
 import os
 
 from multiprocessing import Pool
@@ -123,10 +124,14 @@ class Tools:
     def _progress_bar(percent=0, width=50):
         left = width * percent // 100 
         right = width - left
+        """
         print('\r[', '#' * left, ' ' * right, ']',
               f' {percent:.0f}%',
               sep='', end='', flush=True)
-        
+        """
+        print('\r[', '#' * left, ' ' * right, ']', ' %.0f%%'%percent, sep='', end='') #compatible with python2 docs
+        sys.stdout.flush()
+
     @staticmethod
     def _get_beam_from(beam, dpix=None, distance=None, frac_pixels=1.0):
         """
