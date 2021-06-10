@@ -3,7 +3,7 @@
 ==============
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
-#TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes  
+#TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes.  
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -150,11 +150,12 @@ class Tools:
             if distance is None: raise InputError(distance, 'Wrong input distance. Please provide a value for the distance (in pc) to transform grid pix to arcsec')
             pix_radians = np.arctan(dpix / (distance*sfu.pc)) #dist*ang=projdist
             pix_scale = (pix_radians*u.radian).to(u.arcsec)  
+            print (pix_scale, pix_radians)
         else: raise InputError(beam, 'beam object must either be str or Beam instance')
 
         x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value 
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value 
-        #print (x_stddev, beam.major, pix_scale)
+        print (x_stddev, beam.major, pix_scale)
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
 
@@ -783,7 +784,7 @@ class Cube(object):
 
         if show_beam and self.beam_kernel: self._plot_beam(ax[0])
 
-        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
         img.cmap.set_under('w')
         current_chan = ax[1].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
@@ -879,7 +880,6 @@ class Cube(object):
             bsurf = Button(axbsurf, '', image=surface_img)
             bsurf.on_clicked(go2surface)
         plt.show()
-
         
     """
     #Lasso functions under development
@@ -987,7 +987,7 @@ class Cube(object):
 
         if show_beam and self.beam_kernel: self._plot_beam(ax[0])
 
-        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower left', vmin=vmin, vmax=vmax)
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower', vmin=vmin, vmax=vmax)
         cbar = plt.colorbar(img, cax=axcbar)
         text_chan = ax[1].text(0.15, 1.04, #Converting xdata coords to Axes coords 
                                r'v$_{\rmchan}$=%4.1f %s'%(self.channels[chan_init], vel_unit), ha='center', 
@@ -1103,7 +1103,7 @@ class Cube(object):
         ax.set_ylabel('au')
         for i in range(self.nchan):
             vchan = self.channels[i]
-            int2d = ax.imshow(self.data[i], cmap=cmap, extent=extent, origin='lower left', vmax=max_data)
+            int2d = ax.imshow(self.data[i], cmap=cmap, extent=extent, origin='lower', vmax=max_data)
             cbar = plt.colorbar(int2d)
             cbar.set_label(unit)
             if velocity2d is not None:
@@ -1611,7 +1611,7 @@ class Intensity:
             int2d = Intensity.get_channel(velocity2d, intensity2d, linewidth2d, lineslope2d, vchan, **kwargs)
             int2d_cube.append(int2d)
             extent = [-600, 600, -600, 600]
-            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower left', vmax=np.max(linewidth2d['near']))
+            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower', vmax=np.max(linewidth2d['near']))
             plt.xlabel('au')
             plt.ylabel('au')
             plt.text(200, 500, '%.1f km/s'%vchan)
@@ -1623,7 +1623,7 @@ class Intensity:
             plt.plot([None],[None], color='red', linestyle=':', linewidth=2, label='Far side') 
             plt.legend(loc='upper left')
             plt.savefig(folder+'int2d_chan%04d'%i)
-            print ('Saved channel %d'%i)
+            print ('Saving channel %d'%i)
             plt.close()
 
         os.chdir(folder)
@@ -1820,7 +1820,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self.mc_boundaries = {'velocity': {'Mstar': [0.05, 5.0],
                                            'vsys': [-10, 10]},
                               'orientation': {'incl': [-np.pi/3, np.pi/3], 
-                                              'PA': [-np.pi, np.pi]},
+                                              'PA': [-np.pi, np.pi],
+                                              'xc': [-50, 50],
+                                              'yc': [-50, 50]},
                               'intensity': {'I0': [0, 100], 
                                             'p': [-10.0, 10.0], 
                                             'q': [0, 5.0]},
