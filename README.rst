@@ -82,15 +82,13 @@ Get into the star-forming-regions folder and run the ``setup.py`` script in inst
 
 You can run any example from **star-forming-regions/examples** to check if the installation was succesful.
 
-Upgrade the package
-*******************
-   
+Update the package
+******************
+
 .. code-block:: bash
    
    cd star-forming-regions
-   git fetch --all
-   git reset --hard origin/master
-   git submodule update --force --remote -- lime
+   git pull
    python setup.py install
 
 Uninstall
@@ -109,7 +107,7 @@ Developers
 * `Adam Ginsburg <https://github.com/keflavich>`_
 * `Luke Maud <https://local.strw.leidenuniv.nl/people/touchscreen2/persinline.php?id=1716>`_   
 
-We thank collaborators who have reported bugs or whose ideas and discussions helped improve sf3dmodels, 
+We thank collaborators who have reported bugs or whose ideas and discussions have helped improve sf3dmodels, 
 
 - Rowan Smith
 - Yuxin Lin
