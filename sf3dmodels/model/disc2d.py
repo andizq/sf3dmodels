@@ -150,12 +150,12 @@ class Tools:
             if distance is None: raise InputError(distance, 'Wrong input distance. Please provide a value for the distance (in pc) to transform grid pix to arcsec')
             pix_radians = np.arctan(dpix / (distance*sfu.pc)) #dist*ang=projdist
             pix_scale = (pix_radians*u.radian).to(u.arcsec)  
-            print (pix_scale, pix_radians)
+            #print (pix_scale, pix_radians)
         else: raise InputError(beam, 'beam object must either be str or Beam instance')
 
         x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value 
         y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value 
-        print (x_stddev, beam.major, pix_scale)
+        #print (x_stddev, beam.major, pix_scale)
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
 
