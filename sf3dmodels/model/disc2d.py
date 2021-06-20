@@ -1734,7 +1734,7 @@ class Mcmc:
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(3.*ncols, 3*nrows))
 
-        print (header, kind, samples.shape)
+        #print (header, kind, samples.shape)
         x0_hline = 0
         for k, key in enumerate(kind):
             j = kind_col[key]
@@ -1771,7 +1771,7 @@ class Mcmc:
 
     @staticmethod
     def plot_corner(samples, labels=None, quantiles=None):
-        """Plot the corner plot to check for covariances."""
+        """Plot corner plot to check covariances"""
         import corner
         quantiles = [0.16, 0.5, 0.84] if quantiles is None else quantiles
         corner.corner(samples, labels=labels, title_fmt='.4f', bins=30,
@@ -1898,19 +1898,37 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         if prototype:
             self.params = {}
             for key in self.categories: self.params[key] = {}
-            print ('Available categories for prototyping:', self.params)
-            
+            print ('Available categories for prototyping:', self.params)            
         else: 
             self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
-            print ('Default parameter header for mcmc fitting:', self.mc_header)
-            print ('Default parameters to fit and fixed parameters:', self.mc_params)
+            #print ('Default parameter header for mcmc fitting:', self.mc_header)
+            #print ('Default parameters to fit and fixed parameters:', self.mc_params)
 
+    def plot_quick_attributes(self, R_in=10, R_out=300, surface='upper', fig_width=80, fig_height=25,
+                              height=True, velocity=True, linewidth=True, peakintensity=True, **kwargs_plot):                              
+        import termplotlib as tpl #pip install termplotlib. Requires gnuplot: brew install gnuplot (for OSX users)
+        kwargs = dict(plot_command="plot '-' w steps", xlabel='Offset [au]', label=None, xlim=None, ylim=None) #plot_command: lines, steps, dots, points, boxes
+        kwargs.update(kwargs_plot)
+        R = np.linspace(R_in, R_out, 100)
+        if surface=='upper': coords = {'R': R*sfu.au, 'z': self.z_upper_func({'R': R*sfu.au}, **self.params['height_upper'])}
+        if surface=='lower': coords = {'R': R*sfu.au, 'z': self.z_lower_func({'R': R*sfu.au}, **self.params['height_lower'])}        
+        def make_plot(func, kind, tag=None, val_unit=1, surface=surface):
+            if tag is None: tag=kind
+            fig = tpl.figure()
+            val = func(coords, **self.params[kind])
+            fig.plot(R, val/val_unit, width=fig_width, height=fig_height, title=tag+' '+surface, **kwargs)
+            fig.show()
+        if height and surface=='upper': make_plot(self.z_upper_func, 'height_upper', val_unit=sfu.au, surface='')
+        if height and surface=='lower': make_plot(self.z_lower_func, 'height_lower', val_unit=sfu.au, surface='')
+        if velocity: make_plot(self.velocity_func, 'velocity')
+        if linewidth: make_plot(self.linewidth_func, 'linewidth')
+        if peakintensity: make_plot(self.intensity_func, 'intensity', tag='peak intensity')
         
     def run_mcmc(self, data, channels, p0_mean=[], p0_stddev=1e-3, noise_stddev=1.0,
                  nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
                  custom_header={}, custom_kind={}, tag='',
                  plot_walkers=True, plot_corner=True, **kwargs_model): 
-        #p0: list of initial guesses. In the future will support 'optimize', 'min_bound', 'max_bound'.
+        #p0: list of initial guesses. In the future will support 'optimize', 'min_bound', 'max_bound'
         self.data = data
         self.channels = channels
         self.nchan = len(channels)
@@ -1954,7 +1972,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             print ('Parameters to fit and fixed parameters:')
             pprint.pprint(self.mc_params)
             print ('Number of mc parameters:', self.mc_nparams)
-            print ('Kind of parameters:', self.mc_kind)
+            print ('Parameter attributes:', self.mc_kind)
             print ('Parameter boundaries:')
             pprint.pprint(self.mc_boundaries_list)
             print ('Mean for initial guess p0:', p0_mean)
@@ -1973,7 +1991,6 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         samples = samples.reshape(-1, samples.shape[-1]) #2d matrix, shape (nwalkers*nstats, npars). With the -1 np guesses the dimensionality
         best_params = np.median(samples, axis=0)
         self.best_params = best_params
-        print ('Median from parameter walkers for the last %d steps:'%nstats, list(zip(self.mc_header, best_params)))
 
         #Errors: +- 68.2 percentiles
         errpos, errneg = [], []
@@ -1987,6 +2004,22 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             errneg.append(np.percentile(val, [68.2])) 
         self.best_params_errpos = np.asarray(errpos).squeeze()
         self.best_params_errneg = np.asarray(errneg).squeeze()
+
+        Tools._break_line(init='\n')
+        print ('Median from parameter walkers for the last %d steps:\n'%nstats)        
+        if found_termtables:
+            tt_header = ['Parameter', 'Best-fit value', 'error [+]', 'error [-]']
+            tt_data = np.array([self.mc_header, self.best_params, self.best_params_errpos, self.best_params_errneg]).T
+            termtables.print(
+                tt_data,
+                header=tt_header,
+                style=termtables.styles.markdown,
+                padding=(0, 1),
+                alignment="clll"
+                )
+        else:
+            print (list(zip(self.mc_header, best_params)))
+        Tools._break_line(init='\n', end='\n\n')
 
         #************
         #PLOTTING
@@ -2007,15 +2040,18 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
     def get_projected_coords(self, z_mirror=False, R_inner=0, R_disc=None, 
                              R_nan_val=0, phi_nan_val=10*np.pi, z_nan_val=0):
-
-        from scipy.interpolate import griddata
-        #*************************************
-        #MAKE TRUE GRID FOR NEAR AND FAR SIDES
-        if self.prototype: print ('Getting projected coords for prototype model:', self.params)
+        if self.prototype: 
+            Tools._break_line()
+            print ('Computing disc upper and lower surface coordinates, projected on the sky plane...')
+            print ('Using height and orientation parameters from prototype model:\n')
+            pprint.pprint({key: self.params[key] for key in ['height_upper', 'height_lower', 'orientation']})
+            Tools._break_line(init='\n')
         
         incl, PA, xc, yc = General2d.orientation(**self.params['orientation'])
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
+        #*******************************************
+        #MAKE TRUE GRID FOR UPPER AND LOWER SURFACES
         z_true = {}
         z_true['upper'] = self.z_upper_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_upper'])
 
@@ -2053,12 +2089,13 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         return R, phi, z, R_nonan, phi_nonan, z_nonan
         
-    def make_model(self, z_mirror=False, R_inner=0, R_disc=None):
-                   
-        #*************************************
-        #MAKE TRUE GRID FOR NEAR AND FAR SIDES
-        if self.prototype: print ('Prototype model:', self.params)
-        
+    def make_model(self, z_mirror=False, R_inner=0, R_disc=None):                   
+        if self.prototype: 
+            Tools._break_line()
+            print ('Running prototype model with the following parameters:\n')
+            pprint.pprint(self.params)
+            Tools._break_line(init='\n')
+
         incl, PA, xc, yc = General2d.orientation(**self.params['orientation'])
         int_kwargs = self.params['intensity']
         vel_kwargs = self.params['velocity']
@@ -2067,6 +2104,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
+        #*******************************************
+        #MAKE TRUE GRID FOR UPPER AND LOWER SURFACES
         z_true = self.z_upper_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_upper'])
 
         if z_mirror: z_true_far = -z_true
@@ -2147,9 +2186,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         z_full = np.array(reduce(np.append, list(z_pro_dict.values())))
         z_grid = griddata((x_full, y_full, z_full), z_full, (grid_axes_3d[0], grid_axes_3d[1], grid_axes_3d[2]), method='linear') 
         """
-        #*************************************
-                
+        #*************************************                
         return props
+
     
 class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
     """
