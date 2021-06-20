@@ -30,7 +30,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 try: 
     import termtables
     found_termtables = True
-except (ImportError, ModuleNotFoundError):
+except ImportError:
     print ("\n*** For nicer outputs we recommend installing 'termtables' by typing in terminal: pip install termtables ***")
     found_termtables = False
 
