@@ -9,14 +9,15 @@ from ..utils import constants as sfc
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
 from scipy.interpolate import griddata
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import matplotlib
 import itertools
 import warnings
 import numbers
+import pprint
 import emcee
 import copy
 import time
@@ -25,6 +26,13 @@ import os
 
 from multiprocessing import Pool
 os.environ["OMP_NUM_THREADS"] = "1"
+
+try: 
+    import termtables
+    found_termtables = True
+except (ImportError, ModuleNotFoundError):
+    print ("\n*** For nicer outputs we recommend installing 'termtables' by typing in terminal: pip install termtables ***")
+    found_termtables = False
 
 #warnings.filterwarnings("error")
 __all__ = ['Cube', 'Tools', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
@@ -114,7 +122,7 @@ class Tools:
     def _compute_prop(grid, prop_funcs, prop_kwargs):
         n_funcs = len(prop_funcs)
         props = [{} for i in range(n_funcs)]
-        for side in ['near', 'far']:
+        for side in ['upper', 'lower']:
             x, y, z, R, phi = grid[side]
             coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
@@ -133,10 +141,20 @@ class Tools:
         sys.stdout.flush()
 
     @staticmethod
+    def _break_line(init='', border='*', middle='=', end='\n', width=100):
+        print('\r', init, border, middle * width, border, sep='', end=end)
+
+    @staticmethod
+    def _print_logo(logo=path_file+'logo.txt'):
+        file = open(logo, 'r')
+        print(file.read())
+        file.close()
+
+    @staticmethod
     def _get_beam_from(beam, dpix=None, distance=None, frac_pixels=1.0):
         """
         beam must be str pointing to fits file to extract beam from header or radio_beam Beam object.
-        If radio_beam Beam instance is provided, pixel size (in SI, from grid obj) and distance (in pc) must be provided.
+        If radio_beam Beam instance is provided, pixel size (in SI units) will be extracted from grid obj. Distance (in pc) must be provided.
         #frac_pixels: number of averaged pixels on the data (useful to reduce computing time)
         """
         from radio_beam import Beam
@@ -252,7 +270,6 @@ class Tools:
     def _get_tb(*args, **kwargs): return Tools.get_tb(*args, **kwargs)
         
 
-
 class Residuals:
     pass
 
@@ -273,10 +290,21 @@ class PlotTools:
         ax.minorticks_on()
         ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2)) #1 minor tick per major interval
         ax.yaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+
+    @classmethod
+    def make_up_ax(cls, ax, xlims=(None, None), ylims=(None, None), 
+                   mod_minor=True, mod_major=True, **kwargs_tick_params):
+        kwargs_t = dict(labeltop=True, labelbottom=False, top=True, right=True, which='both', direction='in')
+        kwargs_t.update(kwargs_tick_params)
+        if mod_major: cls.mod_major_ticks(ax)
+        if mod_minor: cls.mod_minor_ticks(ax)
+        ax.set_xlim(*xlims)
+        ax.set_ylim(*ylims)
+        ax.tick_params(**kwargs_t)
                 
     @staticmethod
     def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
-        new_cmap = colors.LinearSegmentedColormap.from_list(
+        new_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
             'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
             cmap(np.linspace(minval, maxval, n)))
         return new_cmap
@@ -289,19 +317,51 @@ class PlotTools:
         new_cmap = ListedColormap(newcolors)
         return new_cmap
 
-    @classmethod
-    def make_up_ax(cls, ax, xlims=(None, None), ylims=(None, None), 
-                   mod_minor=True, mod_major=True, **kwargs_tick_params):
-        kwargs_t = dict(labeltop=True, labelbottom=False, top=True, right=True, which='both', direction='in')
-        kwargs_t.update(kwargs_tick_params)
-        if mod_major: cls.mod_major_ticks(ax)
-        if mod_minor: cls.mod_minor_ticks(ax)
-        ax.set_xlim(*xlims)
-        ax.set_ylim(*ylims)
-        ax.tick_params(**kwargs_t)
-    
     @staticmethod
-    def append_stddev_panel(ax, prop):
+    def get_continuous_cmap(hex_list, float_list=None):                                                                               
+        """
+        Taken from https://github.com/KerryHalupka/custom_colormap 
+        creates and returns a color map that can be used in heat map figures.                                                             
+        If float_list is not provided, colour map graduates linearly between each color in hex_list.
+        If float_list is provided, each color in hex_list is mapped to the respective location in float_list. 
+                                    
+        Parameters                                                                                        
+        ----------                                                                                          
+        hex_list: list of hex code strings                                                                
+        float_list: list of floats between 0 and 1, same length as hex_list. Must start with 0 and end with 1.
+        
+        Returns     
+        ----------
+        matplotlib cmap
+
+        Examples
+        ----------
+        fig, ax = plt.subplots(1,1)
+        hex_list = ['#0091ad', '#fffffc', '#ffd166']
+        x, y = np.mgrid[-5:5:0.05, -5:5:0.05]                                
+        z = (np.sqrt(x**2 + y**2) + np.sin(x**2 + y**2))
+        im = ax.imshow(z, cmap=get_continuous_cmap(hex_list))                                                         
+        fig.colorbar(im)                                                                                                                                                                      
+        ax.yaxis.set_major_locator(plt.NullLocator()) # remove y axis ticks                                                                                                                               
+        ax.xaxis.set_major_locator(plt.NullLocator()) # remove x axis ticks
+        plt.show()
+        """
+
+        rgb_list = [matplotlib.colors.to_rgb(i) for i in hex_list]
+        if float_list:                                    
+            pass
+        else:                      
+            float_list = list(np.linspace(0,1,len(rgb_list)))
+                                                                                                                                          
+        cdict = dict()                                                                                
+        for num, col in enumerate(['red', 'green', 'blue']):                                               
+            col_list = [[float_list[i], rgb_list[i][num], rgb_list[i][num]] for i in range(len(float_list))]
+            cdict[col] = col_list
+        cmap_new = colors.LinearSegmentedColormap('my_cmp', segmentdata=cdict, N=256)
+        return cmap_new
+        
+    @staticmethod
+    def append_stddev_panel(ax, prop): #attach significance panel to ax, based on dist. of points prop 
         gauss = lambda x, A, mu, sigma: A*np.exp(-(x-mu)**2/(2.*sigma**2))
         ax[-1].set_xlim(-0.2, 1.2)
         ax1_ylims = ax[-2].get_ylim()
@@ -319,8 +379,7 @@ class PlotTools:
         prop_y = gauss(prop_x, *prop_pars)
         ax[-1].plot(prop_y, prop_x, color='limegreen', lw=3.5)
         #ax[-1].plot([-0.2, 1.0], [prop_mean]*2, color='0.6', lw=2.5)
-        #for axi in ax[:-1]: axi.axhline(prop_mean, color='0.6', lw=2.5)
-    
+        #for axi in ax[:-1]: axi.axhline(prop_mean, color='0.6', lw=2.5)    
         for i in range(0,4): 
             prop_stdi = prop_mean+i*prop_std
             gauss_prop_stdi = gauss(prop_stdi, *prop_pars)
@@ -329,7 +388,6 @@ class PlotTools:
             if prop_stdi < ax1_ylims[-1] and i>0:
                 ax[-1].text(gauss_prop_stdi+0.2, prop_stdi, r'%d$\sigma$'%i, 
                             fontsize=14, ha='center', va='center', rotation=-90)
-
         for axi in ax: axi.set_ylim(*ax1_ylims)
 
        
@@ -345,9 +403,9 @@ class Contours(PlotTools):
         kwargs_phif.update(kwargs_phi)        
         kwargs_Rf.update(kwargs_R)
 
-        near_nonan = ~np.isnan(R['near'])
+        near_nonan = ~np.isnan(R['upper'])
 
-        Rmax = np.max(R['near'][near_nonan])
+        Rmax = np.max(R['upper'][near_nonan])
         if extent is None:
             extent = np.array([-Rmax, Rmax, -Rmax, Rmax])/sfu.au
         kwargs_phif.update({'extent': extent})
@@ -360,22 +418,22 @@ class Contours(PlotTools):
         #Splitting phi into pos and neg to try and avoid ugly contours close to -pi and pi
         phi_lev_neg = phi_lev[phi_lev<0] 
         phi_lev_pos = phi_lev[phi_lev>0]
-        phi_neg_near = np.where((phi['near']<0) & (R['near']>R_lev[0]) & (R['near']<R_lev[-1]), phi['near'], np.nan)
-        phi_pos_near = np.where((phi['near']>0) & (R['near']>R_lev[0]) & (R['near']<R_lev[-1]), phi['near'], np.nan)
-        phi_neg_far = np.where((phi['far']<0) & (R['far']>R_lev[0]) & (R['far']<R_lev[-1]), phi['far'], np.nan)
-        phi_pos_far = np.where((phi['far']>0) & (R['far']>R_lev[0]) & (R['far']<R_lev[-1]), phi['far'], np.nan)
+        phi_neg_near = np.where((phi['upper']<0) & (R['upper']>R_lev[0]) & (R['upper']<R_lev[-1]), phi['upper'], np.nan)
+        phi_pos_near = np.where((phi['upper']>0) & (R['upper']>R_lev[0]) & (R['upper']<R_lev[-1]), phi['upper'], np.nan)
+        phi_neg_far = np.where((phi['lower']<0) & (R['lower']>R_lev[0]) & (R['lower']<R_lev[-1]), phi['lower'], np.nan)
+        phi_pos_far = np.where((phi['lower']>0) & (R['lower']>R_lev[0]) & (R['lower']<R_lev[-1]), phi['lower'], np.nan)
 
         if proj_offset is not None: #For 3d projections
-            ax.contour(X, Y, R['near'], offset=proj_offset, levels=R_lev, **kwargs_Rf)
-            ax.contour(X, Y, np.where(near_nonan, np.nan, R['far']), offset=proj_offset, levels=R_lev, **kwargs_Rf)
+            ax.contour(X, Y, R['upper'], offset=proj_offset, levels=R_lev, **kwargs_Rf)
+            ax.contour(X, Y, np.where(near_nonan, np.nan, R['lower']), offset=proj_offset, levels=R_lev, **kwargs_Rf)
             ax.contour(X, Y, phi_pos_near, offset=proj_offset, levels=phi_lev_pos, **kwargs_phif)
             ax.contour(X, Y, phi_neg_near, offset=proj_offset, levels=phi_lev_neg, **kwargs_phif)
             ax.contour(X, Y, np.where(near_nonan, np.nan, phi_pos_far), offset=proj_offset, levels=phi_lev_pos, **kwargs_phif)
             ax.contour(X, Y, np.where(near_nonan, np.nan, phi_neg_far), offset=proj_offset, levels=phi_lev_neg, **kwargs_phif)
             
         else:
-            ax.contour(R['near'], levels=R_lev, **kwargs_Rf)
-            ax.contour(np.where(near_nonan, np.nan, R['far']), levels=R_lev, **kwargs_Rf)
+            ax.contour(R['upper'], levels=R_lev, **kwargs_Rf)
+            ax.contour(np.where(near_nonan, np.nan, R['lower']), levels=R_lev, **kwargs_Rf)
             ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
             ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
             ax.contour(np.where(near_nonan, np.nan, phi_pos_far), levels=phi_lev_pos, **kwargs_phif)
@@ -1097,8 +1155,8 @@ class Cube(object):
         contour_color = 'red'
         cmap = plt.get_cmap('binary')
         cmap.set_bad(color=(0.9,0.9,0.9))
-        ax.plot([None],[None], color=contour_color, linestyle='--', linewidth=2, label='Near side') 
-        ax.plot([None],[None], color=contour_color, linestyle=':', linewidth=2, label='Far side') 
+        ax.plot([None],[None], color=contour_color, linestyle='--', linewidth=2, label='Upper surface') 
+        ax.plot([None],[None], color=contour_color, linestyle=':', linewidth=2, label='Lower surface') 
         ax.set_xlabel('au')
         ax.set_ylabel('au')
         for i in range(self.nchan):
@@ -1107,8 +1165,8 @@ class Cube(object):
             cbar = plt.colorbar(int2d)
             cbar.set_label(unit)
             if velocity2d is not None:
-                vel_near=ax.contour(velocity2d['near'], levels=[vchan], colors=contour_color, linestyles='--', linewidths=1.3, extent = extent)
-                vel_far=ax.contour(velocity2d['far'], levels=[vchan], colors=contour_color, linestyles=':', linewidths=1.3, extent = extent)
+                vel_near=ax.contour(velocity2d['upper'], levels=[vchan], colors=contour_color, linestyles='--', linewidths=1.3, extent = extent)
+                vel_far=ax.contour(velocity2d['lower'], levels=[vchan], colors=contour_color, linestyles=':', linewidths=1.3, extent = extent)
                 coll_list = [vel_near, vel_far]
             text_chan = ax.text(0.7, 1.02, '%4.1f km/s'%vchan, color='black', transform=ax.transAxes)
             ax.legend(loc='upper left')
@@ -1133,13 +1191,13 @@ class Height:
         return self._z_upper_func
           
     @z_upper_func.setter 
-    def z_upper_func(self, near): 
-        print('Setting near-side height function to', near) 
-        self._z_upper_func = near
+    def z_upper_func(self, upper): 
+        print('Setting upper surface height function to', upper) 
+        self._z_upper_func = upper
 
     @z_upper_func.deleter 
     def z_upper_func(self): 
-        print('Deleting near-side height function') 
+        print('Deleting upper surface height function') 
         del self._z_upper_func
 
     @property
@@ -1147,13 +1205,13 @@ class Height:
         return self._z_lower_func
           
     @z_lower_func.setter 
-    def z_lower_func(self, far): 
-        print('Setting far-side height function to', far) 
-        self._z_lower_func = far
+    def z_lower_func(self, lower): 
+        print('Setting lower surface height function to', lower) 
+        self._z_lower_func = lower
 
     @z_lower_func.deleter 
     def z_lower_func(self): 
-        print('Deleting far-side height function') 
+        print('Deleting lower surface height function') 
         del self._z_lower_func
 
     psi0 = 15*np.pi/180
@@ -1184,7 +1242,7 @@ class Linewidth:
         del self._linewidth_func
 
     @staticmethod
-    def linewidth_powerlaw(coord, L0=0.2, p=-0.4, q=0.3, R0=100*sfu.au, z0=100*sfu.au): #A=600.0, p=-0.4, q=0.3): #
+    def linewidth_powerlaw(coord, L0=0.2, p=-0.4, q=0.3, R0=100*sfu.au, z0=100*sfu.au):
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
@@ -1208,7 +1266,7 @@ class Lineslope:
         del self._lineslope_func
 
     @staticmethod
-    def lineslope_powerlaw(coord, Ls=5.0, p=0.0, q=0.0, R0=100*sfu.au, z0=100*sfu.au): #A=600.0, p=-0.4, q=0.3): #
+    def lineslope_powerlaw(coord, Ls=5.0, p=0.0, q=0.0, R0=100*sfu.au, z0=100*sfu.au):
         if p==0.0 and q==0.0:
             return Ls
         else:
@@ -1513,26 +1571,26 @@ class Intensity:
         if self.subpixels:
             v_near, v_far = [], []
             for i in range(self.subpixels_sq):
-                v_near.append(self.line_profile(v_chan, vel2d[i]['near'], linew2d['near'], lineb2d['near'], **kwargs))
-                v_far.append(self.line_profile(v_chan, vel2d[i]['far'], linew2d['far'], lineb2d['far'], **kwargs))
+                v_near.append(self.line_profile(v_chan, vel2d[i]['upper'], linew2d['upper'], lineb2d['upper'], **kwargs))
+                v_far.append(self.line_profile(v_chan, vel2d[i]['lower'], linew2d['lower'], lineb2d['lower'], **kwargs))
 
             integ_v_near = np.sum(np.array(v_near), axis=0) * self.sub_dA / self.pix_dA
             integ_v_far = np.sum(np.array(v_far), axis=0) * self.sub_dA / self.pix_dA
             return integ_v_near, integ_v_far
         
         else: 
-            v_near = self.line_profile(v_chan, vel2d['near'], linew2d['near'], lineb2d['near'], **kwargs)
-            v_far = self.line_profile(v_chan, vel2d['far'], linew2d['far'], lineb2d['far'], **kwargs)
+            v_near = self.line_profile(v_chan, vel2d['upper'], linew2d['upper'], lineb2d['upper'], **kwargs)
+            v_far = self.line_profile(v_chan, vel2d['lower'], linew2d['lower'], lineb2d['lower'], **kwargs)
             return v_near, v_far 
 
     def get_channel(self, velocity2d, intensity2d, linewidth2d, lineslope2d, v_chan, **kwargs):                    
         vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
 
-        if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
+        if isinstance(intensity2d, numbers.Number): int2d['upper'] = int2d['lower'] = intensity2d
         else: int2d = intensity2d
-        if isinstance(linewidth2d, numbers.Number): linew2d['near'] = linew2d['far'] = linewidth2d
+        if isinstance(linewidth2d, numbers.Number): linew2d['upper'] = linew2d['lower'] = linewidth2d
         else: linew2d = linewidth2d
-        if isinstance(lineslope2d, numbers.Number): lineb2d['near'] = lineb2d['far'] = lineslope2d
+        if isinstance(lineslope2d, numbers.Number): lineb2d['upper'] = lineb2d['lower'] = lineslope2d
         else: lineb2d = lineslope2d
     
         v_near, v_far = self.get_line_profile(v_chan, vel2d, linew2d, lineb2d, **kwargs)
@@ -1540,9 +1598,9 @@ class Intensity:
         v_near_clean = np.where(np.isnan(v_near), -np.inf, v_near)
         v_far_clean = np.where(np.isnan(v_far), -np.inf, v_far)
         
-        #int2d_near = int2d['near'] * v_near_clean / v_near_clean.max()
-        int2d_near = np.where(np.isnan(int2d['near']), -np.inf, int2d['near'] * v_near_clean)# / v_near_clean.max())
-        int2d_far = np.where(np.isnan(int2d['far']), -np.inf, int2d['far'] * v_far_clean)# / v_far_clean.max())
+        #int2d_near = int2d['upper'] * v_near_clean / v_near_clean.max()
+        int2d_near = np.where(np.isnan(int2d['upper']), -np.inf, int2d['upper'] * v_near_clean)# / v_near_clean.max())
+        int2d_far = np.where(np.isnan(int2d['lower']), -np.inf, int2d['lower'] * v_far_clean)# / v_far_clean.max())
         
         #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
         int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
@@ -1563,21 +1621,21 @@ class Intensity:
         #channels = np.linspace(vchan0, vchan1, num=nchan)
         cube = []
 
-        if isinstance(intensity2d, numbers.Number): int2d['near'] = int2d['far'] = intensity2d
+        if isinstance(intensity2d, numbers.Number): int2d['upper'] = int2d['lower'] = intensity2d
         else: int2d = intensity2d
-        if isinstance(linewidth2d, numbers.Number): linew2d['near'] = linew2d['far'] = linewidth2d
+        if isinstance(linewidth2d, numbers.Number): linew2d['upper'] = linew2d['lower'] = linewidth2d
         else: linew2d = linewidth2d
-        if isinstance(lineslope2d, numbers.Number): lineb2d['near'] = lineb2d['far'] = lineslope2d
+        if isinstance(lineslope2d, numbers.Number): lineb2d['upper'] = lineb2d['lower'] = lineslope2d
         else: lineb2d = lineslope2d
 
-        int2d_near_nan = np.isnan(int2d['near'])#~int2d['near'].mask#
-        int2d_far_nan = np.isnan(int2d['far'])#~int2d['far'].mask#
+        int2d_near_nan = np.isnan(int2d['upper'])#~int2d['upper'].mask#
+        int2d_far_nan = np.isnan(int2d['lower'])#~int2d['lower'].mask#
         if self.subpixels:
-            vel2d_near_nan = np.isnan(vel2d[self.sub_centre_id]['near'])
-            vel2d_far_nan = np.isnan(vel2d[self.sub_centre_id]['far'])
+            vel2d_near_nan = np.isnan(vel2d[self.sub_centre_id]['upper'])
+            vel2d_far_nan = np.isnan(vel2d[self.sub_centre_id]['lower'])
         else:
-            vel2d_near_nan = np.isnan(vel2d['near'])#~vel2d['near'].mask#
-            vel2d_far_nan = np.isnan(vel2d['far'])#~vel2d['far'].mask#
+            vel2d_near_nan = np.isnan(vel2d['upper'])#~vel2d['upper'].mask#
+            vel2d_far_nan = np.isnan(vel2d['lower'])#~vel2d['lower'].mask#
 
         #for i, v_chan in enumerate(vchannels):
         #viter = iter(vchannels)
@@ -1587,8 +1645,8 @@ class Intensity:
             v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
             v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
             
-            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['near'] * v_near_clean)# / v_near_clean.max())
-            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['far'] * v_far_clean)# / v_far_clean.max())        
+            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['upper'] * v_near_clean)# / v_near_clean.max())
+            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['lower'] * v_far_clean)# / v_far_clean.max())        
             #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
             int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
 
@@ -1611,14 +1669,14 @@ class Intensity:
             int2d = Intensity.get_channel(velocity2d, intensity2d, linewidth2d, lineslope2d, vchan, **kwargs)
             int2d_cube.append(int2d)
             extent = [-600, 600, -600, 600]
-            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower', vmax=np.max(linewidth2d['near']))
+            plt.imshow(int2d, cmap='binary', extent=extent, origin='lower', vmax=np.max(linewidth2d['upper']))
             plt.xlabel('au')
             plt.ylabel('au')
             plt.text(200, 500, '%.1f km/s'%vchan)
             cbar = plt.colorbar()
             cbar.set_label(r'Brightness Temperature [K]')
-            plt.contour(velocity2d['near'], levels=[vchan], colors='red', linestyles='--', linewidths=1.3, extent = extent)
-            plt.contour(velocity2d['far'], levels=[vchan], colors='red', linestyles=':', linewidths=1.3, extent = extent)
+            plt.contour(velocity2d['upper'], levels=[vchan], colors='red', linestyles='--', linewidths=1.3, extent = extent)
+            plt.contour(velocity2d['lower'], levels=[vchan], colors='red', linestyles=':', linewidths=1.3, extent = extent)
             plt.plot([None],[None], color='red', linestyle='--', linewidth=2, label='Near side') 
             plt.plot([None],[None], color='red', linestyle=':', linewidth=2, label='Far side') 
             plt.legend(loc='upper left')
@@ -1745,6 +1803,7 @@ class Mcmc:
      
 class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc): #Inheritance should only be from Intensity and Mcmc, the others contain just staticmethods...
     def __init__(self, grid, prototype=False, subpixels=False, beam=None, skygrid=None, kwargs_beam={}):
+        Tools._print_logo()
         self.flags = {'disc': True, 'env': False}
         self.grid = grid
         self.prototype = prototype
@@ -1835,21 +1894,23 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                               'height_upper': {'psi': [0, np.pi/2]},
                               'height_lower': {'psi': [0, np.pi/2]}
                               }
-
+         
         if prototype:
             self.params = {}
             for key in self.categories: self.params[key] = {}
             print ('Available categories for prototyping:', self.params)
-
+            
         else: 
             self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
-            print ('Default parameter header for mcmc model fitting:', self.mc_header)
+            print ('Default parameter header for mcmc fitting:', self.mc_header)
             print ('Default parameters to fit and fixed parameters:', self.mc_params)
 
-    def run_mcmc(self, data, channels, p0_mean='optimize', p0_stddev=1e-3, noise_stddev=1.0,
+        
+    def run_mcmc(self, data, channels, p0_mean=[], p0_stddev=1e-3, noise_stddev=1.0,
                  nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
                  custom_header={}, custom_kind={}, tag='',
-                 plot_walkers=True, plot_corner=True, **kwargs_model): #p0 from 'optimize', 'min', 'max', list of values.
+                 plot_walkers=True, plot_corner=True, **kwargs_model): 
+        #p0: list of initial guesses. In the future will support 'optimize', 'min_bound', 'max_bound'.
         self.data = data
         self.channels = channels
         self.nchan = len(channels)
@@ -1861,27 +1922,44 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
         self.params = copy.deepcopy(self.mc_params)
 
-        print ('Parameter header set for mcmc model fitting:', self.mc_header)
-        print ('Parameters to fit and fixed parameters:', self.mc_params)            
-        print ('Number of mc parameters:', self.mc_nparams)
-        print ('Kind of parameters:', self.mc_kind)
-        print ('Parameter boundaries:', self.mc_boundaries_list)
-        
-        if p0_mean == 'optimize': p0_mean = optimize_p0()
+        #if p0_mean == 'optimize': p0_mean = optimize_p0()
         if isinstance(p0_mean, (list, tuple, np.ndarray)): 
-            if len(p0_mean) != self.mc_nparams: raise InputError(p0_mean, 'Length of input p0_mean must be equal to number of parameters to fit: %d'%self.mc_nparams)
+            if len(p0_mean) != self.mc_nparams: raise InputError(p0_mean, 'Length of input p0_mean must be equal to the number of parameters to fit: %d'%self.mc_nparams)
             else: pass
-        print ('Mean for initial guess p0:', p0_mean)
 
         nstats = int(round(frac_stats*(nsteps-1))) #python2 round returns float, python3 returns int
         ndim = self.mc_nparams
 
         p0_stddev = [frac_stddev*(self.mc_boundaries_list[i][1] - self.mc_boundaries_list[i][0]) for i in range(self.mc_nparams)]
-        print ('p0 pars stddev:', p0_stddev)
         p0 = np.random.normal(loc=p0_mean,
                               scale=p0_stddev,
                               size=(nwalkers, ndim)
                               )
+
+        Tools._break_line()
+        print ('Initialising MCMC routines with the following (%d) parameters:\n'%self.mc_nparams)
+        if found_termtables:
+            bound_left, bound_right = np.array(self.mc_boundaries_list).T
+            tt_header = ['Attribute', 'Parameter', 'Mean initial guess', 'Par stddev', 'Lower bound', 'Upper bound']
+            tt_data = np.array([self.mc_kind, self.mc_header, p0_mean, p0_stddev, bound_left, bound_right]).T
+            termtables.print(
+                tt_data,
+                header=tt_header,
+                style=termtables.styles.markdown,
+                padding=(0, 1),
+                alignment="lcllll"
+                )
+        else:
+            print ('Parameter header set for mcmc model fitting:', self.mc_header)
+            print ('Parameters to fit and fixed parameters:')
+            pprint.pprint(self.mc_params)
+            print ('Number of mc parameters:', self.mc_nparams)
+            print ('Kind of parameters:', self.mc_kind)
+            print ('Parameter boundaries:')
+            pprint.pprint(self.mc_boundaries_list)
+            print ('Mean for initial guess p0:', p0_mean)
+            print ('p0 pars stddev:', p0_stddev)
+        Tools._break_line(init='\n', end='\n\n')
 
         with Pool() as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
@@ -1939,18 +2017,18 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         cos_incl, sin_incl = np.cos(incl), np.sin(incl)
 
         z_true = {}
-        z_true['near'] = self.z_upper_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_upper'])
+        z_true['upper'] = self.z_upper_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_upper'])
 
-        if z_mirror: z_true['far'] = -z_true['near']
-        else: z_true['far'] = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
+        if z_mirror: z_true['lower'] = -z_true['upper']
+        else: z_true['lower'] = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
 
-        grid_true = {'near': [self.x_true, self.y_true, z_true['near'], self.R_true, self.phi_true], 
-                     'far': [self.x_true, self.y_true, z_true['far'], self.R_true, self.phi_true]}
+        grid_true = {'upper': [self.x_true, self.y_true, z_true['upper'], self.R_true, self.phi_true], 
+                     'lower': [self.x_true, self.y_true, z_true['lower'], self.R_true, self.phi_true]}
         
         #***********************************
         #PROJECT PROPERTIES ON THE SKY PLANE        
         R, phi, z = {}, {}, {}
-        for side in ['near', 'far']:
+        for side in ['upper', 'lower']:
             xt, yt, zt = grid_true[side][:3]
             x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
             if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
@@ -1969,9 +2047,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                 for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>R_inner), prop[side], np.nan)
             
         R_nonan, phi_nonan, z_nonan = None, None, None
-        if R_nan_val is not None: R_nonan = {side: np.where(np.isnan(R[side]), R_nan_val, R[side]) for side in ['near', 'far']}
-        if phi_nan_val is not None: phi_nonan = {side: np.where(np.isnan(phi[side]), phi_nan_val, phi[side]) for side in ['near', 'far']}
-        if z_nan_val is not None: z_nonan = {side: np.where(np.isnan(z[side]), z_nan_val, z[side]) for side in ['near', 'far']}
+        if R_nan_val is not None: R_nonan = {side: np.where(np.isnan(R[side]), R_nan_val, R[side]) for side in ['upper', 'lower']}
+        if phi_nan_val is not None: phi_nonan = {side: np.where(np.isnan(phi[side]), phi_nan_val, phi[side]) for side in ['upper', 'lower']}
+        if z_nan_val is not None: z_nonan = {side: np.where(np.isnan(z[side]), z_nan_val, z[side]) for side in ['upper', 'lower']}
 
         return R, phi, z, R_nonan, phi_nonan, z_nonan
         
@@ -1994,8 +2072,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         if z_mirror: z_true_far = -z_true
         else: z_true_far = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
  
-        grid_true = {'near': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true], 
-                     'far': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
+        grid_true = {'upper': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true], 
+                     'lower': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
 
         #*******************************
         #COMPUTE PROPERTIES ON SKY GRID #This will no longer be necessary as all four functions will always be called
@@ -2014,13 +2092,13 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                     if z_mirror: z_true_far = -z_true
                     else: z_true_far = self.z_lower_func({'R': self.sub_R_true[i][j]}, **self.params['height_lower']) 
 
-                    subpix_grid_true = {'near': [self.sub_x_true[j], self.sub_y_true[i], z_true, self.sub_R_true[i][j], self.sub_phi_true[i][j]], 
-                                        'far': [self.sub_x_true[j], self.sub_y_true[i], z_true_far, self.sub_R_true[i][j], self.sub_phi_true[i][j]]}
+                    subpix_grid_true = {'upper': [self.sub_x_true[j], self.sub_y_true[i], z_true, self.sub_R_true[i][j], self.sub_phi_true[i][j]], 
+                                        'lower': [self.sub_x_true[j], self.sub_y_true[i], z_true_far, self.sub_R_true[i][j], self.sub_phi_true[i][j]]}
                     subpix_vel.append(self._compute_prop(subpix_grid_true, [self.velocity_func], [vel_kwargs])[0])
 
             ang_fac = sin_incl * np.cos(self.phi_true) 
             for i in range(self.subpixels_sq):
-                for side in ['near', 'far']: subpix_vel[i][side] *= ang_fac
+                for side in ['upper', 'lower']: subpix_vel[i][side] *= ang_fac
 
             props = self._compute_prop(grid_true, prop_funcs[1:], prop_kwargs[1:])
             props.insert(0, subpix_vel)
@@ -2029,17 +2107,17 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             props = self._compute_prop(grid_true, prop_funcs, prop_kwargs)
             if true_kwargs[0]: #Positive vel is positive along z, i.e. pointing to the observer, for that reason imposed a (-) factor to convert to the standard convention: (+) receding  
                 ang_fac = sin_incl * np.cos(self.phi_true) 
-                props[0]['near'] *= ang_fac 
-                props[0]['far'] *= ang_fac
-                props[0]['near'] += vel_kwargs['vsys']
-                props[0]['far'] += vel_kwargs['vsys']
+                props[0]['upper'] *= ang_fac 
+                props[0]['lower'] *= ang_fac
+                props[0]['upper'] += vel_kwargs['vsys']
+                props[0]['lower'] += vel_kwargs['vsys']
 
         #***********************************
         #PROJECT PROPERTIES ON THE SKY PLANE        
         x_pro_dict = {}
         y_pro_dict = {}
         z_pro_dict = {}
-        for side in ['near', 'far']:
+        for side in ['upper', 'lower']:
             xt, yt, zt = grid_true[side][:3]
             x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
             if PA: x_pro, y_pro = self._rotate_sky_plane(x_pro, y_pro, PA)             
@@ -2171,8 +2249,8 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
 
         #****************************
             
-        grid_true =  {'near': [x_true_near, y_true_near, z_true_near, R_true_near, phi_true_near], 
-                      'far': [x_true_far, y_true_far, z_true_far, R_true_far, phi_true_far]}
+        grid_true =  {'upper': [x_true_near, y_true_near, z_true_near, R_true_near, phi_true_near], 
+                      'lower': [x_true_far, y_true_far, z_true_far, R_true_far, phi_true_far]}
 
         #*******************************
         #COMPUTE PROPERTIES ON TRUE GRID
@@ -2186,9 +2264,9 @@ class Rosenfeld2d(Velocity, Intensity, Linewidth, Tools):
         if true_kwargs[0]:
             ang_fac_near = -sin_incl * np.cos(phi_true_near)
             ang_fac_far = -sin_incl * np.cos(phi_true_far)
-            props[0]['near'] *= ang_fac_near 
-            props[0]['far'] *= ang_fac_far
+            props[0]['upper'] *= ang_fac_near 
+            props[0]['lower'] *= ang_fac_far
                 
         #*************************************
 
-        return [{side: prop[side].reshape(self.grid.Nodes[:2]) for side in ['near', 'far']} for prop in props]
+        return [{side: prop[side].reshape(self.grid.Nodes[:2]) for side in ['upper', 'lower']} for prop in props]
