@@ -4,12 +4,15 @@
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
 #TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes.  
+#TODO in make_model(): Find a smart way to detect and pass only the coords needed by a prop attribute.
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, interp1d
+from scipy.special import ellipk, ellipe
 import matplotlib.patches as patches
+import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
@@ -118,13 +121,13 @@ class Tools:
         z_pro = y * sin_incl + z * cos_incl
         return x_pro, y_pro, z_pro
 
-    @staticmethod
+    @staticmethod #should be a bound method, self.grid is constant except for z_upper, z_lower
     def _compute_prop(grid, prop_funcs, prop_kwargs):
         n_funcs = len(prop_funcs)
         props = [{} for i in range(n_funcs)]
         for side in ['upper', 'lower']:
-            x, y, z, R, phi = grid[side]
-            coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R}
+            x, y, z, R, phi, R_1d, z_1d = grid[side]
+            coord = {'x': x, 'y': y, 'z': z, 'phi': phi, 'R': R, 'R_1d': R_1d, 'z_1d': z_1d}
             for i in range(n_funcs): props[i][side] = prop_funcs[i](coord, **prop_kwargs[i])
         return props
     
@@ -206,7 +209,8 @@ class Tools:
         else:
             print('frac_pixels is <= 1, no average was performed...')
             return data
-        
+
+    #define a fit_double_bell func, with a model input as an optional arg to constrain initial guesses better
     @staticmethod
     def fit_one_gauss_cube(data, vchannels, lw_chan=1.0):
         """
@@ -1277,48 +1281,6 @@ class Lineslope:
             return A*R**p*np.abs(z)**q
 
 
-class Velocity:
-    @property
-    def velocity_func(self): 
-        return self._velocity_func
-          
-    @velocity_func.setter 
-    def velocity_func(self, vel): 
-        print('Setting velocity function to', vel) 
-        self._velocity_func = vel
-
-    @velocity_func.deleter 
-    def velocity_func(self): 
-        print('Deleting velocity function') 
-        del self._velocity_func
-
-    @staticmethod
-    def keplerian(coord, Mstar=1.0, vel_sign=1, vsys=0):
-        Mstar *= sfu.MSun
-        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
-        else: R = coord['R'] 
-        return vel_sign*np.sqrt(sfc.G*Mstar/R) * 1e-3
-    
-    @staticmethod
-    def keplerian_vertical(coord, Mstar=1.0, vel_sign=1, vsys=0):
-        Mstar *= sfu.MSun
-        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
-        else: R = coord['R'] 
-        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
-        else: r = coord['r']
-        return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 
-"""
-    @staticmethod
-    def keplerian_vertical_selfgravity(coord, Mstar=1.0, vel_sign=1, vsys=0):
-        Mstar *= sfu.MSun
-        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
-        else: R = coord['R'] 
-        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
-        else: r = coord['r']
-        SG = integral(R,z; SurfaceDensity(*pars))
-        return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 + SG
-"""
-
 class SurfaceDensity:
     @property
     def surfacedensity_func(self): 
@@ -1338,6 +1300,7 @@ class SurfaceDensity:
     def pringle(coord, Ec=0.3, Rc=100.0, gamma=1.0): #0.03 g/cm2
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
+        R = R/sfu.au
         return Ec*(R/Rc)**-gamma * np.exp(-(R/Rc)**(2-gamma))
 
 
@@ -1363,6 +1326,77 @@ class Temperature:
         z = coord['z']        
         A = T0*R0**-p*z0**-q
         return A*R**p*np.abs(z)**q        
+
+
+class Velocity:
+    @property
+    def velocity_func(self): 
+        return self._velocity_func
+          
+    @velocity_func.setter 
+    def velocity_func(self, vel): 
+        print('Setting velocity function to', vel) 
+        self._velocity_func = vel
+        if vel is Velocity.keplerian_vertical_selfgravity:
+            R_true_au = self.R_true/sfu.au
+            tmp = np.unique(np.array(R_true_au).astype(np.int32))
+            #Adding missing upper bound for interp1d purposes:
+            self.R_1d = np.append(tmp, tmp[-1]+1) #short 1D list of R in au
+
+    @velocity_func.deleter 
+    def velocity_func(self): 
+        print('Deleting velocity function') 
+        del self._velocity_func
+
+    @staticmethod
+    def keplerian(coord, Mstar=1.0, vel_sign=1, vsys=0):
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        return vel_sign*np.sqrt(sfc.G*Mstar/R) * 1e-3
+    
+    @staticmethod
+    def keplerian_vertical(coord, Mstar=1.0, vel_sign=1, vsys=0):
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
+        else: r = coord['r']
+        return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 
+
+    @staticmethod
+    def keplerian_vertical_selfgravity(coord, Mstar=1.0, vel_sign=1, vsys=0,
+                                       Ec=30.0, Rc=100.0, gamma=1.0
+                                       ):
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R']
+        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
+        else: r = coord['r']
+        R_1d = coord['R_1d']
+        z_1d = coord['z_1d']
+
+        def SG_integral(Rp, R, z):
+            dR = np.append(Rp[0], Rp[1:]-Rp[:-1])
+            Rp_R = Rp/R
+            RpxR = Rp*R
+            k2 = 4*RpxR/((R+Rp)**2 + z**2)
+            k = np.sqrt(k2)
+            K1 = ellipk(k2) #Is it k or k2 here? the definition in the Gradshteyn+1980 book is diff from scipy's definition.
+            E2 = ellipe(k2)
+            surf_dens = SurfaceDensity.pringle({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
+            val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
+            #return sfc.G*val*sfu.au 
+            return sfc.G*np.sum(val*dR)*sfu.au 
+        R_len = len(R_1d)
+        SG_1d = []    
+        for i in range(R_len):
+            #SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
+            SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i]))
+    
+        SG_2d = interp1d(R_1d, SG_1d)
+        print (SG_1d, z_1d, R_1d)
+        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au))*1e-3 #np.array(SG_1d)
 
 
 class Intensity:   
@@ -1640,8 +1674,9 @@ class Intensity:
         #for i, v_chan in enumerate(vchannels):
         #viter = iter(vchannels)
         #for _ in itertools.repeat(None, nchan):
-        for i in range(nchan):
-            v_near, v_far = self.get_line_profile(vchannels[i], vel2d, linew2d, lineb2d, **kwargs)
+        #for i in range(nchan):
+        for vchan in vchannels:
+            v_near, v_far = self.get_line_profile(vchan, vel2d, linew2d, lineb2d, **kwargs)
             v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
             v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
             
@@ -1733,8 +1768,6 @@ class Mcmc:
         col_count = np.zeros(ncols).astype('int')
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(3.*ncols, 3*nrows))
-
-        #print (header, kind, samples.shape)
         x0_hline = 0
         for k, key in enumerate(kind):
             j = kind_col[key]
@@ -1767,7 +1800,6 @@ class Mcmc:
         plt.tight_layout()
         plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
         plt.close()
-
 
     @staticmethod
     def plot_corner(samples, labels=None, quantiles=None):
@@ -1831,6 +1863,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self.R_true = hypot_func(x_true, y_true) #grid.rRTP[1] #Slightly different as in the grid object the pixels R=0 actually take the closest-neighbour value. Current approach masks r,R=0
         self.x_true, self.y_true = x_true, y_true
         self.mesh = np.meshgrid(skygrid.XYZgrid[0], skygrid.XYZgrid[1]) #disc grid will be interpolated onto this sky grid in make_model(). Must match data dims for mcmc. 
+        
+        self.R_1d = None #will be modified if selfgravity is considered
 
         if subpixels and isinstance(subpixels, int):
             if subpixels%2 == 0: subpixels+=1 #If input even becomes odd to contain pxl centre
@@ -1877,7 +1911,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                           }
         
         self.mc_boundaries = {'velocity': {'Mstar': [0.05, 5.0],
-                                           'vsys': [-10, 10]},
+                                           'vsys': [-10, 10],
+                                           'Ec': [0, 300],
+                                           'Rc': [50, 300],
+                                           'gamma': [0.5, 2.0]},
                               'orientation': {'incl': [-np.pi/3, np.pi/3], 
                                               'PA': [-np.pi, np.pi],
                                               'xc': [-50, 50],
@@ -2110,9 +2147,15 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         if z_mirror: z_true_far = -z_true
         else: z_true_far = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
- 
-        grid_true = {'upper': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true], 
-                     'lower': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true]}
+
+        if self.velocity_func is Velocity.keplerian_vertical_selfgravity:
+            z_1d = self.z_upper_func({'R': self.R_1d*sfu.au}, **self.params['height_upper'])/sfu.au
+            if z_mirror: z_far_1d = -z_1d
+            else: z_far_1d = self.z_lower_func({'R': self.R_1d*sfu.au}, **self.params['height_lower'])/sfu.au
+        else: z_1d = z_far_1d = None
+
+        grid_true = {'upper': [self.x_true, self.y_true, z_true, self.R_true, self.phi_true, self.R_1d, z_1d], 
+                     'lower': [self.x_true, self.y_true, z_true_far, self.R_true, self.phi_true, self.R_1d, z_far_1d]}
 
         #*******************************
         #COMPUTE PROPERTIES ON SKY GRID #This will no longer be necessary as all four functions will always be called
