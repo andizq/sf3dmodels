@@ -12,7 +12,6 @@ from astropy.convolution import Gaussian2DKernel, convolve
 from scipy.interpolate import griddata, interp1d
 from scipy.special import ellipk, ellipe
 import matplotlib.patches as patches
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
@@ -41,16 +40,13 @@ except ImportError:
 __all__ = ['Cube', 'Tools', 'Intensity', 'Velocity', 'General2d', 'Rosenfeld2d']
 path_file = os.path.dirname(os.path.realpath(__file__))+'/'
 
+"""
 matplotlib.rcParams['font.family'] = 'monospace'
 matplotlib.rcParams['font.weight'] = 'normal'
 matplotlib.rcParams['lines.linewidth'] = 1.5
 matplotlib.rcParams['axes.linewidth'] = 3.0
 matplotlib.rcParams['xtick.major.width']=1.6
 matplotlib.rcParams['ytick.major.width']=1.6
-
-SMALL_SIZE = 10
-MEDIUM_SIZE = 15
-BIGGER_SIZE = 22
 
 matplotlib.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
 matplotlib.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of axes title
@@ -65,6 +61,11 @@ params = {'xtick.major.size': 6.5,
           }
 
 matplotlib.rcParams.update(params)
+"""
+SMALL_SIZE = 10
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 22
+
 sigma2fwhm = np.sqrt(8*np.log(2))
 
 hypot_func = lambda x,y: np.sqrt(x**2 + y**2) #Slightly faster than np.hypot<np.linalg.norm<scipydistance. Checked precision up to au**2 orders and it all seems ok.
@@ -361,7 +362,7 @@ class PlotTools:
         for num, col in enumerate(['red', 'green', 'blue']):                                               
             col_list = [[float_list[i], rgb_list[i][num], rgb_list[i][num]] for i in range(len(float_list))]
             cdict[col] = col_list
-        cmap_new = colors.LinearSegmentedColormap('my_cmp', segmentdata=cdict, N=256)
+        cmap_new = matplotlib.colors.LinearSegmentedColormap('my_cmp', segmentdata=cdict, N=256)
         return cmap_new
         
     @staticmethod
