@@ -21,7 +21,7 @@ TINY_SIZE = 5
 SMALL_SIZE = 10
 MEDIUM_SIZE = 15
 BIGGER_SIZE = 20
-
+"""
 matplotlib.rcParams['font.family'] = 'monospace'
 matplotlib.rcParams['font.weight'] = 'normal'
 matplotlib.rcParams['lines.linewidth'] = 1.5
@@ -43,7 +43,7 @@ matplotlib.rc('xtick', labelsize=SMALL_SIZE)
 matplotlib.rc('ytick', labelsize=SMALL_SIZE)   
 matplotlib.rc('legend', fontsize=SMALL_SIZE)   
 matplotlib.rc('figure', titlesize=BIGGER_SIZE)  
-
+"""
 
 class Error(Exception):
     """Base class for exceptions in this module."""
