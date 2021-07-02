@@ -4,4 +4,4 @@ matplotlib
 numpy
 cython
 pandas
-emcee
+emcee<3.0
