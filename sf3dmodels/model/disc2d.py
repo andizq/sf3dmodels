@@ -3,14 +3,19 @@
 ==============
 Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 """
-#TODO in show(): Perhaps use text labels on line profiles to distinguish prof from more than 2 cubes.  
+#TODO in show(): Perhaps use text labels on line profiles to distinguish profiles for more than 2 cubes.  
 #TODO in make_model(): Find a smart way to detect and pass only the coords needed by a prop attribute.
+#TODO in run_mcmc(): Enable an arg to allow the user see the position of parameter walkers every 'arg' steps.
+#TODO in General2d: Implement irregular grids (see e.g.  meshio from nschloe on github) for the disc grid.
+#TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.  
+#TODO in get_cube(): Avoid using too many masks, I think only one mask of nans is needed before beam convolution.
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
 from astropy.convolution import Gaussian2DKernel, convolve
 from scipy.interpolate import griddata, interp1d
 from scipy.special import ellipk, ellipe
+from scipy.optimize import curve_fit
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -211,41 +216,53 @@ class Tools:
             print('frac_pixels is <= 1, no average was performed...')
             return data
 
+    @staticmethod
+    def weighted_std(prop, weights, weighted_mean=None):
+        sum_weights = np.sum(weights)
+        if weighted_mean is None:
+            weighted_mean = np.sum(weights*prop)/sum_weights
+        n = np.sum(weights>0)
+        w_std = np.sqrt(np.sum(weights*(prop-weighted_mean)**2)/((n-1)/n * sum_weights))
+        return w_std
+            
     #define a fit_double_bell func, with a model input as an optional arg to constrain initial guesses better
     @staticmethod
-    def fit_one_gauss_cube(data, vchannels, lw_chan=1.0):
+    def fit_one_gauss_cube(data, vchannels, lw_chan=1.0, sigma_fit=None):
         """
         Fit Gaussian profile along velocity axis to input data
         lw_chan: initial guess for line width is lw_chan*np.mean(dvi).  
         """
-        from scipy.optimize import curve_fit
         gauss = lambda x, *p: p[0]*np.exp(-(x-p[1])**2/(2.*p[2]**2))
         nchan, nx, ny = np.shape(data)
-        peak = np.zeros((nx, ny))
-        centroid = np.zeros((nx, ny))
-        linewidth = np.zeros((nx, ny))
+        peak, dpeak = np.zeros((nx, ny)), np.zeros((nx, ny))
+        centroid, dcent = np.zeros((nx, ny)), np.zeros((nx, ny))
+        linewidth, dlinew = np.zeros((nx, ny)), np.zeros((nx, ny))
         nbad = 0
         ind_max = np.argmax(data, axis=0)
         I_max = np.max(data, axis=0)
         vel_peak = vchannels[ind_max]
         dv = lw_chan*np.mean(vchannels[1:]-vchannels[:-1])
         progress = Tools._progress_bar   
+        if sigma_fit is None: sigma_func = lambda i,j: None
+        else: sigma_func = lambda i,j: sigma_fit[:,i,j]
         print ('Fitting Gaussian profile to pixels (along velocity axis)...')
         for i in range(nx):
             for j in range(ny):
                 tmp_data = data[:,i,j]
                 try: coeff, var_matrix = curve_fit(gauss, vchannels, tmp_data, 
-                                                   p0=[I_max[i,j], vel_peak[i,j], dv])
+                                                   p0=[I_max[i,j], vel_peak[i,j], dv],
+                                                   sigma=sigma_func(i,j))
                 except RuntimeError: 
                     nbad+=1
                     continue
                 peak[i,j] = coeff[0]
                 centroid[i,j] = coeff[1]
                 linewidth[i,j] = coeff[2]
+                dpeak[i,j], dcent[i,j], dlinew[i,j] = np.sqrt(np.diag(var_matrix))
             progress(int(100*i/nx))
         progress(100)
         print ('\nGaussian fit did not converge for %.2f%s of the pixels'%(100.0*nbad/(nx*ny),'%'))
-        return peak, centroid, linewidth
+        return peak, centroid, linewidth, dpeak, dcent, dlinew
         
     @staticmethod
     def get_tb(I, nu, beam, full=True):
@@ -353,10 +370,7 @@ class PlotTools:
         """
 
         rgb_list = [matplotlib.colors.to_rgb(i) for i in hex_list]
-        if float_list:                                    
-            pass
-        else:                      
-            float_list = list(np.linspace(0,1,len(rgb_list)))
+        if float_list is None: float_list = np.linspace(0,1,len(rgb_list))
                                                                                                                                           
         cdict = dict()                                                                                
         for num, col in enumerate(['red', 'green', 'blue']):                                               
@@ -366,9 +380,8 @@ class PlotTools:
         return cmap_new
         
     @staticmethod
-    def append_stddev_panel(ax, prop): #attach significance panel to ax, based on dist. of points prop 
+    def append_stddev_panel(ax, prop, weights=None, hist=False, fit_gauss_hist=False): #attach significance panel to ax, based on dist. of points prop 
         gauss = lambda x, A, mu, sigma: A*np.exp(-(x-mu)**2/(2.*sigma**2))
-        ax[-1].set_xlim(-0.2, 1.2)
         ax1_ylims = ax[-2].get_ylim()
         for axi in ax[:-1]: axi.tick_params(which='both', right=False, labelright=False)
         ax[-1].tick_params(which='both', top=False, bottom=False, labelbottom=False, 
@@ -376,22 +389,39 @@ class PlotTools:
         ax[-1].yaxis.set_label_position('right')
         ax[-1].spines['left'].set_color('0.6')
         ax[-1].spines['left'].set_linewidth(3.5)
-    
-        prop_mean = np.mean(prop)
-        prop_std = np.std(prop)
+
+        if weights is not None:
+            prop_mean = np.sum(weights*prop)/np.sum(weights)
+            prop_std = Tools.weighted_std(prop, weights, weighted_mean=prop_mean)
+        else:
+            prop_mean = np.mean(prop)
+            prop_std = np.std(prop)
+        max_y = 1.0
+        if hist:
+            n, bins, patches = ax[-1].hist(prop, bins=2*int(round(len(prop)**(1/3.)))-1, orientation='horizontal', 
+                                           density=True, linewidth=1.5, facecolor='0.95', edgecolor='k', alpha=1.0)
+            max_y = np.max(n)
+            if fit_gauss_hist: #Fit Gaussian to histogram to compare against data distribution
+                coeff, var_matrix = curve_fit(gauss, 0.5*(bins[1:]+bins[:-1]), n, p0=[max_y, prop_mean, prop_std])
+                prop_x = np.linspace(prop_mean-4*prop_std, prop_mean+4*prop_std, 100)
+                prop_y = gauss(prop_x, *coeff)
+                ax[-1].plot(prop_y, prop_x, color='tomato', ls='--', lw=2.0)
+            
         prop_x = np.linspace(prop_mean-4*prop_std, prop_mean+4*prop_std, 100)
-        prop_pars =  [1.0, prop_mean, prop_std]
+        prop_pars =  [max_y, prop_mean, prop_std]
         prop_y = gauss(prop_x, *prop_pars)
         ax[-1].plot(prop_y, prop_x, color='limegreen', lw=3.5)
+        ax[-1].set_xlim(-0.2*max_y, 1.2*max_y)
+
         #ax[-1].plot([-0.2, 1.0], [prop_mean]*2, color='0.6', lw=2.5)
         #for axi in ax[:-1]: axi.axhline(prop_mean, color='0.6', lw=2.5)    
         for i in range(0,4): 
             prop_stdi = prop_mean+i*prop_std
             gauss_prop_stdi = gauss(prop_stdi, *prop_pars)
-            ax[-1].plot([-0.2, gauss_prop_stdi], [prop_stdi]*2, color='0.6', ls=':', lw=2.)
+            ax[-1].plot([-0.2*max_y, gauss_prop_stdi], [prop_stdi]*2, color='0.6', ls=':', lw=2.)
             for axi in ax[:-1]: axi.axhline(prop_stdi, color='0.6', ls=':', lw=2.)
             if prop_stdi < ax1_ylims[-1] and i>0:
-                ax[-1].text(gauss_prop_stdi+0.2, prop_stdi, r'%d$\sigma$'%i, 
+                ax[-1].text(gauss_prop_stdi+0.2*max_y, prop_stdi, r'%d$\sigma$'%i, 
                             fontsize=14, ha='center', va='center', rotation=-90)
         for axi in ax: axi.set_ylim(*ax1_ylims)
 
@@ -455,7 +485,8 @@ class Contours(PlotTools):
                           color_bounds=[np.pi/5, np.pi/2],
                           colors=['k', 'dodgerblue', (0,1,0), (1,0,0)],
                           lws=[2, 0.5, 0.2, 0.2], lw_ax2_factor=1,
-                          subtract_quadrants=False):
+                          subtract_quadrants=False,
+                          subtract_func=np.subtract):
         """
         Compute radial/azimuthal contours according to the model disc geometry 
         to get and plot information from the input 2D property ``prop``.    
@@ -509,7 +540,10 @@ class Contours(PlotTools):
            (i>0) for subsequent bounds.
 
         subtract_quadrants : bool, optional
-           If True, subtract residuals by folding along the projected minor axis of the disc.
+           If True, subtract residuals by folding along the projected minor axis of the disc. Currently working for azimuthal contours only.
+           
+        subtract_func : function, optional
+           If subtract_quadrants, this function is used to operate between folded quadrants. Defaults to np.subtract.
         """
         from skimage import measure 
 
@@ -543,7 +577,7 @@ class Contours(PlotTools):
                     color = colors[i+1]
                     break
 
-            if subtract_quadrants: #Currently for azimuthal contours only
+            if subtract_quadrants:
                 #if lev < color_bounds[0]: continue
                 ref_pos = PA+90 #Reference axis for positive angles
                 ref_neg = PA-90
@@ -562,7 +596,7 @@ class Contours(PlotTools):
                     ind = np.argmin(np.abs(-1*relative_diff_pos - diff))  
                     mirror_ind = angles==angles_pos[ind]
                     current_ind = angles==angles_pos[i]
-                    prop_diff = prop_[current_ind][0] - prop_[mirror_ind][0]
+                    prop_diff = subtract_func(prop_[current_ind][0], prop_[mirror_ind][0])
                     angle_diff_pos.append(angles_pos[i])
                     prop_diff_pos.append(prop_diff)
                 angle_diff_pos = np.asarray(angle_diff_pos)
@@ -586,7 +620,7 @@ class Contours(PlotTools):
                     ind = np.argmin(np.abs(-1*relative_diff_neg - diff))
                     mirror_ind = angles==angles_neg[ind]
                     current_ind = angles==angles_neg[i]
-                    prop_diff = prop_[current_ind][0] - prop_[mirror_ind][0]
+                    prop_diff = subtract_func(prop_[current_ind][0], prop_[mirror_ind][0])
                     angle_diff_neg.append(angles_neg[i])
                     prop_diff_neg.append(prop_diff)
                 angle_diff_neg = np.asarray(angle_diff_neg)
@@ -714,8 +748,7 @@ class Cube(object):
             return plot_spec
    
     def box(self, fig, ax, extent=None, compare_cubes=[], stat_func=np.mean, **kwargs):
-        from matplotlib.widgets import RectangleSelector
-        
+        from matplotlib.widgets import RectangleSelector        
         def onselect(eclick, erelease):
             if eclick.inaxes is ax[0]:
                 plot_spec = self._plot_spectrum_region(eclick.xdata, erelease.xdata, eclick.ydata, erelease.ydata, 
@@ -828,7 +861,7 @@ class Cube(object):
 
         y0, y1 = ax[1].get_position().y0, ax[1].get_position().y1
         axcbar = plt.axes([0.47, y0, 0.03, y1-y0])
-        max_data = np.max([self.data]+[comp.data for comp in compare_cubes])
+        max_data = np.nanmax([self.data]+[comp.data for comp in compare_cubes])
         ax[0].set_xlabel(pos_unit)
         ax[0].set_ylabel(pos_unit)
         ax[1].set_xlabel('l.o.s velocity [%s]'%vel_unit)
@@ -1298,7 +1331,7 @@ class SurfaceDensity:
         del self._surfacedensity_func
 
     @staticmethod
-    def pringle(coord, Ec=0.3, Rc=100.0, gamma=1.0): #0.03 g/cm2
+    def pringle(coord, Ec=30.0, Rc=100.0, gamma=1.0): #3.0 g/cm2
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         R = R/sfu.au
@@ -1383,7 +1416,7 @@ class Velocity:
             RpxR = Rp*R
             k2 = 4*RpxR/((R+Rp)**2 + z**2)
             k = np.sqrt(k2)
-            K1 = ellipk(k2) #Is it k or k2 here? the definition in the Gradshteyn+1980 book is diff from scipy's definition.
+            K1 = ellipk(k2) #It is k2 and not k here. The definition in the Gradshteyn+1980 book is diff from scipy's definition.
             E2 = ellipe(k2)
             surf_dens = SurfaceDensity.pringle({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
             val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
@@ -1396,8 +1429,8 @@ class Velocity:
             SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i]))
     
         SG_2d = interp1d(R_1d, SG_1d)
-        print (SG_1d, z_1d, R_1d)
-        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au))*1e-3 #np.array(SG_1d)
+        #print (SG_1d, z_1d, R_1d)
+        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au))*1e-3 
 
 
 class Intensity:   
@@ -1629,31 +1662,30 @@ class Intensity:
         else: lineb2d = lineslope2d
     
         v_near, v_far = self.get_line_profile(v_chan, vel2d, linew2d, lineb2d, **kwargs)
-
+        """
         v_near_clean = np.where(np.isnan(v_near), -np.inf, v_near)
         v_far_clean = np.where(np.isnan(v_far), -np.inf, v_far)
-        
-        #int2d_near = int2d['upper'] * v_near_clean / v_near_clean.max()
+        #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)        
         int2d_near = np.where(np.isnan(int2d['upper']), -np.inf, int2d['upper'] * v_near_clean)# / v_near_clean.max())
         int2d_far = np.where(np.isnan(int2d['lower']), -np.inf, int2d['lower'] * v_far_clean)# / v_far_clean.max())
-        
-        #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
-        int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
+        """
+        int2d_full = np.nanmax([int2d_near, int2d_far], axis=0)
         
         if self.beam_kernel:
+            """
             inf_mask = np.isinf(int2d_full)
+            """
+            inf_mask = np.isnan(int2d_full)
             int2d_full = np.where(inf_mask, 0.0, int2d_full) 
             int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
 
         return int2d_full
 
-    #def get_cube(self, vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchan=30, tb={'nu': False, 'beam': False}, **kwargs):
-    def get_cube(self, vchannels, velocity2d, intensity2d, linewidth2d, lineslope2d, 
+    def get_cube(self, vchannels, velocity2d, intensity2d, linewidth2d, lineslope2d, make_convolve=True, 
                  nchan=None, tb={'nu': False, 'beam': False, 'full': True}, return_data_only=False, **kwargs):
         vel2d, int2d, linew2d, lineb2d = velocity2d, {}, {}, {}
         line_profile = self.line_profile
         if nchan is None: nchan=len(vchannels)
-        #channels = np.linspace(vchan0, vchan1, num=nchan)
         cube = []
 
         if isinstance(intensity2d, numbers.Number): int2d['upper'] = int2d['lower'] = intensity2d
@@ -1663,32 +1695,38 @@ class Intensity:
         if isinstance(lineslope2d, numbers.Number): lineb2d['upper'] = lineb2d['lower'] = lineslope2d
         else: lineb2d = lineslope2d
 
-        int2d_near_nan = np.isnan(int2d['upper'])#~int2d['upper'].mask#
-        int2d_far_nan = np.isnan(int2d['lower'])#~int2d['lower'].mask#
+        """
+        int2d_near_nan = np.isnan(int2d['upper']) #~int2d['upper'].mask
+        int2d_far_nan = np.isnan(int2d['lower']) #~int2d['lower'].mask
         if self.subpixels:
             vel2d_near_nan = np.isnan(vel2d[self.sub_centre_id]['upper'])
             vel2d_far_nan = np.isnan(vel2d[self.sub_centre_id]['lower'])
         else:
-            vel2d_near_nan = np.isnan(vel2d['upper'])#~vel2d['upper'].mask#
-            vel2d_far_nan = np.isnan(vel2d['lower'])#~vel2d['lower'].mask#
+            vel2d_near_nan = np.isnan(vel2d['upper']) #~vel2d['upper'].mask
+            vel2d_far_nan = np.isnan(vel2d['lower']) #~vel2d['lower'].mask
+        """
 
-        #for i, v_chan in enumerate(vchannels):
-        #viter = iter(vchannels)
         #for _ in itertools.repeat(None, nchan):
-        #for i in range(nchan):
         for vchan in vchannels:
             v_near, v_far = self.get_line_profile(vchan, vel2d, linew2d, lineb2d, **kwargs)
+            """
             v_near_clean = np.where(vel2d_near_nan, -np.inf, v_near)
             v_far_clean = np.where(vel2d_far_nan, -np.inf, v_far)
-            
-            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['upper'] * v_near_clean)# / v_near_clean.max())
-            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['lower'] * v_far_clean)# / v_far_clean.max())        
             #vmap_full = np.array([v_near_clean, v_far_clean]).max(axis=0)
-            int2d_full = np.array([int2d_near, int2d_far]).max(axis=0)
+            int2d_near = np.where(int2d_near_nan, -np.inf, int2d['upper'] * v_near_clean)
+            int2d_far = np.where(int2d_far_nan, -np.inf, int2d['lower'] * v_far_clean)
+            """
+            int2d_near = int2d['upper'] * v_near
+            int2d_far = int2d['lower'] * v_far
+            #vel nans might differ from Int nans when a z surf is zero and SG is active, then nanmax must be used: 
+            int2d_full = np.nanmax([int2d_near, int2d_far], axis=0) 
 
-            if self.beam_kernel:
+            if make_convolve and self.beam_kernel:
+                """
                 inf_mask = np.isinf(int2d_full)
-                int2d_full = np.where(inf_mask, 0.0, int2d_full)
+                """
+                inf_mask = np.isnan(int2d_full)
+                int2d_full = np.where(inf_mask, 0.0, int2d_full)                
                 int2d_full = self._beam_area*convolve(int2d_full, self.beam_kernel, preserve_nan=False)
 
             cube.append(int2d_full)
@@ -1697,8 +1735,7 @@ class Intensity:
         else: return Cube(nchan, vchannels, np.asarray(cube), beam=self.beam_info, beam_kernel=self.beam_kernel, tb=tb)
 
     @staticmethod
-    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, linewidth2d, nchans=30, folder='./movie_channels/', **kwargs):
-        import matplotlib.pyplot as plt
+    def make_channels_movie(vchan0, vchan1, velocity2d, intensity2d, linewidth2d, lineslope2d, nchans=30, folder='./movie_channels/', **kwargs):
         channels = np.linspace(vchan0, vchan1, num=nchans)
         int2d_cube = []
         for i, vchan in enumerate(channels):
@@ -1963,7 +2000,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         if peakintensity: make_plot(self.intensity_func, 'intensity', tag='peak intensity')
         
     def run_mcmc(self, data, channels, p0_mean=[], p0_stddev=1e-3, noise_stddev=1.0,
-                 nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, z_mirror=False, 
+                 nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, 
+                 z_mirror=False, nthreads=None,
                  custom_header={}, custom_kind={}, tag='',
                  plot_walkers=True, plot_corner=True, **kwargs_model): 
         #p0: list of initial guesses. In the future will support 'optimize', 'min_bound', 'max_bound'
@@ -2017,7 +2055,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             print ('p0 pars stddev:', p0_stddev)
         Tools._break_line(init='\n', end='\n\n')
 
-        with Pool() as pool:
+        with Pool(processes=nthreads) as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
             start = time.time()
             sampler.run_mcmc(p0, nsteps, progress=True)
