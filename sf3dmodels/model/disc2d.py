@@ -8,7 +8,6 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in run_mcmc(): Enable an arg to allow the user see the position of parameter walkers every 'arg' steps.
 #TODO in General2d: Implement irregular grids (see e.g.  meshio from nschloe on github) for the disc grid.
 #TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.  
-#TODO in get_cube(): Avoid using too many masks, I think only one mask of nans is needed before beam convolution.
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -1835,8 +1834,8 @@ class Mcmc:
             if i_last < nrows-1: #Remove empty axes
                 for k in range((nrows-1)-i_last): ax[nrows-1-k][j].axis('off')
 
-        plt.tight_layout()
-        plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
+        #plt.tight_layout()
+        plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps), dpi=300)
         plt.close()
 
     @staticmethod
@@ -2064,10 +2063,11 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
         samples = sampler.chain[:, -nstats:] #3d matrix, shape (nwalkers, nstats, npars)
-        samples = samples.reshape(-1, samples.shape[-1]) #2d matrix, shape (nwalkers*nstats, npars). With the -1 np guesses the dimensionality
+        samples = samples.reshape(-1, samples.shape[-1]) #2d matrix, shape (nwalkers*nstats, npars). With -1 numpy guesses the x dimensionality
         best_params = np.median(samples, axis=0)
+        self.mc_samples = samples
         self.best_params = best_params
-
+        
         #Errors: +- 68.2 percentiles
         errpos, errneg = [], []
         for i in range(self.mc_nparams):
