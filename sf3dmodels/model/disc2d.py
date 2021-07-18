@@ -1834,7 +1834,7 @@ class Mcmc:
             if i_last < nrows-1: #Remove empty axes
                 for k in range((nrows-1)-i_last): ax[nrows-1-k][j].axis('off')
 
-        #plt.tight_layout()
+        plt.tight_layout()
         plt.savefig('mc_walkers_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps), dpi=300)
         plt.close()
 
