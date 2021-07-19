@@ -1,5 +1,4 @@
-try:
-    # Python 3.8
+try: # Python 3.8
     from importlib import metadata
 except ImportError:
     import importlib_metadata as metadata

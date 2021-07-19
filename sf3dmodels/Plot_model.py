@@ -1,27 +1,25 @@
 from __future__ import print_function
-import numpy as np
-import random
-import inspect
 import sys
 import time
+import random
+import inspect
 import warnings
 import itertools
-
-import matplotlib
-import matplotlib.pyplot as plt
+import numpy as np
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-from mpl_toolkits.mplot3d import Axes3D #Needed to handle 3d projections, even if not called
-
+#Needed to handle 3d projections, even if not called:
+from mpl_toolkits.mplot3d import Axes3D 
 from . import BuildGlobalGrid as BGG
 from . import Model
 
-
+"""
 TINY_SIZE = 5
 SMALL_SIZE = 10
 MEDIUM_SIZE = 15
 BIGGER_SIZE = 20
-"""
+
 matplotlib.rcParams['font.family'] = 'monospace'
 matplotlib.rcParams['font.weight'] = 'normal'
 matplotlib.rcParams['lines.linewidth'] = 1.5
