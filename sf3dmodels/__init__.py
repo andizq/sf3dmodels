@@ -7,10 +7,10 @@ from ._astropy_init import *
 # import version_error
 # ----------------------------------------------------------------------------
 
-if not _ASTROPY_SETUP_:
+#if not _ASTROPY_SETUP_:
     # For egg_info test builds to pass, put package imports here.
     #from .example_mod import *
-    from .__about__ import __version__
+    #from .__about__ import __version__
 
 #from .Model import grid, sphe_cart, streamline, density_Env_Disc
 
