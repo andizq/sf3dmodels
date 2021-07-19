@@ -70,9 +70,7 @@ SMALL_SIZE = 10
 MEDIUM_SIZE = 15
 BIGGER_SIZE = 22
 
-sigma2fwhm = np.sqrt(8*np.log(2))
-
-hypot_func = lambda x,y: np.sqrt(x**2 + y**2) #Slightly faster than np.hypot<np.linalg.norm<scipydistance. Checked precision up to au**2 orders and it all seems ok.
+hypot_func = lambda x,y: np.sqrt(x**2 + y**2) #Slightly faster than np.hypot<np.linalg.norm<scipydistance. Checked precision up to au**2 orders and it seems ok.
 
 class InputError(Exception):
     """Exception raised for errors in the input.
@@ -168,6 +166,7 @@ class Tools:
         from radio_beam import Beam
         from astropy.io import fits
         from astropy import units as u
+        sigma2fwhm = np.sqrt(8*np.log(2))
         if isinstance(beam, str):
             header = fits.getheader(beam)
             beam = Beam.from_fits_header(header)
