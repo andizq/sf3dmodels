@@ -8,6 +8,8 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in run_mcmc(): Enable an arg to allow the user see the position of parameter walkers every 'arg' steps.
 #TODO in General2d: Implement irregular grids (see e.g.  meshio from nschloe on github) for the disc grid.
 #TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.  
+#TODO in __main__(): show intro message when python -m disc2d
+#TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -24,7 +26,6 @@ import itertools
 import warnings
 import numbers
 import pprint
-import emcee
 import copy
 import time
 import sys
@@ -79,7 +80,6 @@ class InputError(Exception):
         expression -- input expression in which the error occurred
         message -- explanation of the error
     """
-
     def __init__(self, expression, message):
         self.expression = expression
         self.message = message
@@ -123,6 +123,15 @@ class Tools:
         y_pro = y * cos_incl - z * sin_incl
         z_pro = y * sin_incl + z * cos_incl
         return x_pro, y_pro, z_pro
+
+    @staticmethod
+    def get_sky_from_disc_coords(R, az, z, incl, PA):
+        xp = R*np.cos(az)
+        yp = R*np.sin(az)
+        zp = z
+        xp, yp, zp = Tools._project_on_skyplane(xp, yp, zp, np.cos(incl), np.sin(incl))
+        xp, yp = Tools._rotate_sky_plane(xp, yp, PA)
+        return xp, yp, zp
 
     @staticmethod #should be a bound method, self.grid is constant except for z_upper, z_lower
     def _compute_prop(grid, prop_funcs, prop_kwargs):
@@ -335,6 +344,28 @@ class PlotTools:
         newcolors = np.tile(cmap, lev).reshape(lev,4) #Repeats the colour lev times
         newcolors[:,-1] = np.linspace(0.25, 0.95, lev) #Modifies alpha only
         new_cmap = ListedColormap(newcolors)
+        return new_cmap
+
+    @staticmethod
+    def mask_cmap_interval(cmap, cmap_lims, mask_lims, mask_color=np.ones(4), append=False):
+        if isinstance(cmap, str): cmap = plt.get_cmap(cmap)
+        cmap0, cmap1 = cmap_lims
+        mask0, mask1 = mask_lims
+        c0 = (mask0-cmap0)/(cmap1-cmap0)
+        c1 = (mask1-cmap0)/(cmap1-cmap0)
+        id0 = int(round(c0*(cmap.N)))
+        id1 = int(round(c1*(cmap.N)))
+        new_cmap = copy.copy(cmap)
+        new_cmap._init()
+        """#The following does not work, plt does not know where to locate the newly added colorss
+        if append:
+           mask_color_arr = np.broadcast_to(mask_color, (id1-id0, 4))
+           new_cmap._lut = np.insert(new_cmap._lut, id0, mask_color_arr, axis=0)
+           new_cmap.N = cmap.N + id1-id0
+           #Next line redoes the continuous linearsegmented colormap, thus the masked color block is reduced to a single color  
+           #new_cmap = new_cmap._resample(new_cmap.N) 
+        """
+        new_cmap._lut[id0:id1,:] = mask_color 
         return new_cmap
 
     @staticmethod
@@ -1546,7 +1577,7 @@ class Intensity:
         del self._intensity_func
 
     @staticmethod
-    def intensity_powerlaw(coord, I0=30.0, R0=100*sfu.au, p=-0.4, z0=100*sfu.au, q=0.3): #A=600.0, p=-0.4, q=0.3): #
+    def intensity_powerlaw(coord, I0=30.0, R0=100*sfu.au, p=-0.4, z0=100*sfu.au, q=0.3):
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         z = coord['z']        
@@ -1561,7 +1592,7 @@ class Intensity:
         return A*(R**-gamma) * (1+(R/Rt)**alpha)**((gamma-beta)/alpha)
 
     @staticmethod
-    def line_profile_subchannel(line_profile_func, v_chan, v, v_sigma, b_slope, channel_width=0.1, **kwargs): #Not currently used
+    def line_profile_subchannel(line_profile_func, v_chan, v, v_sigma, b_slope, channel_width=0.1, **kwargs): #Currently not used
         half_chan = 0.5*channel_width
         v0 = v_chan - half_chan
         v1 = v_chan + half_chan
@@ -1803,13 +1834,14 @@ class Mcmc:
         kind_col = {ukind[i]: i for i in range(ncols)}
         col_count = np.zeros(ncols).astype('int')
 
-        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(3.*ncols, 3*nrows))
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(3*ncols, 3*nrows))
         x0_hline = 0
         for k, key in enumerate(kind):
             j = kind_col[key]
             i = col_count[j] 
             for walker in samples[k].T:
                 if ncols == 1: axij = ax[i]
+                elif nrows==1: axij = ax[j]
                 else: axij = ax[i][j]
                 axij.plot(walker, alpha=0.1, lw=1.0, color='k')
                 if header is not None: 
@@ -1829,8 +1861,9 @@ class Mcmc:
         for j in range(ncols):
             i_last = col_count[j]-1
             if ncols==1: ax[i_last].set_xlabel('Steps')
+            elif nrows==1: ax[j].set_xlabel('Steps') 
             else: ax[i_last][j].set_xlabel('Steps')
-            if i_last < nrows-1: #Remove empty axes
+            if nrows>1 and i_last<nrows-1: #Remove empty axes
                 for k in range((nrows-1)-i_last): ax[nrows-1-k][j].axis('off')
 
         plt.tight_layout()
@@ -1839,7 +1872,7 @@ class Mcmc:
 
     @staticmethod
     def plot_corner(samples, labels=None, quantiles=None):
-        """Plot corner plot to check covariances"""
+        """Plot corner plot to check parameter correlations. Requires the 'corner' module"""
         import corner
         quantiles = [0.16, 0.5, 0.84] if quantiles is None else quantiles
         corner.corner(samples, labels=labels, title_fmt='.4f', bins=30,
@@ -1847,6 +1880,7 @@ class Mcmc:
         
     def ln_likelihood(self, new_params, **kwargs):
         for i in range(self.mc_nparams):
+            #Assuming uniform prior likelihood (within boundaries) for all parameters
             if not (self.mc_boundaries_list[i][0] < new_params[i] < self.mc_boundaries_list[i][1]): return -np.inf
             else: self.params[self.mc_kind[i]][self.mc_header[i]] = new_params[i]
 
@@ -1961,7 +1995,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                               'linewidth': {'L0': [0.005, 5.0], 
                                             'p': [-5.0, 5.0], 
                                             'q': [-5.0, 5.0]},
-                              'lineslope': {'Ls': [0.005, 100], 
+                              'lineslope': {'Ls': [0.005, 20], 
                                             'p': [-5.0, 5.0], 
                                             'q': [-5.0, 5.0]},
                               'height_upper': {'psi': [0, np.pi/2]},
@@ -1998,19 +2032,24 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         if peakintensity: make_plot(self.intensity_func, 'intensity', tag='peak intensity')
         
     def run_mcmc(self, data, channels, p0_mean=[], p0_stddev=1e-3, noise_stddev=1.0,
-                 nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, mc_layers=1, 
-                 z_mirror=False, nthreads=None,
-                 custom_header={}, custom_kind={}, tag='',
-                 plot_walkers=True, plot_corner=True, **kwargs_model): 
+                 nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, 
+                 nthreads=None, 
+                 use_zeus=False,
+                 #custom_header={}, custom_kind={}, mc_layers=1,
+                 z_mirror=False, 
+                 plot_walkers=True, plot_corner=True, tag='', 
+                 **kwargs_model): 
         #p0: list of initial guesses. In the future will support 'optimize', 'min_bound', 'max_bound'
         self.data = data
         self.channels = channels
         self.nchan = len(channels)
         self.noise_stddev = noise_stddev
-
+        if use_zeus: import zeus as sampler_id
+        else: import emcee as sampler_id
+            
         kwargs_model.update({'z_mirror': z_mirror})
         if z_mirror: 
-            for key in self.mc_params['height_lower']: self.mc_params['height_lower'][key] = 'height_upper'
+            for key in self.mc_params['height_lower']: self.mc_params['height_lower'][key] = 'height_upper_mirror'
         self.mc_header, self.mc_kind, self.mc_nparams, self.mc_boundaries_list, self.mc_params_indices = General2d._get_params2fit(self.mc_params, self.mc_boundaries)
         self.params = copy.deepcopy(self.mc_params)
 
@@ -2054,19 +2093,22 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         Tools._break_line(init='\n', end='\n\n')
 
         with Pool(processes=nthreads) as pool:
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
+            sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
             start = time.time()
             sampler.run_mcmc(p0, nsteps, progress=True)
             end = time.time()
             multi_time = end - start
             print("Multiprocessing took {0:.1f} seconds".format(multi_time))
-
-        samples = sampler.chain[:, -nstats:] #3d matrix, shape (nwalkers, nstats, npars)
+            
+        sampler_chain = sampler.chain
+        if use_zeus: sampler_chain = np.swapaxes(sampler.chain, 0, 1) #zeus chains shape (nsteps, nwalkers, npars) must be swapped
+        samples = sampler_chain[:, -nstats:] #3d matrix, chains shape (nwalkers, nstats, npars)
         samples = samples.reshape(-1, samples.shape[-1]) #2d matrix, shape (nwalkers*nstats, npars). With -1 numpy guesses the x dimensionality
         best_params = np.median(samples, axis=0)
+        self.mc_sampler = sampler
         self.mc_samples = samples
         self.best_params = best_params
-        
+
         #Errors: +- 68.2 percentiles
         errpos, errneg = [], []
         for i in range(self.mc_nparams):
@@ -2074,7 +2116,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             indpos = samples[:,i] > tmp
             indneg = samples[:,i] < tmp
             val = samples[:,i][indpos] - tmp
-            errpos.append(np.percentile(val, [68.2])) 
+            errpos.append(np.percentile(val, [68.2])) #1 sigma (2x perc 34.1), positive pars
             val = np.abs(samples[:,i][indneg] - tmp)
             errneg.append(np.percentile(val, [68.2])) 
         self.best_params_errpos = np.asarray(errpos).squeeze()
@@ -2099,9 +2141,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         #************
         #PLOTTING
         #************
-        for key in custom_header: self.mc_header[key] = custom_header[key]
+        #for key in custom_header: self.mc_header[key] = custom_header[key]
+        #for key in custom_kund: self.mc_kind[key] = custom_kind[key]
         if plot_walkers: 
-            Mcmc.plot_walkers(sampler.chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats, tag=tag)
+            Mcmc.plot_walkers(sampler_chain.T, best_params, header=self.mc_header, kind=self.mc_kind, nstats=nstats, tag=tag)
         if plot_corner: 
             Mcmc.plot_corner(samples, labels=self.mc_header)
             plt.savefig('mc_corner_%s_%dwalkers_%dsteps.png'%(tag, nwalkers, nsteps))
