@@ -238,6 +238,7 @@ class Tools:
         """
         Fit Gaussian profile along velocity axis to input data
         lw_chan: initial guess for line width is lw_chan*np.mean(dvi).  
+        sigma_fit: cube w/ channel weights for each pixel, passed to curve_fit
         """
         gauss = lambda x, *p: p[0]*np.exp(-(x-p[1])**2/(2.*p[2]**2))
         nchan, nx, ny = np.shape(data)
@@ -984,6 +985,116 @@ class Cube(object):
                       vel_unit=vel_unit, surface=surface, **kwargs)
         def go2surface(event):
             self.surface(ax[0], *surface['args'], **surface['kwargs'])
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            
+        box_img = plt.imread(path_file+'button_box.png')
+        cursor_img = plt.imread(path_file+'button_cursor.jpeg')
+        trash_img = plt.imread(path_file+'button_trash.jpg') 
+        surface_img = plt.imread(path_file+'button_surface.png') 
+        axbcursor = plt.axes([0.05, 0.779, 0.05, 0.05])
+        axbbox = plt.axes([0.05, 0.72, 0.05, 0.05])
+        axbtrash = plt.axes([0.05, 0.661, 0.05, 0.05], frameon=True, aspect='equal')
+        bcursor = Button(axbcursor, '', image=cursor_img)
+        bcursor.on_clicked(go2cursor)
+        bbox = Button(axbbox, '', image=box_img)
+        bbox.on_clicked(go2box)
+        btrash = Button(axbtrash, '', image=trash_img, color='white', hovercolor='lime')
+        btrash.on_clicked(go2trash)
+        if len(surface['args'])>0:
+            axbsurf = plt.axes([0.005, 0.759, 0.07, 0.07], frameon=True, aspect='equal')
+            bsurf = Button(axbsurf, '', image=surface_img)
+            bsurf.on_clicked(go2surface)
+        plt.show()
+
+    def show_side_by_side(self, cube1, extent=None, chan_init=0, cursor_grid=True, cmap='gnuplot2_r',
+                          int_unit=r'Intensity [mJy beam$^{-1}$]', pos_unit='Offset [au]', vel_unit=r'km s$^{-1}$',
+                          show_beam=False, surface={'args': (), 'kwargs': {}}, **kwargs):
+        from matplotlib.widgets import Slider, Cursor, Button
+        compare_cubes = [cube1]
+        v0, v1 = self.channels[0], self.channels[-1]
+        dv = v1-v0
+        fig, ax = plt.subplots(ncols=3, figsize=(17,5))
+        plt.subplots_adjust(wspace=0.25)
+
+        y0, y1 = ax[2].get_position().y0, ax[2].get_position().y1
+        axcbar = plt.axes([0.63, y0, 0.015, y1-y0])
+        max_data = np.nanmax([self.data]+[comp.data for comp in compare_cubes])
+        ax[0].set_xlabel(pos_unit)
+        ax[0].set_ylabel(pos_unit)
+        ax[2].set_xlabel('l.o.s velocity [%s]'%vel_unit)
+        PlotTools.mod_major_ticks(ax[0], axis='both', nbins=5)
+        ax[0].tick_params(direction='out')
+        ax[2].tick_params(direction='in', right=True, labelright=False, labelleft=False)
+        axcbar.tick_params(direction='out')
+        ax[2].set_ylabel(int_unit, labelpad=15)
+        ax[2].yaxis.set_label_position('right')
+        ax[2].set_xlim(v0-0.1, v1+0.1)
+        vmin, vmax = -1*max_data/100, 0.7*max_data#0.8*max_data#
+        ax[2].set_ylim(vmin, vmax)
+        cmap = plt.get_cmap(cmap)
+        cmap.set_bad(color=(0.9,0.9,0.9))
+
+        if show_beam and self.beam_kernel: self._plot_beam(ax[0])
+
+        img = ax[0].imshow(self.data[chan_init], cmap=cmap, extent=extent, origin='lower', vmin=vmin, vmax=vmax)
+        img1 = ax[1].imshow(cube1.data[chan_init], cmap=cmap, extent=extent, origin='lower', vmin=vmin, vmax=vmax)
+        cbar = plt.colorbar(img, cax=axcbar)
+        img.cmap.set_under('w')
+        img1.cmap.set_under('w')
+        current_chan = ax[2].axvline(self.channels[chan_init], color='black', lw=2, ls='--')
+        text_chan = ax[2].text((self.channels[chan_init]-v0)/dv, 1.02, #Converting xdata coords to Axes coords 
+                               '%4.1f %s'%(self.channels[chan_init], vel_unit), ha='center', 
+                               color='black', transform=ax[2].transAxes)
+
+        if cursor_grid: cg = Cursor(ax[0], useblit=True, color='lime', linewidth=1.5)
+
+        def get_interactive(func):
+            return func(fig, [ax[0], ax[2]], extent=extent, compare_cubes=compare_cubes, **kwargs)
+        
+        interactive_obj = [get_interactive(self.interactive)]
+        #***************
+        #SLIDERS
+        #***************
+        def update_chan(val):
+            chan = int(val)
+            vchan = self.channels[chan]
+            img.set_data(self.data[chan])
+            img1.set_data(cube1.data[chan])
+            current_chan.set_xdata(vchan)
+            text_chan.set_x((vchan-v0)/dv)
+            text_chan.set_text('%4.1f %s'%(vchan, vel_unit))
+            fig.canvas.draw_idle()
+
+        ncubes = len(compare_cubes)
+        axchan = plt.axes([0.2, 0.9, 0.24, 0.05], facecolor='0.7')
+        slider_chan = Slider(axchan, 'Channel', 0, self.nchan-1, 
+                             valstep=1, valinit=chan_init, valfmt='%2d', color='dodgerblue')        
+        slider_chan.on_changed(update_chan)
+    
+        #*************
+        #BUTTONS
+        #*************
+        def go2cursor(event):
+            if self.interactive == self.cursor or self.interactive == self.point: return 0
+            interactive_obj[0].set_active(False)
+            self.interactive = self.cursor
+            interactive_obj[0] = get_interactive(self.interactive)
+        def go2box(event):
+            if self.interactive == self.box: return 0
+            fig.canvas.mpl_disconnect(interactive_obj[0])
+            self.interactive = self.box
+            interactive_obj[0] = get_interactive(self.interactive)
+        def go2trash(event):
+            print ('Cleaning interactive figure...')
+            plt.close()
+            chan = int(slider_chan.val)
+            self.show_side_by_side(cube1, extent=extent, chan_init=chan,
+                                   cursor_grid=cursor_grid, int_unit=int_unit, pos_unit=pos_unit, 
+                                   vel_unit=vel_unit, surface=surface, **kwargs)
+        def go2surface(event):
+            self.surface(ax[0], *surface['args'], **surface['kwargs'])
+            self.surface(ax[1], *surface['args'], **surface['kwargs'])
             fig.canvas.draw()
             fig.canvas.flush_events()
             

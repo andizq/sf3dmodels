@@ -6,7 +6,7 @@ include ah_bootstrap.py
 include setup.cfg
 include sf3dmodels/tests/coveragerc
 
-recursive-include sf3dmodels *.pyx *.c *.pxd
+recursive-include sf3dmodels *.pyx *.c *.pxd *button* *logo*
 recursive-include docs *
 recursive-include licenses *
 recursive-include cextern *
