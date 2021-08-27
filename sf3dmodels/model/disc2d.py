@@ -246,8 +246,8 @@ class Tools:
         centroid, dcent = np.zeros((nx, ny)), np.zeros((nx, ny))
         linewidth, dlinew = np.zeros((nx, ny)), np.zeros((nx, ny))
         nbad = 0
-        ind_max = np.argmax(data, axis=0)
-        I_max = np.max(data, axis=0)
+        ind_max = np.nanargmax(data, axis=0)
+        I_max = np.nanmax(data, axis=0)
         vel_peak = vchannels[ind_max]
         dv = lw_chan*np.mean(vchannels[1:]-vchannels[:-1])
         progress = Tools._progress_bar   
@@ -256,8 +256,8 @@ class Tools:
         print ('Fitting Gaussian profile to pixels (along velocity axis)...')
         for i in range(nx):
             for j in range(ny):
-                tmp_data = data[:,i,j]
-                try: coeff, var_matrix = curve_fit(gauss, vchannels, tmp_data, 
+                isfin = np.isfinite(data[:,i,j])
+                try: coeff, var_matrix = curve_fit(gauss, vchannels[isfin], data[:,i,j][isfin],
                                                    p0=[I_max[i,j], vel_peak[i,j], dv],
                                                    sigma=sigma_func(i,j))
                 except RuntimeError: 
@@ -694,6 +694,36 @@ class Contours(PlotTools):
                     if isinstance(axi, matplotlib.axes._subplots.Axes): axi.plot(x_cont[corr_inds], y_cont[corr_inds], color=color, lw=lw*lw_ax2_factor)
 
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
+
+    @staticmethod
+    def get_average_east_west(resid_list, coord_list, lev_list, 
+                              av_func=np.nanmean, mask_ang=0, resid_thres=None,
+                              error_func=None, error_unit=1.0, error_thres=np.inf):
+        nconts = len(lev_list)
+        if resid_thres is None: resid_thres = [3*np.std(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from residuals annulus
+        beams_ring_sqrt = np.sqrt([0.5*beams_along_ring(lev) for lev in lev_list]) #0.5 because we split the disc in halves
+        ind_west = [((coord_list[i]<90-mask_ang) & (coord_list[i]>-90+mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
+        ind_east = [((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
+        av_west = np.array([av_func(resid_list[i][ind_west[i]]) for i in range(nconts)])
+        av_east = np.array([av_func(resid_list[i][ind_east[i]]) for i in range(nconts)])
+
+        if error_func is None: #compute standard error of mean value
+            av_west_error = np.array([np.std(resid_list[i][ind_west[i]], ddof=1) for i in range(nconts)])/beams_ring_sqrt
+            av_east_error = np.array([np.std(resid_list[i][ind_east[i]], ddof=1) for i in range(nconts)])/beams_ring_sqrt
+        else: #if error map provided, compute average error per radius, divided by sqrt of number of beams (see Michiel Hogerheijde notes on errors)
+            av_west_error, av_east_error = np.zeros(nconts), np.zeros(nconts)
+            for i in range(nconts):
+                x_west, y_west, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_west[i]])
+                x_east, y_east, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_east[i]])
+                error_west = np.array(list(map(error_func, x_west, y_west))).T[0]
+                error_east = np.array(list(map(error_func, x_east, y_east))).T[0]
+                sigma2_west = np.where((np.isfinite(error_west)) & (error_unit*error_west<error_thres) & (error_west>0), (error_unit*error_west)**2, 0)
+                sigma2_east = np.where((np.isfinite(error_east)) & (error_unit*error_east<error_thres) & (error_east>0), (error_unit*error_east)**2, 0)
+                Np_west = len(coord_list[i][ind_west[i]])
+                Np_east = len(coord_list[i][ind_east[i]])
+                av_west_error[i] = np.sqrt(np.nansum(sigma2_west)/Np_west)/beams_ring_sqrt[i]  
+                av_east_error[i] = np.sqrt(np.nansum(sigma2_east)/Np_east)/beams_ring_sqrt[i]        
+        return av_west, av_east, av_west_error, av_east_error
 
 
 class Cube(object):
