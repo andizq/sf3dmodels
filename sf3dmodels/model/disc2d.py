@@ -682,7 +682,10 @@ class Contours(PlotTools):
                 resid_list.append(prop_cont[corr_inds])
                 color_list.append(color)
                 lev_list.append(lev)
-                ax.plot(second_cont[corr_inds], prop_cont[corr_inds], color=color, lw=lw, zorder=zorder)
+                ind_sort = np.argsort(second_cont[corr_inds])
+                ax.plot(second_cont[corr_inds][ind_sort], 
+                        prop_cont[corr_inds][ind_sort], 
+                        color=color, lw=lw, zorder=zorder)
 
             if ax2 is not None:
                 x_cont = np.array([X[i] for i in inds_cont])
@@ -696,33 +699,59 @@ class Contours(PlotTools):
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
 
     @staticmethod
+    def make_contour_lev(prop, lev, X, Y, acc_threshold=20): 
+        from skimage import measure 
+        contour = measure.find_contours(prop, lev)
+        inds_cont = np.round(contour[-1]).astype(np.int)
+        inds_cont = [tuple(f) for f in inds_cont]
+        first_cont = np.array([prop[i] for i in inds_cont])
+        corr_inds = np.abs(first_cont-lev) < acc_threshold
+        x_cont = np.array([X[i] for i in inds_cont])
+        y_cont = np.array([Y[i] for i in inds_cont])
+        return x_cont[corr_inds], y_cont[corr_inds], inds_cont, corr_inds
+
+    @staticmethod
+    def beams_along_ring(lev, Rgrid, beam_size, X, Y):
+        xc, yc, _, _ = Contours.make_contour_lev(Rgrid, lev, X, Y)
+        rc = hypot_func(xc, yc)
+        a = np.max(rc)
+        b = np.min(rc)
+        ellipse_perim = np.pi*(3*(a+b)-np.sqrt((3*a+b)*(a+3*b)))
+        return ellipse_perim/beam_size
+
+    @staticmethod
     def get_average_east_west(resid_list, coord_list, lev_list, 
-                              av_func=np.nanmean, mask_ang=0, resid_thres=None,
-                              error_func=None, error_unit=1.0, error_thres=np.inf):
+                              Rgrid, beam_size, X, Y,
+                              av_func=np.nanmean, mask_ang=0, resid_thres='3sigma',
+                              error_func=True, error_unit=1.0, error_thres=np.inf):
         nconts = len(lev_list)
-        if resid_thres is None: resid_thres = [3*np.std(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from residuals annulus
-        beams_ring_sqrt = np.sqrt([0.5*beams_along_ring(lev) for lev in lev_list]) #0.5 because we split the disc in halves
+        if resid_thres is None: resid_thres = [np.inf]*nconts
+        elif resid_thres == '3sigma': resid_thres = [3*np.std(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from residuals annulus
         ind_west = [((coord_list[i]<90-mask_ang) & (coord_list[i]>-90+mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
         ind_east = [((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
         av_west = np.array([av_func(resid_list[i][ind_west[i]]) for i in range(nconts)])
         av_east = np.array([av_func(resid_list[i][ind_east[i]]) for i in range(nconts)])
-
-        if error_func is None: #compute standard error of mean value
-            av_west_error = np.array([np.std(resid_list[i][ind_west[i]], ddof=1) for i in range(nconts)])/beams_ring_sqrt
-            av_east_error = np.array([np.std(resid_list[i][ind_east[i]], ddof=1) for i in range(nconts)])/beams_ring_sqrt
-        else: #if error map provided, compute average error per radius, divided by sqrt of number of beams (see Michiel Hogerheijde notes on errors)
-            av_west_error, av_east_error = np.zeros(nconts), np.zeros(nconts)
-            for i in range(nconts):
-                x_west, y_west, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_west[i]])
-                x_east, y_east, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_east[i]])
-                error_west = np.array(list(map(error_func, x_west, y_west))).T[0]
-                error_east = np.array(list(map(error_func, x_east, y_east))).T[0]
-                sigma2_west = np.where((np.isfinite(error_west)) & (error_unit*error_west<error_thres) & (error_west>0), (error_unit*error_west)**2, 0)
-                sigma2_east = np.where((np.isfinite(error_east)) & (error_unit*error_east<error_thres) & (error_east>0), (error_unit*error_east)**2, 0)
-                Np_west = len(coord_list[i][ind_west[i]])
-                Np_east = len(coord_list[i][ind_east[i]])
-                av_west_error[i] = np.sqrt(np.nansum(sigma2_west)/Np_west)/beams_ring_sqrt[i]  
-                av_east_error[i] = np.sqrt(np.nansum(sigma2_east)/Np_east)/beams_ring_sqrt[i]        
+        
+        if error_func is None: av_west_error, av_east_error = None, None
+        else:
+            beams_ring_sqrt = np.sqrt([0.5*Contours.beams_along_ring(lev, Rgrid, beam_size, X, Y) for lev in lev_list]) #0.5 because we split the disc in halves
+            if callable(error_func): #if error map provided, compute average error per radius, divided by sqrt of number of beams (see Michiel Hogerheijde notes on errors)
+                av_west_error, av_east_error = np.zeros(nconts), np.zeros(nconts)
+                for i in range(nconts):
+                    x_west, y_west, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_west[i]])
+                    x_east, y_east, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_east[i]])
+                    error_west = np.array(list(map(error_func, x_west, y_west))).T[0]
+                    error_east = np.array(list(map(error_func, x_east, y_east))).T[0]
+                    sigma2_west = np.where((np.isfinite(error_west)) & (error_unit*error_west<error_thres) & (error_west>0), (error_unit*error_west)**2, 0)
+                    sigma2_east = np.where((np.isfinite(error_east)) & (error_unit*error_east<error_thres) & (error_east>0), (error_unit*error_east)**2, 0)
+                    Np_west = len(coord_list[i][ind_west[i]])
+                    Np_east = len(coord_list[i][ind_east[i]])
+                    av_west_error[i] = np.sqrt(np.nansum(sigma2_west)/Np_west)/beams_ring_sqrt[i]  
+                    av_east_error[i] = np.sqrt(np.nansum(sigma2_east)/Np_east)/beams_ring_sqrt[i]        
+            else: #compute standard error of mean value
+                av_west_error = np.array([np.std(resid_list[i][ind_west[i]], ddof=1) for i in range(nconts)])/beams_ring_sqrt
+                av_east_error = np.array([np.std(resid_list[i][ind_east[i]], ddof=1) for i in range(nconts)])/beams_ring_sqrt
+                
         return av_west, av_east, av_west_error, av_east_error
 
 
