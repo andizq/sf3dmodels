@@ -9,7 +9,8 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in General2d: Implement irregular grids (see e.g.  meshio from nschloe on github) for the disc grid.
 #TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.  
 #TODO in __main__(): show intro message when python -m disc2d
-#TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes
+#TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes.
+#TODO in make_model(): Allow R_disc to be a free parameter.
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -726,7 +727,7 @@ class Contours(PlotTools):
                               error_func=True, error_unit=1.0, error_thres=np.inf):
         nconts = len(lev_list)
         if resid_thres is None: resid_thres = [np.inf]*nconts
-        elif resid_thres == '3sigma': resid_thres = [3*np.std(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from residuals annulus
+        elif resid_thres == '3sigma': resid_thres = [3*np.nanstd(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from residuals annulus
         ind_west = [((coord_list[i]<90-mask_ang) & (coord_list[i]>-90+mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
         ind_east = [((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
         av_west = np.array([av_func(resid_list[i][ind_west[i]]) for i in range(nconts)])
@@ -2159,7 +2160,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                                               'PA': [-np.pi, np.pi],
                                               'xc': [-50, 50],
                                               'yc': [-50, 50]},
-                              'intensity': {'I0': [0, 100], 
+                              'intensity': {'I0': [0, 1000], 
                                             'p': [-10.0, 10.0], 
                                             'q': [0, 5.0]},
                               'linewidth': {'L0': [0.005, 5.0], 
