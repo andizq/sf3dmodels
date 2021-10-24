@@ -11,6 +11,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in __main__(): show intro message when python -m disc2d
 #TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes.
 #TODO in make_model(): Allow R_disc to be a free parameter.
+#TODO in v1.0: migrate to astropy units
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -603,7 +604,7 @@ class Contours(PlotTools):
                     color = colors[0]
                     zorder = 10
                     break
-                if np.abs(coord_ref - lev) < bound: 
+                if np.abs(coord_ref - lev) < bound:
                     lw = lws[i+1]
                     color = colors[i+1]
                     break
@@ -683,7 +684,7 @@ class Contours(PlotTools):
                 resid_list.append(prop_cont[corr_inds])
                 color_list.append(color)
                 lev_list.append(lev)
-                ind_sort = np.argsort(second_cont[corr_inds])
+                ind_sort = np.argsort(second_cont[corr_inds]) #sorting by azimuth to avoid 'joint' boundaries in plot
                 ax.plot(second_cont[corr_inds][ind_sort], 
                         prop_cont[corr_inds][ind_sort], 
                         color=color, lw=lw, zorder=zorder)
@@ -1462,6 +1463,13 @@ class Height:
     @staticmethod
     def z_cone_neg(coord, psi=psi0):
         return -Height.z_cone(coord, psi)
+
+    @staticmethod
+    def z_upper_irregular(coord, file='0.txt', **kwargs):
+        R = coord['R']/sfu.au
+        Rf, zf = np.loadtxt(file)
+        z_interp = interp1d(Rf, zf, **kwargs)
+        return sfu.au*z_interp(R)
 
 
 class Linewidth:
