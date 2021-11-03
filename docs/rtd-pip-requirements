@@ -5,3 +5,4 @@ numpy
 cython
 pandas
 emcee<3.0
+docutils<0.16
