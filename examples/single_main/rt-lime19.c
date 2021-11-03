@@ -21,7 +21,7 @@ input(inputPars *par, image *img){
   par->minScale                 = 2.5*AU; // 2 * sizex / Nx / 2
   par->pIntensity               = 20000; 
   par->sinkPoints               = 5000; 
-  par->dust                     = "../opacities_k05_230GHz_B_1_7.tab";
+  par->dust                     = "opacities_k05_230GHz_B_1_7.tab";
   par->moldatfile[0]            = "ch3cn.dat";
   //par->antialias                = 1;
   par->sampling                 = 1; // if 0: log distr. for radius, directions distr. uniformly on a sphere.
