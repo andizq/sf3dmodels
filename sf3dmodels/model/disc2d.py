@@ -7,7 +7,9 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in make_model(): Find a smart way to detect and pass only the coords needed by a prop attribute.
 #TODO in run_mcmc(): Enable an arg to allow the user see the position of parameter walkers every 'arg' steps.
 #TODO in General2d: Implement irregular grids (see e.g.  meshio from nschloe on github) for the disc grid.
-#TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.  
+#TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.
+#TODO in General2d: Allow the lower surface to have independent intensity and line width parametrisations.
+#TODO in make_model(): Allow for warped emitting surfaces, check notes for ideas as to how to solve for multiple intersections between l.o.s and emission surface.
 #TODO in __main__(): show intro message when python -m disc2d
 #TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes.
 #TODO in make_model(): Allow R_disc to be a free parameter.
@@ -701,6 +703,29 @@ class Contours(PlotTools):
 
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
 
+    @staticmethod
+    def make_substructures(ax, twodim=False, gaps=[], rings=[], kinks=[],
+                           kwargs_gaps={}, kwargs_rings={}, kwargs_kinks={}):
+        '''Overlay ring-like (if twodim) or vertical lines (if not twodim) to illustrate the radial location of substructures in the disc'''
+        kwargs_g = dict(color='0.2', ls='--', lw=1.7, alpha=0.9)
+        kwargs_r = dict(color='0.2', ls='-', lw=1.7, alpha=0.9)
+        kwargs_k = dict(color='purple', ls=':', lw=2.6, alpha=0.9)
+        kwargs_gaps.update(kwargs_g)
+        kwargs_rings.update(kwargs_r)
+        kwargs_kinks.update(kwargs_k)        
+        if twodim:
+            phi = np.linspace(0, 2*np.pi, 50)
+            cos_phi = np.cos(phi)
+            sin_phi = np.sin(phi)
+            for R in gaps: ax.plot(R*cos_phi, R*sin_phi, **kwargs_gaps)
+            for R in rings: ax.plot(R*cos_phi, R*sin_phi, **kwargs_rings)
+            for R in kinks: ax.plot(R*cos_phi, R*sin_phi, **kwargs_kinks)
+        else:
+            for R in gaps: ax.axvline(R, **kwargs_gaps)
+            for R in rings: ax.axvline(R, **kwargs_rings)
+            for R in kinks: ax.axvline(R, **kwargs_kinks)
+        return ax
+        
     @staticmethod
     def make_contour_lev(prop, lev, X, Y, acc_threshold=20): 
         from skimage import measure 
