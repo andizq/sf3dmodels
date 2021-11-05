@@ -571,6 +571,29 @@ class Radmc3d(MakeDatatab): #RADMC-3D uses the cgs units system
         print ('%s is done!'%inspect.stack()[0][3])
         print ('-------------------------------------------------')
 
+    def write_mol_density(self, dens_mol, species='co', fmt = '%13.6e'):
+        """
+        Writes the file 'numberdens_XXX.inp' for radmc3d. 
+        
+        Parameters
+        ----------
+        dens_dust : list or array_like, shape(n,)  
+           The molecular number density (in :math:`1/m^3`).
+        
+        fmt : str
+           Format string for numbers in the output file.
+        """
+        dens_mol = np.asarray(dens_mol)*cm**-3
+        with open('numberdens_%s.inp'%species,'w+') as f:
+            f.write('1\n')                                          # Format number
+            f.write('%d\n'%self.nn)                                 # Nr of cells
+            #data = dens_e.ravel(order='F') # Create a 1-D view, fortran-style indexing
+            dens_mol.tofile(f, sep='\n', format=fmt)
+            f.close()
+
+        print ('%s is done!'%inspect.stack()[0][3])
+        print ('-------------------------------------------------')
+
     def write_dust_density(self, dens_dust, nrspec = 1, fmt = '%13.6e'):
         """
         Writes the file 'dust_density.inp' for radmc3d. 
