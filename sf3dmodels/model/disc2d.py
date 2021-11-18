@@ -38,6 +38,7 @@ import os
 
 from multiprocessing import Pool
 os.environ["OMP_NUM_THREADS"] = "1"
+matplotlib.use('Agg')
 
 try: 
     import termtables
@@ -2350,6 +2351,10 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self.mc_samples = samples
         self.best_params = best_params
 
+        samples_all = sampler_chain[:, :] #3d matrix, chains shape (nwalkers, nsteps, npars)
+        samples_all = samples_all.reshape(-1, samples.shape[-1]) #2d matrix, shape (nwalkers*nsteps, npars)
+        self.mc_samples_all = samples_all
+        
         #Errors: +- 68.2 percentiles
         errpos, errneg = [], []
         for i in range(self.mc_nparams):
