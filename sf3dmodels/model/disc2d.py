@@ -2369,7 +2369,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self.best_params_errneg = np.asarray(errneg).squeeze()
         
         best_fit_dict = np.array([p0_mean, best_params, self.best_params_errneg, self.best_params_errpos]).T
-        best_fit_dict = {key: str(best_fit_dict[i].tolist())[1:-1] for i,key in enumerate(self.mc_header)}
+        best_fit_dict = {key+'_'+self.mc_kind[i]: str(best_fit_dict[i].tolist())[1:-1] for i,key in enumerate(self.mc_header)}
         self.best_fit_dict = best_fit_dict
         
         Tools._break_line(init='\n')
