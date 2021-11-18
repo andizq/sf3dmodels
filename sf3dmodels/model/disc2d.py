@@ -38,7 +38,6 @@ import os
 
 from multiprocessing import Pool
 os.environ["OMP_NUM_THREADS"] = "1"
-matplotlib.use('Agg')
 
 try: 
     import termtables
