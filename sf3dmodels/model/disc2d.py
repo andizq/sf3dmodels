@@ -2367,12 +2367,16 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             errneg.append(np.percentile(val, [68.2])) 
         self.best_params_errpos = np.asarray(errpos).squeeze()
         self.best_params_errneg = np.asarray(errneg).squeeze()
-
+        
+        best_fit_dict = np.array([p0_mean, best_params, self.best_params_errneg, self.best_params_errpos]).T
+        best_fit_dict = {key: best_fit_dict[i] for i,key in enumerate(self.mc_header)}
+        self.best_fit_dict = best_fit_dict
+        
         Tools._break_line(init='\n')
         print ('Median from parameter walkers for the last %d steps:\n'%nstats)        
         if found_termtables:
-            tt_header = ['Parameter', 'Best-fit value', 'error [+]', 'error [-]']
-            tt_data = np.array([self.mc_header, self.best_params, self.best_params_errpos, self.best_params_errneg]).T
+            tt_header = ['Parameter', 'Best-fit value', 'error [-]', 'error [+]']
+            tt_data = np.array([self.mc_header, self.best_params, self.best_params_errneg, self.best_params_errpos]).T
             termtables.print(
                 tt_data,
                 header=tt_header,
