@@ -9,6 +9,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in General2d: Implement irregular grids (see e.g.  meshio from nschloe on github) for the disc grid.
 #TODO in General2d: Compute props in the interpolated grid (not in the original grid) to avoid interpolation of props and save time.
 #TODO in General2d: Allow the lower surface to have independent intensity and line width parametrisations.
+#TODO in General2d: Implement pressure support term
 #TODO in make_model(): Allow for warped emitting surfaces, check notes for ideas as to how to solve for multiple intersections between l.o.s and emission surface.
 #TODO in __main__(): show intro message when python -m disc2d
 #TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes.
