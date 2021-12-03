@@ -5,6 +5,9 @@ include ez_setup.py
 include ah_bootstrap.py
 include setup.cfg
 include sf3dmodels/tests/coveragerc
+include sf3dmodels/model/*.png
+include sf3dmodels/model/*.jpeg
+include sf3dmodels/model/*.jpg
 
 recursive-include sf3dmodels *.pyx *.c *.pxd 
 recursive-include docs *
