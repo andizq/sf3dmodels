@@ -166,10 +166,10 @@ class Tools:
         print('\r', init, border, middle * width, border, sep='', end=end)
 
     @staticmethod
-    def _print_logo(logo=path_file+'logo.txt'):
-        file = open(logo, 'r')
-        print(file.read())
-        file.close()
+    def _print_logo(filename=path_file+'logo.txt'):
+        logo = open(filename, 'r')
+        print(logo.read())
+        logo.close()
 
     @staticmethod
     def _get_beam_from(beam, dpix=None, distance=None, frac_pixels=1.0):
@@ -705,7 +705,7 @@ class Contours(PlotTools):
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
 
     @staticmethod
-    def make_substructures(ax, twodim=False, gaps=[], rings=[], kinks=[],
+    def make_substructures(ax, twodim=False, gaps=[], rings=[], kinks=[], make_labels=False,
                            kwargs_gaps={}, kwargs_rings={}, kwargs_kinks={}):
         '''Overlay ring-like (if twodim) or vertical lines (if not twodim) to illustrate the radial location of substructures in the disc'''
         kwargs_g = dict(color='0.2', ls='--', lw=1.7, alpha=0.9)
@@ -725,6 +725,10 @@ class Contours(PlotTools):
             for R in gaps: ax.axvline(R, **kwargs_gaps)
             for R in rings: ax.axvline(R, **kwargs_rings)
             for R in kinks: ax.axvline(R, **kwargs_kinks)
+        if make_labels and len(gaps)>0: ax.plot([None], [None], label='Gaps', **kwargs_g)
+        if make_labels and len(rings)>0: ax.plot([None], [None], label='Rings', **kwargs_r)
+        if make_labels and len(kinks)>0: ax.plot([None], [None], label='Kinks', **kwargs_k)
+            
         return ax
         
     @staticmethod
@@ -2511,19 +2515,26 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
             ang_fac = sin_incl * np.cos(self.phi_true) 
             for i in range(self.subpixels_sq):
-                for side in ['upper', 'lower']: subpix_vel[i][side] *= ang_fac
-
+                for side in ['upper', 'lower']:
+                    subpix_vel[i][side] *= ang_fac
+                    subpix_vel[i][side] += vel_kwargs['vsys']
+                    
             props = self._compute_prop(grid_true, prop_funcs[1:], prop_kwargs[1:])
             props.insert(0, subpix_vel)
             
         else: 
             props = self._compute_prop(grid_true, prop_funcs, prop_kwargs)
-            if true_kwargs[0]: #Positive vel is positive along z, i.e. pointing to the observer, for that reason imposed a (-) factor to convert to the standard convention: (+) receding  
-                ang_fac = sin_incl * np.cos(self.phi_true) 
-                props[0]['upper'] *= ang_fac 
-                props[0]['lower'] *= ang_fac
-                props[0]['upper'] += vel_kwargs['vsys']
-                props[0]['lower'] += vel_kwargs['vsys']
+            if true_kwargs[0]: #Convention: positive vel (+) means gas receding from observer
+                phi_fac = sin_incl * np.cos(self.phi_true) #phi component
+                for side in ['upper', 'lower']:
+                    if len(props[0][side])==3: #3D vel
+                        v3d = props[0][side]
+                        r_fac = sin_incl * np.sin(self.phi_true)
+                        z_fac = cos_incl
+                        props[0][side] = v3d[0]*phi_fac+v3d[1]*r_fac+v3d[2]*z_fac
+                    else: #1D vel, assuming vphi only
+                        props[0][side] *= phi_fac 
+                    props[0][side] += vel_kwargs['vsys']
 
         #***********************************
         #PROJECT PROPERTIES ON THE SKY PLANE        
