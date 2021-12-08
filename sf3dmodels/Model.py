@@ -360,8 +360,62 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
                       'r_disc': rdisc_max, 'r_env': renv_max, 'streamline': costheta0,
                       'nonzero_ids': nonzero_ids} )
 
-#-------------------
-#-------------------
+#-------------------------------------
+#DENSITY (viscously ev. disc) FUNCTION
+#-------------------------------------
+
+def density_lyndenbell_disc(GRID, Rc=100*AU, Ec=30.0, gamma=1.0, H0=6.5*AU, psi=1.25, Ro=500*AU,
+                            rho_thres = 10.0, rho_min = 1.0, 
+                            discFlag=True, rdisc_max = False):
+
+#Rc: characteristic radius
+#Ec: surface density normalisation at Rc
+#gamma: viscous power-law exponent
+#H0: scale height normalisation at Rc
+#psi: flaring index
+#Ro: outer radius of the disk
+#rho_thres: densities below this value will acquire a density val of rho_min 
+    
+    XYZ, rRTP = GRID.XYZ, GRID.rRTP
+
+    #------------
+    #LISTS TO USE
+    #------------
+    zList = XYZ[2]
+    rList, RList = rRTP[:-2] 
+
+    #-------------------------------------------------------
+    #MODEL. Hartmann et al. 1998, Izquierdo et al. 2021(A&A)
+    #-------------------------------------------------------
+
+    #------------
+    #DISC PROFILE
+    #------------
+    if discFlag:
+        print ('Computing Lynden-Bell disc density...')
+        if not rdisc_max: rdisc_max = Ro
+        print ('Scale-height at Rc (au):', H0/AU)
+        H = H0*(RList/Rc)**psi #Scaleheight powerlaw
+        rhoDISC = np.where( RList <= rdisc_max,
+                            Ec*(RList/Rc)**-gamma*np.exp(-1*(RList/Rc)**(2-gamma)) * np.exp(-0.5*(zList/H)**2)/(np.sqrt(2*np.pi)*H), rho_min)
+        rhoDISC = np.where( rhoDISC < rho_thres, rho_min, rhoDISC)
+    else: 
+        print ('No Disc was invoked!')
+        rhoDISC = np.zeros(GRID.NPoints)
+        
+    #----------------------------------------------
+    #----------------------------------------------
+
+    nonzero_ids = np.where(rhoDISC != 0.0)
+    #rhoDISC[GRID.R_ind_zero] = 0 #*np.mean(rhoDISC)
+    
+    print ('%s is done!'%inspect.stack()[0][3])
+    print ('-------------------------------------------------\n-------------------------------------------------')
+
+    return Struct( **{'total': rhoDISC, 'disc': rhoDISC, 'env': 0., 'H': H,  
+                      'discFlag': discFlag, 'envFlag': False, 'Rc': Rc, 
+                      'r_disc': rdisc_max, 'r_env': False,
+                      'nonzero_ids': nonzero_ids} ) 
 
 #------------------------------
 #DENSITY (Hamburguers) FUNCTION
