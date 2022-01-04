@@ -14,6 +14,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in __main__(): show intro message when python -m disc2d
 #TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes.
 #TODO in make_model(): Allow R_disc to be a free parameter.
+#TODO in make_model(): Enable 3D velocities too when subpixel algorithm is used
 #TODO in v1.0: migrate to astropy units
 from __future__ import print_function
 from ..utils import constants as sfc
@@ -77,7 +78,7 @@ SMALL_SIZE = 10
 MEDIUM_SIZE = 15
 BIGGER_SIZE = 22
 
-hypot_func = lambda x,y: np.sqrt(x**2 + y**2) #Slightly faster than np.hypot<np.linalg.norm<scipydistance. Checked precision up to au**2 orders and it seems ok.
+hypot_func = lambda x,y: np.sqrt(x**2 + y**2) #Slightly faster than np.hypot<np.linalg.norm<scipydistance. Checked precision up to au**2 orders and seemed ok.
 
 class InputError(Exception):
     """Exception raised for errors in the input.
@@ -1590,6 +1591,30 @@ class Lineslope:
             return A*R**p*np.abs(z)**q
 
 
+class ScaleHeight:
+    @property
+    def scaleheight_func(self): 
+        return self._scaleheight_func
+          
+    @scaleheight_func.setter 
+    def scaleheight_func(self, surf): 
+        print('Setting scaleheight function to', surf) 
+        self._scaleheight_func = surf
+
+    @scaleheight_func.deleter 
+    def scaleheight_func(self): 
+        print('Deleting scaleheight function') 
+        del self._scaleheight_func
+
+    @staticmethod
+    def powerlaw(coord, H0=6.5, psi=1.25, R0=100.0):
+        #Simple powerlaw in R. 
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        R = R/sfu.au
+        return sfu.au*H0*(R/R0)**psi
+
+        
 class SurfaceDensity:
     @property
     def surfacedensity_func(self): 
@@ -1606,12 +1631,21 @@ class SurfaceDensity:
         del self._surfacedensity_func
 
     @staticmethod
-    def pringle(coord, Ec=30.0, Rc=100.0, gamma=1.0): #3.0 g/cm2
+    def powerlaw(coord, Ec=30.0, gamma=1.0, Rc=100.0):
+        #Simple powerlaw in R.
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        R = R/sfu.au
+        return Ec*(R/Rc)**-gamma
+
+    @staticmethod
+    def powerlaw_tapered(coord, Ec=30.0, Rc=100.0, gamma=1.0): #30.0 kg/m2 or 3.0 g/cm2
+        #Self-similar model of thin, viscous accretion disc, see Rosenfeld+2013.
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
         R = R/sfu.au
         return Ec*(R/Rc)**-gamma * np.exp(-(R/Rc)**(2-gamma))
-
+    
 
 class Temperature:
     @property
@@ -1646,7 +1680,8 @@ class Velocity:
     def velocity_func(self, vel): 
         print('Setting velocity function to', vel) 
         self._velocity_func = vel
-        if vel is Velocity.keplerian_vertical_selfgravity:
+        if (vel is Velocity.keplerian_vertical_selfgravity or
+            vel is Velocity.keplerian_vertical_selfgravity_pressure):
             R_true_au = self.R_true/sfu.au
             tmp = np.unique(np.array(R_true_au).astype(np.int32))
             #Adding missing upper bound for interp1d purposes:
@@ -1674,39 +1709,112 @@ class Velocity:
         return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 
 
     @staticmethod
-    def keplerian_vertical_selfgravity(coord, Mstar=1.0, vel_sign=1, vsys=0,
-                                       Ec=30.0, Rc=100.0, gamma=1.0
-                                       ):
+    def keplerian_vertical_pressure(coord, Mstar=1.0, vel_sign=1, vsys=0,
+                                    gamma=1.0, beta=0.5, H0=6.5, R0=100.0):
+        #pressure support taken from Lodato's 2021 notes and Viscardi+2021 thesis
+        #--> pressure term assumes vertically isothermal disc, T propto R**-beta, and surfdens propto R**-gamma (using Rosenfeld+2013 notation).
+        #--> R0 is the ref radius for scaleheight powerlaw, no need to be set as free par during mcmc.
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R']
         if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
         else: r = coord['r']
-        R_1d = coord['R_1d']
-        z_1d = coord['z_1d']
+        z = coord['z']
+        
+        z_R2 = (z/R)**2
+        z_R32 = (1+z_R2)**1.5
+        alpha = 1.5 + gamma + 0.5*beta
+        dlogH_dlogR = 1.5 - 0.5*beta
+        psi = -0.5*beta + 1.5
+        H = ScaleHeight.powerlaw({'R': R}, H0=H0, R0=R0, psi=psi)
+        vk2 = sfc.G*Mstar/R
+        vp2 = vk2*( -alpha*(H/R)**2 + (2/z_R32)*( 1+1.5*z_R2-z_R32-dlogH_dlogR*(1+z_R2-z_R32) ) ) #pressure term        
+        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + vp2) * 1e-3 
 
+    @staticmethod
+    def keplerian_vertical_selfgravity(coord, Mstar=1.0, vel_sign=1, vsys=0,
+                                       Ec=30.0, Rc=100.0, gamma=1.0):
+        #disc self-gravity contribution taken from Veronesi+2021
+        #using exponentially tapered powerlaw function for surfdens
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R'] 
+        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
+        else: r = coord['r']
+        R_1d = coord['R_1d'] #in au to ease computing below
+        z_1d = coord['z_1d'] #in au
+        
         def SG_integral(Rp, R, z):
             dR = np.append(Rp[0], Rp[1:]-Rp[:-1]) ##
             Rp_R = Rp/R
             RpxR = Rp*R
             k2 = 4*RpxR/((R+Rp)**2 + z**2)
             k = np.sqrt(k2)
-            K1 = ellipk(k2) #It is k2 and not k here. The definition in the Gradshteyn+1980 book is diff from scipy's definition.
+            K1 = ellipk(k2) #It's k2 (not k) here. The def in the Gradshteyn+1980 book differs from that of scipy.
             E2 = ellipe(k2)
-            surf_dens = SurfaceDensity.pringle({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
+            #surf_dens = SurfaceDensity.powerlaw_tapered({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
+            surf_dens = SurfaceDensity.powerlaw({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
             val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
             #return sfc.G*val*sfu.au 
             return sfc.G*np.sum(val*dR)*sfu.au ##
+
         R_len = len(R_1d)
         SG_1d = []    
         for i in range(R_len):
             #SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
             SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
-    
         SG_2d = interp1d(R_1d, SG_1d)
-        #print (SG_1d, z_1d, R_1d)
-        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au))*1e-3 
 
+        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au)) * 1e-3 
+    
+    @staticmethod
+    def keplerian_vertical_selfgravity_pressure(coord, Mstar=1.0, vel_sign=1, vsys=0,
+                                                Ec=30.0, gamma=1.0,
+                                                beta=0.5,
+                                                H0=6.5,
+                                                Rc=100.0, R0=100.0):
+        #--> Rc and R0 are reference radii for surfdens and scaleheight powerlaws, no need to be set as free pars during mcmc.
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R']
+        if 'r' not in coord.keys(): r = hypot_func(R, coord['z'])
+        else: r = coord['r']
+        R_1d = coord['R_1d'] 
+        z_1d = coord['z_1d'] 
+        
+        def SG_integral(Rp, R, z):
+            dR = np.append(Rp[0], Rp[1:]-Rp[:-1]) ##
+            Rp_R = Rp/R
+            RpxR = Rp*R
+            k2 = 4*RpxR/((R+Rp)**2 + z**2)
+            k = np.sqrt(k2)
+            K1 = ellipk(k2) #It's k2 (not k) here. The def in the Gradshteyn+1980 book differs from that of scipy.
+            E2 = ellipe(k2)
+            surf_dens = SurfaceDensity.powerlaw({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
+            val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
+            #return sfc.G*val*sfu.au 
+            return sfc.G*np.sum(val*dR)*sfu.au ##
+
+        R_len = len(R_1d)
+        SG_1d = []    
+        for i in range(R_len):
+            #SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
+            SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
+        SG_2d = interp1d(R_1d, SG_1d)
+
+        #calculate pressure support
+        z = coord['z']
+        z_R2 = (z/R)**2
+        z_R32 = (1+z_R2)**1.5
+        alpha = 1.5 + gamma + 0.5*beta
+        dlogH_dlogR = 1.5 - 0.5*beta
+        psi = -0.5*beta + 1.5
+        H = ScaleHeight.powerlaw({'R': R}, H0=H0, R0=R0, psi=psi)
+        vk2 = sfc.G*Mstar/R
+        vp2 = vk2*( -alpha*(H/R)**2 + (2/z_R32)*( 1+1.5*z_R2-z_R32-dlogH_dlogR*(1+z_R2-z_R32) ) )
+        
+        return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au) + vp2) * 1e-3 
+    
 
 class Intensity:   
     @property
@@ -2483,7 +2591,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         if z_mirror: z_true_far = -z_true
         else: z_true_far = self.z_lower_func({'R': self.R_true, 'phi': self.phi_true}, **self.params['height_lower']) 
 
-        if self.velocity_func is Velocity.keplerian_vertical_selfgravity:
+        if (self.velocity_func is Velocity.keplerian_vertical_selfgravity or
+            self.velocity_func is Velocity.keplerian_vertical_selfgravity_pressure):
             z_1d = self.z_upper_func({'R': self.R_1d*sfu.au}, **self.params['height_upper'])/sfu.au
             if z_mirror: z_far_1d = -z_1d
             else: z_far_1d = self.z_lower_func({'R': self.R_1d*sfu.au}, **self.params['height_lower'])/sfu.au
