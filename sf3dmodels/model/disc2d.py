@@ -1763,7 +1763,7 @@ class Velocity:
         R_len = len(R_1d)
         SG_1d = []    
         for i in range(R_len):
-            SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
+            SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]), limit=100)[0])
             #SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
         SG_2d = interp1d(R_1d, SG_1d)
 
@@ -1800,7 +1800,7 @@ class Velocity:
         R_len = len(R_1d)
         SG_1d = []    
         for i in range(R_len):
-            SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
+            SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]), limit=100)[0])
             #SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
         SG_2d = interp1d(R_1d, SG_1d)
 
