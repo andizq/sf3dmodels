@@ -1745,7 +1745,7 @@ class Velocity:
         z_1d = coord['z_1d'] #in au
         
         def SG_integral(Rp, R, z):
-            dR = np.append(Rp[0], Rp[1:]-Rp[:-1]) ##
+            #dR = np.append(Rp[0], Rp[1:]-Rp[:-1]) ##
             Rp_R = Rp/R
             RpxR = Rp*R
             k2 = 4*RpxR/((R+Rp)**2 + z**2)
@@ -1755,14 +1755,14 @@ class Velocity:
             #surf_dens = SurfaceDensity.powerlaw_tapered({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
             surf_dens = SurfaceDensity.powerlaw({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
             val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
-            #return sfc.G*val*sfu.au 
-            return sfc.G*np.sum(val*dR)*sfu.au ##
+            return sfc.G*val*sfu.au 
+            #return sfc.G*np.sum(val*dR)*sfu.au ##
 
         R_len = len(R_1d)
         SG_1d = []    
         for i in range(R_len):
-            #SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
-            SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
+            SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
+            #SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
         SG_2d = interp1d(R_1d, SG_1d)
 
         return vel_sign*np.sqrt(R**2*sfc.G*Mstar/r**3 + SG_2d(R/sfu.au)) * 1e-3 
@@ -1783,7 +1783,7 @@ class Velocity:
         z_1d = coord['z_1d'] 
         
         def SG_integral(Rp, R, z):
-            dR = np.append(Rp[0], Rp[1:]-Rp[:-1]) ##
+            #dR = np.append(Rp[0], Rp[1:]-Rp[:-1]) ##
             Rp_R = Rp/R
             RpxR = Rp*R
             k2 = 4*RpxR/((R+Rp)**2 + z**2)
@@ -1792,14 +1792,14 @@ class Velocity:
             E2 = ellipe(k2)
             surf_dens = SurfaceDensity.powerlaw({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
             val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
-            #return sfc.G*val*sfu.au 
-            return sfc.G*np.sum(val*dR)*sfu.au ##
+            return sfc.G*val*sfu.au 
+            #return sfc.G*np.sum(val*dR)*sfu.au ##
 
         R_len = len(R_1d)
         SG_1d = []    
         for i in range(R_len):
-            #SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
-            SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
+            SG_1d.append(quad(SG_integral, 0, np.inf, args=(R_1d[i], z_1d[i]))[0])
+            #SG_1d.append(SG_integral(R_1d, R_1d[i], z_1d[i])) ##
         SG_2d = interp1d(R_1d, SG_1d)
 
         #calculate pressure support
