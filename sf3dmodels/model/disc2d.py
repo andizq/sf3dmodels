@@ -1733,9 +1733,11 @@ class Velocity:
 
     @staticmethod
     def keplerian_vertical_selfgravity(coord, Mstar=1.0, vel_sign=1, vsys=0,
-                                       Ec=30.0, Rc=100.0, gamma=1.0):
+                                       Ec=30.0, gamma=1.0, Rc=100.0,
+                                       surfacedensity_func=SurfaceDensity.powerlaw):
         #disc self-gravity contribution taken from Veronesi+2021
-        #using exponentially tapered powerlaw function for surfdens
+        #Surface density function defaults to powerlaw, surfdens propto R**-gamma
+        #--> Rc is the critical radius, no need to be set as free par during mcmc if input function is powerlaw.
         Mstar *= sfu.MSun
         if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
         else: R = coord['R'] 
@@ -1753,7 +1755,7 @@ class Velocity:
             K1 = ellipk(k2) #It's k2 (not k) here. The def in the Gradshteyn+1980 book differs from that of scipy.
             E2 = ellipe(k2)
             #surf_dens = SurfaceDensity.powerlaw_tapered({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
-            surf_dens = SurfaceDensity.powerlaw({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
+            surf_dens = surfacedensity_func({'R': Rp*sfu.au}, Ec=Ec, Rc=Rc, gamma=gamma)
             val = (K1 - 0.25*(k2/(1-k2))*(Rp_R - R/Rp + z**2/RpxR)*E2) * np.sqrt(Rp_R)*k*surf_dens
             return sfc.G*val*sfu.au 
             #return sfc.G*np.sum(val*dR)*sfu.au ##
