@@ -2340,7 +2340,9 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                                            'vsys': [-10, 10],
                                            'Ec': [0, 300],
                                            'Rc': [50, 300],
-                                           'gamma': [0.5, 2.0]},
+                                           'gamma': [0.5, 2.0],
+                                           'beta': [0, 1.0],
+                                           'H0': [0.1, 20]}
                               'orientation': {'incl': [-np.pi/3, np.pi/3], 
                                               'PA': [-np.pi, np.pi],
                                               'xc': [-50, 50],
