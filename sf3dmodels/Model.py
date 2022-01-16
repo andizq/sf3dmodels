@@ -524,7 +524,7 @@ def density_Hamburgers_piecewise(RStar, H0, R_list, p_list, rho0, GRID, RH_list 
 
     if RH_list is None:
         q = q_list[0]
-        H = H0 * (RList / R0)**(1 + 0.5*(1-q)) #Scaleheight, without tapering 
+        H = H0 * (RList / RStar)**(1 + 0.5*(1-q)) #Scaleheight, without tapering 
             
     else: 
         H = np.ones(NPoints) #ones instead of zeroes to avoid dividing by zero at empty spaces.
