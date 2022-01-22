@@ -1682,10 +1682,16 @@ class Velocity:
         self._velocity_func = vel
         if (vel is Velocity.keplerian_vertical_selfgravity or
             vel is Velocity.keplerian_vertical_selfgravity_pressure):
+            """
             R_true_au = self.R_true/sfu.au
             tmp = np.unique(np.array(R_true_au).astype(np.int32))
             #Adding missing upper bound for interp1d purposes:
             self.R_1d = np.append(tmp, tmp[-1]+1) #short 1D list of R in au
+            """
+            R_true_au = self.R_true/sfu.au
+            tmp = np.max(R_true_au).astype(np.int32)
+            #Adding missing upper bound for interp1d purposes:
+            self.R_1d = np.arange(1, tmp+2) #short 1D list of R in au
 
     @velocity_func.deleter 
     def velocity_func(self): 
