@@ -11,11 +11,13 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in General2d: Allow the lower surface to have independent intensity and line width parametrisations.
 #TODO in General2d: Implement pressure support term
 #TODO in make_model(): Allow for warped emitting surfaces, check notes for ideas as to how to solve for multiple intersections between l.o.s and emission surface.
-#TODO in __main__(): show intro message when python -m disc2d
+#TODO in __main__ file: show intro message when python -m disc2d
 #TODO in run_mcmc(): use get() methods instead of allowing the user to use self obj attributes.
 #TODO in make_model(): Allow R_disc to be a free parameter.
 #TODO in make_model(): Enable 3D velocities too when subpixel algorithm is used
 #TODO in v1.0: migrate to astropy units
+#TODO in make_model(): Save/load bestfit/input parameters in json files. These should store relevant info in separate dicts (e.g. nwalkers, attribute functions). 
+#TODO in run_mcmc(): Implement other minimisation kernels (i.e. Delta_v). Only one kernel currently: difference of intensities on each pixel, on each channel.
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -2400,7 +2402,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                  use_zeus=False,
                  #custom_header={}, custom_kind={}, mc_layers=1,
                  z_mirror=False, 
-                 plot_walkers=True, plot_corner=True, tag='', 
+                 plot_walkers=True, plot_corner=True, tag='',
+                 mpi=False,
                  **kwargs_model): 
         #p0: list of initial guesses. In the future will support 'optimize', 'min_bound', 'max_bound'
         self.data = data
@@ -2455,13 +2458,29 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             print ('p0 pars stddev:', p0_stddev)
         Tools._break_line(init='\n', end='\n\n')
 
-        with Pool(processes=nthreads) as pool:
-            sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
-            start = time.time()
-            sampler.run_mcmc(p0, nsteps, progress=True)
-            end = time.time()
-            multi_time = end - start
-            print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+        if mpi: #Needs schwimmbad library: $ pip install schwimmbad 
+            from schwimmbad import MPIPool
+
+            with MPIPool() as pool:
+                if not pool.is_master():
+                    pool.wait()
+                    sys.exit(0)
+               
+                sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
+                start = time.time()
+                sampler.run_mcmc(p0, nsteps, progress=True)
+                end = time.time()
+                multi_time = end - start
+                print("MPI multiprocessing took {0:.1f} seconds".format(multi_time))
+
+        else:
+            with Pool(processes=nthreads) as pool:
+                sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
+                start = time.time()
+                sampler.run_mcmc(p0, nsteps, progress=True)
+                end = time.time()
+                multi_time = end - start
+                print("Multiprocessing took {0:.1f} seconds".format(multi_time))
             
         sampler_chain = sampler.chain
         if use_zeus: sampler_chain = np.swapaxes(sampler.chain, 0, 1) #zeus chains shape (nsteps, nwalkers, npars) must be swapped
