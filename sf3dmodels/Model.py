@@ -7,6 +7,7 @@ import sys
 import os
 
 from .Utils import *
+from .utils.constants import mH
 
 class Struct:
     def __init__(self, **entries):
@@ -365,11 +366,11 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
 #-------------------------------------
 
 def density_lyndenbell_disc(GRID, Rc=100*AU, Ec=30.0, gamma=1.0, H0=6.5*AU, psi=1.25, Ro=500*AU,
-                            rho_thres = 10.0, rho_min = 1.0, 
+                            rho_thres = 10.0*mH, rho_min = 2*mH,
                             discFlag=True, rdisc_max = False):
 
 #Rc: characteristic radius
-#Ec: surface density normalisation at Rc
+#Ec: mass surface density normalisation at Rc
 #gamma: viscous power-law exponent
 #H0: scale height normalisation at Rc
 #psi: flaring index
