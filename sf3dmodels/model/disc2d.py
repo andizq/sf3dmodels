@@ -196,8 +196,8 @@ class Tools:
             #print (pix_scale, pix_radians)
         else: raise InputError(beam, 'beam object must either be str or Beam instance')
 
-        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).value 
-        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).value 
+        x_stddev = ((beam.major/pix_scale) / sigma2fwhm).decompose().value 
+        y_stddev = ((beam.minor/pix_scale) / sigma2fwhm).decompose().value 
         #print (x_stddev, beam.major, pix_scale)
         angle = (90*u.deg+beam.pa).to(u.radian).value
         gauss_kern = Gaussian2DKernel(x_stddev, y_stddev, angle) 
@@ -471,7 +471,9 @@ class Canvas3d:
 
 class Contours(PlotTools):
     @staticmethod
-    def emission_surface(ax, R, phi, R_lev=None, phi_lev=None, extent=None, proj_offset=None, X=None, Y=None, kwargs_R={}, kwargs_phi={}):
+    def emission_surface(ax, R, phi, R_lev=None, phi_lev=None, extent=None,
+                         proj_offset=None, X=None, Y=None,
+                         kwargs_R={}, kwargs_phi={}):
         kwargs_phif = dict(linestyles=':', linewidths=1.0, colors='k')
         kwargs_Rf = dict(linewidths=1.4, colors='k')
         kwargs_phif.update(kwargs_phi)        
