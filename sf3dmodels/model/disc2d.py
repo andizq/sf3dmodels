@@ -472,7 +472,7 @@ class Canvas3d:
 class Contours(PlotTools):
     @staticmethod
     def emission_surface(ax, R, phi, R_lev=None, phi_lev=None, extent=None,
-                         proj_offset=None, X=None, Y=None,
+                         proj_offset=None, X=None, Y=None, which='both',
                          kwargs_R={}, kwargs_phi={}):
         kwargs_phif = dict(linestyles=':', linewidths=1.0, colors='k')
         kwargs_Rf = dict(linewidths=1.4, colors='k')
@@ -508,12 +508,21 @@ class Contours(PlotTools):
             ax.contour(X, Y, np.where(near_nonan, np.nan, phi_neg_far), offset=proj_offset, levels=phi_lev_neg, **kwargs_phif)
             
         else:
-            ax.contour(R['upper'], levels=R_lev, **kwargs_Rf)
-            ax.contour(np.where(near_nonan, np.nan, R['lower']), levels=R_lev, **kwargs_Rf)
-            ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
-            ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
-            ax.contour(np.where(near_nonan, np.nan, phi_pos_far), levels=phi_lev_pos, **kwargs_phif)
-            ax.contour(np.where(near_nonan, np.nan, phi_neg_far), levels=phi_lev_neg, **kwargs_phif)
+            if which=='both':
+                ax.contour(R['upper'], levels=R_lev, **kwargs_Rf)
+                ax.contour(np.where(near_nonan, np.nan, R['lower']), levels=R_lev, **kwargs_Rf)
+                ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
+                ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
+                ax.contour(np.where(near_nonan, np.nan, phi_pos_far), levels=phi_lev_pos, **kwargs_phif)
+                ax.contour(np.where(near_nonan, np.nan, phi_neg_far), levels=phi_lev_neg, **kwargs_phif)
+            elif which=='upper':
+                ax.contour(R['upper'], levels=R_lev, **kwargs_Rf)
+                ax.contour(phi_pos_near, levels=phi_lev_pos, **kwargs_phif)
+                ax.contour(phi_neg_near, levels=phi_lev_neg, **kwargs_phif)
+            elif which=='lower':
+                ax.contour(R['lower'], levels=R_lev, **kwargs_Rf)
+                ax.contour(phi_pos_far, levels=phi_lev_pos, **kwargs_phif)
+                ax.contour(phi_neg_far, levels=phi_lev_neg, **kwargs_phif)
 
     #The following method can be optimised if the contour finding process is separated from the plotting
     # by returning coords_list and inds_cont first, which will allow the user use the same set of contours to plot different props.
