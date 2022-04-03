@@ -324,7 +324,8 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
     else: 
         print ('No Keplerian flared-disc was invoked!')
         rhoDISC = np.zeros(NPoints)
-    
+        H = None
+        
     #----------------
     #ENVELOPE PROFILE
     #----------------
@@ -357,7 +358,8 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
     print ('%s is done!'%inspect.stack()[0][3])
     print ('-------------------------------------------------\n-------------------------------------------------')
 
-    return Struct( **{'total': RHO, 'disc': rhoDISC, 'env': rhoENV, 'discFlag': discFlag, 'envFlag': envFlag, 
+    return Struct( **{'total': RHO, 'disc': rhoDISC, 'env': rhoENV, 'H': H,
+                      'discFlag': discFlag, 'envFlag': envFlag, 
                       'r_disc': rdisc_max, 'r_env': renv_max, 'streamline': costheta0,
                       'nonzero_ids': nonzero_ids} )
 
