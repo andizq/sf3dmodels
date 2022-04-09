@@ -286,7 +286,8 @@ def streamline(Rd, GRID):
 #DENSITY FUNCTION
 #-------------------
 
-def density_Env_Disc(RStar, Rd, rhoE0, Arho, exp_disc, GRID, 
+def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID, 
+                     exp_disc=2.25,
                      discFlag = True, envFlag = False, 
                      rdisc_max = False, renv_max = False, 
                      ang_cavity = False, rho_min_env = 1.0e9):
@@ -296,6 +297,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, exp_disc, GRID,
 #rhoE0: density at Rd and theta=pi/2
 #Arho: Factor between envelope and disk densities
 #GRID: Cartesian-grid to work in. [xList,yList,zList] 
+#exp_disc (optional): radial powerlaw exponent of disc density
 
     XYZgrid, XYZ, rRTP = GRID.XYZgrid, GRID.XYZ, GRID.rRTP
     NPoints = GRID.NPoints
@@ -325,7 +327,6 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, exp_disc, GRID,
         print ('No Keplerian flared-disc was invoked!')
         rhoDISC = np.zeros(NPoints)
         H = None
-        exp_disc = None
         
     #----------------
     #ENVELOPE PROFILE
