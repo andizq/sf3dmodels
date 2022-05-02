@@ -18,6 +18,7 @@ Classes: Rosenfeld2d, General2d, Velocity, Intensity, Cube, Tools
 #TODO in v1.0: migrate to astropy units
 #TODO in make_model(): Save/load bestfit/input parameters in json files. These should store relevant info in separate dicts (e.g. nwalkers, attribute functions). 
 #TODO in run_mcmc(): Implement other minimisation kernels (i.e. Delta_v). Only one kernel currently: difference of intensities on each pixel, on each channel.
+#TODO where relevant: see comments next to get_sky_from_disc_coords function appearences. 
 from __future__ import print_function
 from ..utils import constants as sfc
 from ..utils import units as sfu
@@ -31,6 +32,7 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import matplotlib
+import functools
 import itertools
 import warnings
 import numbers
@@ -134,7 +136,7 @@ class Tools:
         return x_pro, y_pro, z_pro
 
     @staticmethod
-    def get_sky_from_disc_coords(R, az, z, incl, PA):
+    def get_sky_from_disc_coords(R, az, z, incl, PA): #NEEDS CORRECTION BY xc, yc
         xp = R*np.cos(az)
         yp = R*np.sin(az)
         zp = z
@@ -749,7 +751,7 @@ class Contours(PlotTools):
     def make_contour_lev(prop, lev, X, Y, acc_threshold=20): 
         from skimage import measure 
         contour = measure.find_contours(prop, lev)
-        inds_cont = np.round(contour[-1]).astype(np.int)
+        inds_cont = np.round(contour[-1]).astype(int)
         inds_cont = [tuple(f) for f in inds_cont]
         first_cont = np.array([prop[i] for i in inds_cont])
         corr_inds = np.abs(first_cont-lev) < acc_threshold
@@ -760,11 +762,14 @@ class Contours(PlotTools):
     @staticmethod
     def beams_along_ring(lev, Rgrid, beam_size, X, Y):
         xc, yc, _, _ = Contours.make_contour_lev(Rgrid, lev, X, Y)
-        rc = hypot_func(xc, yc)
-        a = np.max(rc)
-        b = np.min(rc)
-        ellipse_perim = np.pi*(3*(a+b)-np.sqrt((3*a+b)*(a+3*b)))
-        return ellipse_perim/beam_size
+        try:
+            rc = hypot_func(xc, yc)
+            a = np.max(rc)
+            b = np.min(rc)
+            ellipse_perim = np.pi*(3*(a+b)-np.sqrt((3*a+b)*(a+3*b))) #Assuming that disc vertical extent does not distort much the ellipse
+            return ellipse_perim/beam_size
+        except ValueError: #No contour was found
+            return np.inf
 
     @staticmethod
     def get_average_east_west(resid_list, coord_list, lev_list, 
@@ -787,8 +792,8 @@ class Contours(PlotTools):
             if callable(error_func): #if error map provided, compute average error per radius, divided by sqrt of number of beams (see Michiel Hogerheijde notes on errors)
                 av_west_error, av_east_error = np.zeros(nconts), np.zeros(nconts)
                 for i in range(nconts):
-                    x_west, y_west, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_west[i]])
-                    x_east, y_east, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_east[i]])
+                    x_west, y_west, __ = Tools.get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_west[i]]) #MISSING z, incl, PA for the function to work
+                    x_east, y_east, __ = Tools.get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_east[i]]) #MISSING z, incl, PA for the function to work
                     error_west = np.array(list(map(error_func, x_west, y_west))).T[0]
                     error_east = np.array(list(map(error_func, x_east, y_east))).T[0]
                     sigma2_west = np.where((np.isfinite(error_west)) & (error_unit*error_west<error_thres) & (error_west>0), (error_unit*error_west)**2, 0)
@@ -827,7 +832,7 @@ class Contours(PlotTools):
             if callable(error_func): #if error map provided, compute average error per radius, divided by sqrt of number of beams (see Michiel Hogerheijde notes on errors)
                 av_error = np.zeros(nconts)
                 for i in range(nconts):
-                    x_accep, y_accep, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_accep[i]])
+                    x_accep, y_accep, __ = get_sky_from_disc_coords(lev_list[i], coord_list[i][ind_accep[i]]) #MISSING z, incl, PA for the function to work
                     error_accep = np.array(list(map(error_func, x_accep, y_accep))).T[0]
                     sigma2_accep = np.where((np.isfinite(error_accep)) & (error_unit*error_accep<error_thres) & (error_accep>0), (error_unit*error_accep)**2, 0)
                     Np_accep = len(coord_list[i][ind_accep[i]])
@@ -837,7 +842,73 @@ class Contours(PlotTools):
                 
         return av_annulus, av_error
 
+    @staticmethod
+    def get_average_zones(resid_list, coord_list, lev_list, Rgrid, beam_size, X, Y,
+                          az_zones=[[-30, 30], [150,  -150]], join_zones=False, av_func=np.nanmean,
+                          resid_thres='3sigma', error_func=True, error_unit=1.0, error_thres=np.inf):
+                          
+        #resid_thres: None, '3sigma', or list of thresholds with size len(lev_list)
+        nconts = len(lev_list)
+        nzones = len(az_zones)
+        
+        if resid_thres is None: resid_thres = [np.inf]*nconts
+        elif resid_thres == '3sigma': resid_thres = [3*np.nanstd(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from annulus
 
+        make_or = lambda az0, az1: [((coord_list[i]>az0) | (coord_list[i]<az1)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
+        make_and = lambda az0, az1: [((coord_list[i]>az0) & (coord_list[i]<az1)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
+
+        def get_portion_inds(az):
+            az0, az1 = az
+            if (az0 > az1):
+                inds = make_or(az0, az1)
+            else:
+                inds = make_and(az0, az1)
+            return inds
+
+        def get_portion_percent(az):
+            az0, az1 = az
+            if (az0 > az1):
+                if az0 < 0: perc = 1 - (az0-az1)/360.
+                else: perc = (180-az0 + 180-np.abs(az1))/360.
+            else:
+                perc = (az1-az0)/360.
+            return perc
+
+        #inds containts lists of indices, one list per zone. Each is a list of lists, with as many lists as nconts (number of radii). Each sublist has different number of indices, the larger the radius (i.e. larger path) the more indices.        
+        inds = [get_portion_inds(zone) for zone in az_zones] 
+        az_percent = np.array([get_portion_percent(zone) for zone in az_zones])
+
+        if join_zones and nzones>1:
+            concat = lambda x,y: x+y
+            inds = [[functools.reduce(concat, [ind[i] for ind in inds]) for i in range(nconts)]] #concatenates indices from zones, per radius.
+            az_percent = np.sum(az_percent)[None] #array of single number
+            nzones = 1
+            
+        av_on_inds = [np.array([av_func(resid_list[i][ind[i]]) for i in range(nconts)]) for ind in inds]        
+
+        beams_ring_full = [Contours.beams_along_ring(lev, Rgrid, beam_size, X, Y) for lev in lev_list]
+        beams_zone_sqrt = [np.sqrt(az_percent*br) for br in beams_ring_full]
+
+        if error_func is None: av_error = None
+        else:
+            if callable(error_func): #Not yet tested
+                #if error map provided, compute average error per radius, divided by sqrt of number of beams (see Michiel Hogerheijde notes on errors)  
+                av_error = []
+                for i in range(nconts):
+                    r_ind = [Tools.get_sky_from_disc_coords(lev_list[i], coord_list[i][ind[i]]) for ind in inds] #MISSING z, incl, PA for the function to work
+                    error_ind = [np.array(list(map(error_func, r_ind[j][0], r_ind[j][1]))).T[0] for j in range(nzones)]
+                    sigma2_ind = [np.where((np.isfinite(error_ind[j])) & (error_unit*error_ind[j]<error_thres) & (error_ind[j]>0),
+                                           (error_unit*error_ind[j])**2,
+                                           0)
+                                  for j in range(nzones)]
+                    np_ind = [len(coord_list[i][ind[i]]) for ind in inds]
+                    av_error.append([np.sqrt(np.nansum(sigma2_ind[j])/np_ind[j])/beams_zone_sqrt[i][j] for j in range(nzones) in np_ind])
+            else: #compute standard error of mean value 
+                av_error = [np.array([np.std(resid_list[i][inds[j][i]], ddof=1)/beams_zone_sqrt[i][j] for i in range(nconts)]) for j in range(nzones)]
+
+        return av_on_inds, av_error    
+
+     
 class Cube(object):
     def __init__(self, nchan, channels, data, beam=False, beam_kernel=False, tb={'nu': False, 'beam': False, 'full': True}):
         self.nchan = nchan
