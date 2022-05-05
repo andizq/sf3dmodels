@@ -290,7 +290,8 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
                      exp_disc=2.25,
                      discFlag = True, envFlag = False, 
                      rdisc_max = False, renv_max = False, 
-                     ang_cavity = False, rho_min_env = 1.0e9):
+                     ang_cavity = False, average_around_Rd = None, 
+                     rho_min_env = 1.0e9):
 
 #RStar: stellar radius
 #Rd: Centrifugal radius
@@ -346,6 +347,18 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
                             (1 + (Rd / rList) * (3. * costheta0**2 - 1))**-1), 
                            rho_min_env )
         rhoENV = np.where( rhoENV < 1.0, 1.0, rhoENV)
+        
+        if average_around_Rd is not None:
+            if not callable(average_around_Rd): 
+                average_around_Rd = np.median
+
+            zcentres = GRID.XYZcentres[2]
+            step = GRID.step[0]
+            ind_Rd = np.abs(RList-Rd) < 2*step #Consider 3 cells around and on Rd
+            for zi in zcentres:
+                ind_z = zList == zi #Iterate over z planes
+                rhoENV[ind_Rd & ind_z] = average_around_Rd(np.sort(rhoENV[ind_Rd & ind_z])[1:-1]) #Average without min and max values
+                #print (np.sum([ind_Rd & ind_z]), RList[ind_Rd & ind_z])
     else:
         print ('No Envelope was invoked!')
         costheta0 = False
