@@ -268,6 +268,14 @@ class Tools:
         for i in range(nx):
             for j in range(ny):
                 isfin = np.isfinite(data[:,i,j])
+                if np.sum(isfin)==0:
+                    peak[i,j] = np.nan
+                    centroid[i,j] = np.nan
+                    linewidth[i,j] = np.nan
+                    dpeak[i,j], dcent[i,j], dlinew[i,j] = np.nan, np.nan, np.nan
+                    nbad+=1
+                    continue
+                
                 try: coeff, var_matrix = curve_fit(gauss, vchannels[isfin], data[:,i,j][isfin],
                                                    p0=[I_max[i,j], vel_peak[i,j], dv],
                                                    sigma=sigma_func(i,j))
