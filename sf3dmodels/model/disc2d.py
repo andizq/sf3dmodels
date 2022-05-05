@@ -245,7 +245,7 @@ class Tools:
             
     #define a fit_double_bell func, with a model input as an optional arg to constrain initial guesses better
     @staticmethod
-    def fit_one_gauss_cube(data, vchannels, lw_chan=1.0, sigma_fit=None):
+    def fit_one_gauss_cube(data, vchannels, lw_chan=1.0, sigma_fit=None, verbose=True):
         """
         Fit Gaussian profile along velocity axis to input data
         lw_chan: initial guess for line width is lw_chan*np.mean(dvi).  
@@ -264,7 +264,8 @@ class Tools:
         progress = Tools._progress_bar   
         if sigma_fit is None: sigma_func = lambda i,j: None
         else: sigma_func = lambda i,j: sigma_fit[:,i,j]
-        print ('Fitting Gaussian profile to pixels (along velocity axis)...')
+        if verbose: print ('Fitting Gaussian profile to pixels (along velocity axis)...')
+
         for i in range(nx):
             for j in range(ny):
                 isfin = np.isfinite(data[:,i,j])
@@ -286,9 +287,9 @@ class Tools:
                 centroid[i,j] = coeff[1]
                 linewidth[i,j] = coeff[2]
                 dpeak[i,j], dcent[i,j], dlinew[i,j] = np.sqrt(np.diag(var_matrix))
-            progress(int(100*i/nx))
-        progress(100)
-        print ('\nGaussian fit did not converge for %.2f%s of the pixels'%(100.0*nbad/(nx*ny),'%'))
+            if verbose: progress(int(100*i/nx))
+        if verbose: progress(100)
+        if verbose: print ('\nGaussian fit did not converge for %.2f%s of the pixels'%(100.0*nbad/(nx*ny),'%'))
         return peak, centroid, linewidth, dpeak, dcent, dlinew
         
     @staticmethod
@@ -2687,8 +2688,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
 
         return R, phi, z, R_nonan, phi_nonan, z_nonan
         
-    def make_model(self, z_mirror=False, R_inner=0, R_disc=None):                   
-        if self.prototype: 
+    def make_model(self, z_mirror=False, R_inner=0, R_disc=None, verbose=True):                   
+        if self.prototype and verbose: 
             Tools._break_line()
             print ('Running prototype model with the following parameters:\n')
             pprint.pprint(self.params)
