@@ -504,7 +504,7 @@ class Contours(PlotTools):
 
         #Splitting phi into pos and neg to try and avoid ugly contours close to -pi and pi
         phi_lev_neg = phi_lev[phi_lev<0] 
-        phi_lev_pos = phi_lev[phi_lev>0]
+        phi_lev_pos = phi_lev[phi_lev>=0]
         phi_neg_near = np.where((phi['upper']<0) & (R['upper']>R_lev[0]) & (R['upper']<R_lev[-1]), phi['upper'], np.nan)
         phi_pos_near = np.where((phi['upper']>0) & (R['upper']>R_lev[0]) & (R['upper']<R_lev[-1]), phi['upper'], np.nan)
         phi_neg_far = np.where((phi['lower']<0) & (R['lower']>R_lev[0]) & (R['lower']<R_lev[-1]), phi['lower'], np.nan)
@@ -534,7 +534,7 @@ class Contours(PlotTools):
                 ax.contour(R['lower'], levels=R_lev, **kwargs_Rf)
                 ax.contour(phi_pos_far, levels=phi_lev_pos, **kwargs_phif)
                 ax.contour(phi_neg_far, levels=phi_lev_neg, **kwargs_phif)
-
+                
     #The following method can be optimised if the contour finding process is separated from the plotting
     # by returning coords_list and inds_cont first, which will allow the user use the same set of contours to plot different props.
     @staticmethod
@@ -688,7 +688,7 @@ class Contours(PlotTools):
                 prop_diff_neg = np.asarray(prop_diff_neg)
 
                 if len(angle_diff_neg)>1:
-                    ind_sort_neg = np.argsort(angle_diff_neg)    
+                    ind_sort_neg = np.argsort(np.abs(angle_diff_neg))
                     plot_ang_diff_neg = angle_diff_neg[ind_sort_neg]
                     plot_prop_diff_neg = prop_diff_neg[ind_sort_neg]
                     ind_prop_neg = np.abs(plot_prop_diff_neg)<max_prop_threshold
@@ -730,26 +730,34 @@ class Contours(PlotTools):
         return [np.asarray(tmp) for tmp in [coord_list, resid_list, color_list, lev_list]]
 
     @staticmethod
-    def make_substructures(ax, twodim=False, gaps=[], rings=[], kinks=[], make_labels=False,
-                           kwargs_gaps={}, kwargs_rings={}, kwargs_kinks={}):
+    def make_substructures(ax, twodim=False, polar=False, gaps=[], rings=[], kinks=[], make_labels=False,
+                           kwargs_gaps={}, kwargs_rings={}, kwargs_kinks={}, func1d='axvline'):
         '''Overlay ring-like (if twodim) or vertical lines (if not twodim) to illustrate the radial location of substructures in the disc'''
-        kwargs_g = dict(color='0.2', ls='--', lw=1.7, alpha=0.9)
-        kwargs_r = dict(color='0.2', ls='-', lw=1.7, alpha=0.9)
-        kwargs_k = dict(color='purple', ls=':', lw=2.6, alpha=0.9)
+        kwargs_g = dict(color='0.2', ls='--', lw=1.7, dash_capstyle='round', dashes=(3.0, 2.5), alpha=1.0)
+        kwargs_r = dict(color='0.2', ls='-', lw=1.7, dash_capstyle='round', alpha=1.0)
+        kwargs_k = dict(color='purple', ls=':', lw=2.5, dash_capstyle='round', dashes=(0.5, 1.5), alpha=0.9)
         kwargs_g.update(kwargs_gaps)
         kwargs_r.update(kwargs_rings)
         kwargs_k.update(kwargs_kinks)        
         if twodim:
-            phi = np.linspace(0, 2*np.pi, 50)
-            cos_phi = np.cos(phi)
-            sin_phi = np.sin(phi)
-            for R in gaps: ax.plot(R*cos_phi, R*sin_phi, **kwargs_g)
-            for R in rings: ax.plot(R*cos_phi, R*sin_phi, **kwargs_r)
-            for R in kinks: ax.plot(R*cos_phi, R*sin_phi, **kwargs_k)
+            nphi = 100
+            phi = np.linspace(0, 2*np.pi, nphi)
+            if polar:
+                for R in gaps: ax.plot(phi, [R]*nphi, **kwargs_g)
+                for R in rings: ax.plot(phi, [R]*nphi, **kwargs_r)
+                for R in kinks: ax.plot(phi, [R]*nphi, **kwargs_k)                
+            else:
+                cos_phi = np.cos(phi)
+                sin_phi = np.sin(phi)
+                for R in gaps: ax.plot(R*cos_phi, R*sin_phi, **kwargs_g)
+                for R in rings: ax.plot(R*cos_phi, R*sin_phi, **kwargs_r)
+                for R in kinks: ax.plot(R*cos_phi, R*sin_phi, **kwargs_k)
         else:
-            for R in gaps: ax.axvline(R, **kwargs_g)
-            for R in rings: ax.axvline(R, **kwargs_r)
-            for R in kinks: ax.axvline(R, **kwargs_k)
+            if func1d=='axvline': func1d=ax.axvline
+            elif func1d=='axhline': func1d=ax.axhline            
+            for R in gaps: func1d(R, **kwargs_g)
+            for R in rings: func1d(R, **kwargs_r)
+            for R in kinks: func1d(R, **kwargs_k)
         if make_labels and len(gaps)>0: ax.plot([None], [None], label='Gaps', **kwargs_g)
         if make_labels and len(rings)>0: ax.plot([None], [None], label='Rings', **kwargs_r)
         if make_labels and len(kinks)>0: ax.plot([None], [None], label='Kinks', **kwargs_k)
@@ -790,8 +798,8 @@ class Contours(PlotTools):
         if resid_thres is None: resid_thres = [np.inf]*nconts
         elif resid_thres == '3sigma': resid_thres = [3*np.nanstd(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from annulus
         # -np.pi<coord_list<np.pi
-        ind_west = [((coord_list[i]<90-mask_ang) & (coord_list[i]>-90+mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
-        ind_east = [((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
+        ind_west = [((coord_list[i]<90-mask_ang) & (coord_list[i]>-90+mask_ang)) & (np.abs(resid_list[i]-np.nanmean(resid_list[i])) < resid_thres[i]) for i in range(nconts)]
+        ind_east = [((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang)) & (np.abs(resid_list[i]-np.nanmean(resid_list[i])) < resid_thres[i]) for i in range(nconts)]
         av_west = np.array([av_func(resid_list[i][ind_west[i]]) for i in range(nconts)])
         av_east = np.array([av_func(resid_list[i][ind_east[i]]) for i in range(nconts)])
         
@@ -831,7 +839,7 @@ class Contours(PlotTools):
         # -np.pi<coord_list<np.pi        
         ind_accep = [(((coord_list[i]<90-mask_ang) & (coord_list[i]>-90+mask_ang)) |
                       ((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang))) &
-                     (np.abs(resid_list[i])<resid_thres[i])
+                     (np.abs(resid_list[i]-np.nanmean(resid_list[i]))<resid_thres[i])
                      for i in range(nconts)]
         av_annulus = np.array([av_func(resid_list[i][ind_accep[i]]) for i in range(nconts)])
         
@@ -863,8 +871,8 @@ class Contours(PlotTools):
         if resid_thres is None: resid_thres = [np.inf]*nconts
         elif resid_thres == '3sigma': resid_thres = [3*np.nanstd(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from annulus
 
-        make_or = lambda az0, az1: [((coord_list[i]>az0) | (coord_list[i]<az1)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
-        make_and = lambda az0, az1: [((coord_list[i]>az0) & (coord_list[i]<az1)) & (np.abs(resid_list[i])<resid_thres[i]) for i in range(nconts)]
+        make_or = lambda az0, az1: [((coord_list[i]>az0) | (coord_list[i]<az1)) & (np.abs(resid_list[i]-np.nanmean(resid_list[i])) < resid_thres[i]) for i in range(nconts)]
+        make_and = lambda az0, az1: [((coord_list[i]>az0) & (coord_list[i]<az1)) & (np.abs(resid_list[i]-np.nanmean(resid_list[i])) < resid_thres[i]) for i in range(nconts)]
 
         def get_portion_inds(az):
             az0, az1 = az
@@ -1807,6 +1815,22 @@ class Velocity:
         return vel_sign*np.sqrt(sfc.G*Mstar/r**3)*R * 1e-3 
 
     @staticmethod
+    def keplerian_pressure(coord, Mstar=1.0, vel_sign=1, vsys=0,
+                           gamma=1.0, beta=0.5, H0=6.5, R0=100.0):
+        #pressure support taken from Lodato's 2021 notes and Viscardi+2021 thesis
+        #--> pressure term assumes vertically isothermal disc, T propto R**-beta, and surfdens propto R**-gamma (using Rosenfeld+2013 notation).
+        #--> R0 is the ref radius for scaleheight powerlaw, no need to be set as free par during mcmc.
+        Mstar *= sfu.MSun
+        if 'R' not in coord.keys(): R = hypot_func(coord['x'], coord['y'])
+        else: R = coord['R']
+        alpha = 1.5 + gamma + 0.5*beta
+        psi = -0.5*beta + 1.5
+        H = ScaleHeight.powerlaw({'R': R}, H0=H0, R0=R0, psi=psi)
+        vk2 = sfc.G*Mstar/R
+        vp2 = vk2*(-alpha*(H/R)**2) #pressure term
+        return vel_sign*np.sqrt(vk2 + vp2) * 1e-3 
+    
+    @staticmethod
     def keplerian_vertical_pressure(coord, Mstar=1.0, vel_sign=1, vsys=0,
                                     gamma=1.0, beta=0.5, H0=6.5, R0=100.0):
         #pressure support taken from Lodato's 2021 notes and Viscardi+2021 thesis
@@ -2663,6 +2687,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         #***********************************
         #PROJECT PROPERTIES ON THE SKY PLANE        
         R, phi, z = {}, {}, {}
+        R_nonan, phi_nonan, z_nonan = {}, {}, {}        
         for side in ['upper', 'lower']:
             xt, yt, zt = grid_true[side][:3]
             x_pro, y_pro, z_pro = self._project_on_skyplane(xt, yt, zt, cos_incl, sin_incl)
@@ -2678,14 +2703,17 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
             #phi[side] = griddata((x_pro, y_pro), self.phi_true, (self.mesh[0], self.mesh[1]), method='linear')
             z[side] = griddata((x_pro, y_pro), z_true[side], (self.mesh[0], self.mesh[1]), method='linear')
             #r[side] = hypot_func(R[side], z[side])
+            R_nonan[side] = copy.copy(R[side]) #Still nan out of the sky grid
+            phi_nonan[side] = copy.copy(phi[side])
+            z_nonan[side] = copy.copy(z[side])
             if R_disc is not None: 
                 for prop in [R, phi, z]: prop[side] = np.where(np.logical_and(R[side]<R_disc, R[side]>R_inner), prop[side], np.nan)
-            
-        R_nonan, phi_nonan, z_nonan = None, None, None
+        
+        #R_nonan, phi_nonan, z_nonan = None, None, None
         if R_nan_val is not None: R_nonan = {side: np.where(np.isnan(R[side]), R_nan_val, R[side]) for side in ['upper', 'lower']}
         if phi_nan_val is not None: phi_nonan = {side: np.where(np.isnan(phi[side]), phi_nan_val, phi[side]) for side in ['upper', 'lower']}
         if z_nan_val is not None: z_nonan = {side: np.where(np.isnan(z[side]), z_nan_val, z[side]) for side in ['upper', 'lower']}
-
+        
         return R, phi, z, R_nonan, phi_nonan, z_nonan
         
     def make_model(self, z_mirror=False, R_inner=0, R_disc=None, verbose=True):                   
