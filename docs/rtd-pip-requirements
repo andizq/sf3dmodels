@@ -2,6 +2,7 @@ astropy<3.0
 sphinx-astropy
 matplotlib
 numpy
+scipy
 cython
 pandas
 emcee<3.0
