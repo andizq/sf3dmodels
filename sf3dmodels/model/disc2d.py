@@ -2560,7 +2560,8 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         
     def run_mcmc(self, data, channels, p0_mean=[], p0_stddev=1e-3, noise_stddev=1.0,
                  nwalkers=30, nsteps=100, frac_stats=0.5, frac_stddev=1e-3, 
-                 nthreads=None, 
+                 nthreads=None,
+                 backend=None, #emcee
                  use_zeus=False,
                  #custom_header={}, custom_kind={}, mc_layers=1,
                  z_mirror=False, 
@@ -2628,17 +2629,24 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
                     pool.wait()
                     sys.exit(0)
                
-                sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
+                sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, backend=backend, kwargs=kwargs_model)                                                        
                 start = time.time()
-                sampler.run_mcmc(p0, nsteps, progress=True)
+                if backend is None:
+                    sampler.run_mcmc(p0, nsteps, progress=True)
+                else:
+                    sampler.run_mcmc(None, nsteps, progress=True)
                 end = time.time()
                 multi_time = end - start
                 print("MPI multiprocessing took {0:.1f} seconds".format(multi_time))
 
         else:
             with Pool(processes=nthreads) as pool:
-                sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, kwargs=kwargs_model)                                                        
+                sampler = sampler_id.EnsembleSampler(nwalkers, ndim, self.ln_likelihood, pool=pool, backend=backend, kwargs=kwargs_model)                                                        
                 start = time.time()
+                if backend is None:
+                    sampler.run_mcmc(p0, nsteps, progress=True)
+                else:
+                    sampler.run_mcmc(None, nsteps, progress=True)
                 sampler.run_mcmc(p0, nsteps, progress=True)
                 end = time.time()
                 multi_time = end - start
