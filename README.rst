@@ -130,9 +130,10 @@ Papers using sf3dmodels
 - `Izquierdo et al. (2021a) <https://ui.adsabs.harvard.edu/abs/2021MNRAS.500.5268I/abstract>`_
 - `Izquierdo et al. (2021b), <https://ui.adsabs.harvard.edu/abs/2021arXiv210409596I/abstract>`_
 - `Carrasco-González et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210601235C/abstract>`_
-- Lin et al. (subm.)
-- Curone et al. (subm.)
-
+- `Lin et al. (2022.) <https://ui.adsabs.harvard.edu/abs/2022A%26A...658A.128L/abstract>`_
+- `Curone et al. (2022.) <https://ui.adsabs.harvard.edu/abs/2022A%26A...665A..25C/abstract>`_
+- Galvan-Madrid et al. (subm.)
+  
 License
 -------
 
