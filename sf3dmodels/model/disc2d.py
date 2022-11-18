@@ -26,7 +26,7 @@ from astropy.convolution import Gaussian2DKernel, convolve
 from scipy.interpolate import griddata, interp1d
 from scipy.special import ellipk, ellipe
 from scipy.optimize import curve_fit
-from scipy.integrate import quad
+from scipy.integrate import quad, trapezoid
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -841,6 +841,7 @@ class Contours(PlotTools):
                       ((coord_list[i]>90+mask_ang) | (coord_list[i]<-90-mask_ang))) &
                      (np.abs(resid_list[i]-np.nanmean(resid_list[i]))<resid_thres[i])
                      for i in range(nconts)]
+
         av_annulus = np.array([av_func(resid_list[i][ind_accep[i]]) for i in range(nconts)])
         
         if error_func is None: av_error = None
@@ -860,13 +861,14 @@ class Contours(PlotTools):
         return av_annulus, av_error
 
     @staticmethod
-    def get_average_zones(resid_list, coord_list, lev_list, Rgrid, beam_size, X, Y,
+    def get_average_zones(resid_list, coord_list, lev_list, Rgrid, beam_size, X, Y, fast=True, 
                           az_zones=[[-30, 30], [150,  -150]], join_zones=False, av_func=np.nanmean,
                           resid_thres='3sigma', error_func=True, error_unit=1.0, error_thres=np.inf):
                           
         #resid_thres: None, '3sigma', or list of thresholds with size len(lev_list)
         nconts = len(lev_list)
         nzones = len(az_zones)
+        if not fast: join_zones=False
         
         if resid_thres is None: resid_thres = [np.inf]*nconts
         elif resid_thres == '3sigma': resid_thres = [3*np.nanstd(resid_list[i]) for i in range(nconts)] #anything higher than 3sigma is rejected from annulus
@@ -900,9 +902,23 @@ class Contours(PlotTools):
             inds = [[functools.reduce(concat, [ind[i] for ind in inds]) for i in range(nconts)]] #concatenates indices from zones, per radius.
             az_percent = np.sum(az_percent)[None] #array of single number
             nzones = 1
-            
-        av_on_inds = [np.array([av_func(resid_list[i][ind[i]]) for i in range(nconts)]) for ind in inds]        
 
+        if fast: #Compute usual average
+            av_on_inds = [np.array([av_func(resid_list[i][ind[i]]) for i in range(nconts)]) for ind in inds]        
+        else: #Compute average using integral definition (trapezoid seems to succeed better than simpson)
+            av_integral = lambda y,x,dT: trapezoid(y, x=x)/dT
+            av_on_inds = []
+            for ind in inds:
+                av_annulus = []
+                for i in range(nconts):
+                    ii = ind[i]
+                    coords_ii = coord_list[i][ii]
+                    resid_ii = resid_list[i][ii]
+                    if not len(coords_ii): trap=None
+                    else: trap = av_integral(resid_ii, coords_ii, coords_ii[-1]-coords_ii[0]) #dT assumes coords_list is sorted (no matter if ascending or descending)
+                    av_annulus.append(trap) 
+                av_on_inds.append(np.array(av_annulus))
+            
         beams_ring_full = [Contours.beams_along_ring(lev, Rgrid, beam_size, X, Y) for lev in lev_list]
         beams_zone_sqrt = [np.sqrt(az_percent*br) for br in beams_ring_full]
 
@@ -925,7 +941,38 @@ class Contours(PlotTools):
 
         return av_on_inds, av_error    
 
-     
+    def make_filaments(prop_2D, R_nonan_up_au, R_inner_au, beam_size_au, distance_pc, dpix_arcsec, **kwargs):
+        #FIND FILAMENTS
+        #adapt_thresh is the width of the element used for the adaptive thresholding mask.
+        # This is primarily the step that picks out the filamentary structure. The element size should be similar to the width of the expected filamentary structure
+
+        #kw_fil_mask = dict(verbose=False, adapt_thresh=50*apu.au, smooth_size=1*beam_size_au*apu.au, size_thresh=100*apu.pix**2, border_masking=False, fill_hole_size=0.01*apu.arcsec**2)
+        from fil_finder import FilFinder2D
+        from astropy import units as apu
+
+        distance=distance_pc*apu.pc
+        ang_scale=dpix_arcsec*apu.arcsec
+        R_min=R_inner_au
+        
+        kw_fil_mask = dict(verbose=False, adapt_thresh=1*beam_size_au*apu.au, smooth_size=0.2*beam_size_au*apu.au, size_thresh=500*apu.pix**2, border_masking=False, fill_hole_size=0.01*apu.arcsec**2)
+        kw_fil_mask.update(kwargs)
+        Rgrid = R_nonan_up_au
+        Rind = (Rgrid>R_min) #& (Rgrid<R_max)
+        fil_pos = FilFinder2D(np.where(Rind & (prop_2D>0), np.abs(prop_2D), 0), ang_scale=ang_scale, distance=distance)
+        fil_pos.preprocess_image(skip_flatten=True) 
+        fil_pos.create_mask(**kw_fil_mask)
+        fil_pos.medskel(verbose=False)
+        
+        fil_neg = FilFinder2D(np.where(Rind & (prop_2D<0), np.abs(prop_2D), 0), ang_scale=ang_scale, distance=distance)
+        fil_neg.preprocess_image(skip_flatten=True) 
+        fil_neg.create_mask(**kw_fil_mask)
+        fil_neg.medskel(verbose=False)
+        
+        fil_pos.analyze_skeletons(prune_criteria='length')
+        fil_neg.analyze_skeletons(prune_criteria='length')
+        return fil_pos, fil_neg
+
+    
 class Cube(object):
     def __init__(self, nchan, channels, data, beam=False, beam_kernel=False, tb={'nu': False, 'beam': False, 'full': True}):
         self.nchan = nchan
