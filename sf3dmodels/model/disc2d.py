@@ -26,7 +26,7 @@ from astropy.convolution import Gaussian2DKernel, convolve
 from scipy.interpolate import griddata, interp1d
 from scipy.special import ellipk, ellipe
 from scipy.optimize import curve_fit
-from scipy.integrate import quad, trapezoid
+from scipy.integrate import quad
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -906,7 +906,7 @@ class Contours(PlotTools):
         if fast: #Compute usual average
             av_on_inds = [np.array([av_func(resid_list[i][ind[i]]) for i in range(nconts)]) for ind in inds]        
         else: #Compute average using integral definition (trapezoid seems to succeed better than simpson)
-            av_integral = lambda y,x,dT: trapezoid(y, x=x)/dT
+            av_integral = lambda y,x,dT: np.trapz(y, x=x)/dT # or trapezoid from scipy.integrate
             av_on_inds = []
             for ind in inds:
                 av_annulus = []
