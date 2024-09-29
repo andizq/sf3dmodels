@@ -383,7 +383,7 @@ def density_Env_Disc(RStar, Rd, rhoE0, Arho, GRID,
 #-------------------------------------
 
 def density_lyndenbell_disc(GRID, Rc=100*AU, Ec=30.0, gamma=1.0, H0=6.5*AU, psi=1.25, Ro=500*AU,
-                            rho_thres = 10.0*mH, rho_min = 2*mH,
+                            rho_thres = 10.0*mH, rho_min = 2*mH, rdisc_min = 0.0,
                             discFlag=True, rdisc_max = False):
 
 #Rc: characteristic radius
@@ -414,7 +414,7 @@ def density_lyndenbell_disc(GRID, Rc=100*AU, Ec=30.0, gamma=1.0, H0=6.5*AU, psi=
         if not rdisc_max: rdisc_max = Ro
         print ('Scale-height at Rc (au):', H0/AU)
         H = H0*(RList/Rc)**psi #Scaleheight powerlaw
-        rhoDISC = np.where( RList <= rdisc_max,
+        rhoDISC = np.where( (RList >= rdisc_min) & (RList <= rdisc_max),
                             Ec*(RList/Rc)**-gamma*np.exp(-1*(RList/Rc)**(2-gamma)) * np.exp(-0.5*(zList/H)**2)/(np.sqrt(2*np.pi)*H), rho_min)
         rhoDISC = np.where( rhoDISC < rho_thres, rho_min, rhoDISC)
     else: 
@@ -1164,7 +1164,7 @@ def temperature_Constant(density, GRID, discTemp = 0, envTemp = 0, backTemp = 30
 #TEMPERATURE (PowerLaw-mean_rho) FUNCTION
 #-----------------------------------
 
-def temperature_Powerlaw(r_max, T_mean, q, GRID, T_min = 2.725):
+def temperature_Powerlaw(r_max, T_mean, q, GRID, T_min = 2.725, rid=0):
 
 #r_max: Maximum radius of the envelope 
 #T_mean: Mean temperature of the Envelope 
@@ -1175,7 +1175,7 @@ def temperature_Powerlaw(r_max, T_mean, q, GRID, T_min = 2.725):
     #------------
     #LISTS TO USE
     #------------
-    rList, NPoints = GRID.rRTP[0], GRID.NPoints #Due to spherical symmetry only r is needed
+    rList, NPoints = GRID.rRTP[rid], GRID.NPoints #Due to spherical symmetry only r is needed
 
     #------------------------
     #MODEL. Envelope powerlaw
@@ -1187,7 +1187,6 @@ def temperature_Powerlaw(r_max, T_mean, q, GRID, T_min = 2.725):
     T0 = NPoints * T_mean / np.sum(rqList)
     TENV = T0 * rqList
     TENV = np.where(TENV < T_min, T_min, TENV)
-
     #TENV = np.where( T0 * rqList < 1.0, T_min, T0 * rqList )
     
     #------------------------
@@ -1293,7 +1292,7 @@ def temperature_PowerlawShells(r_list, p_list, T0, GRID, T_min = 1.0e3):
 #VELOCITY FUNCTION
 #----------------------
 
-def velocity(RStar,MStar,Rd,density,GRID):
+def velocity(RStar,MStar,Rd,density,GRID, vertical=False, vel_sign=1):
 
 #MStar: Mass of the central source
 #Rd: Centrifugal radius
@@ -1322,8 +1321,11 @@ def velocity(RStar,MStar,Rd,density,GRID):
         print ('Computing Disc velocity...')
         rdisc = density.r_disc
         #Pure azimuthal component. It's assumed that the radial velocity in the rotationally supported disc is comparatively small (Keto 2010).
-        vdisc = np.where( RList <= rdisc, (G * MStar / RList)**0.5, 0*-3e8)
-        vphi = vdisc
+        if vertical:
+            vdisc = np.where( RList <= rdisc, RList*(G * MStar / rList**3)**0.5, 0*-3e8)
+        else:
+            vdisc = np.where( RList <= rdisc, (G * MStar / RList)**0.5, 0*-3e8)
+        vphi = vel_sign*vdisc
     else: vdisc = 0.
 
     #----------------
