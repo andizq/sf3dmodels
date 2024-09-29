@@ -22,7 +22,7 @@ try:
 except ImportError:
     __githash__ = ''
 
-
+"""
 if not _ASTROPY_SETUP_:  # noqa
     import os
     from warnings import warn
@@ -57,3 +57,4 @@ if not _ASTROPY_SETUP_:  # noqa
                     del e
                 except Exception:
                     raise orig_error
+"""
