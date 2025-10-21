@@ -941,6 +941,7 @@ class Contours(PlotTools):
 
         return av_on_inds, av_error    
 
+    @staticmethod
     def make_filaments(prop_2D, R_nonan_up_au, R_inner_au, beam_size_au, distance_pc, dpix_arcsec, **kwargs):
         #FIND FILAMENTS
         #adapt_thresh is the width of the element used for the adaptive thresholding mask.
@@ -2454,7 +2455,7 @@ class General2d(Height, Velocity, Intensity, Linewidth, Lineslope, Tools, Mcmc):
         self._use_full_channel = False
  
         x_true, y_true = grid.XYZ[:2] 
-        self.phi_true = np.arctan2(y_true, x_true) #grid.rRTP[3] 
+        self.phi_true = np.arctan2(y_true, x_true) #grid.rRTP[3] #from -np.pi to np.pi
         self.R_true = hypot_func(x_true, y_true) #grid.rRTP[1] #Slightly different as in the grid object the pixels R=0 actually take the closest-neighbour value. Current approach masks r,R=0
         self.x_true, self.y_true = x_true, y_true
         self.mesh = np.meshgrid(skygrid.XYZgrid[0], skygrid.XYZgrid[1]) #disc grid will be interpolated onto this sky grid in make_model(). Must match data dims for mcmc. 
